@@ -1,5 +1,11 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"buildCommand": "cd ../.. && pnpm run build --filter=@app/mcp",
-	"installCommand": "pnpm install"
+	"installCommand": "pnpm install",
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/api"
+		}
+	]
 }

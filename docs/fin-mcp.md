@@ -68,20 +68,7 @@ Run the HTTP transport:
 pnpm --filter @app/mcp run dev:http
 ```
 
-Build and run the production HTTP server:
-
-```bash
-DATABASE_URL=<database-url> pnpm --filter fin-api exec prisma generate
-pnpm --filter @app/mcp run build
-PORT=8080 pnpm --filter @app/mcp run start
-```
-
-Build the Cloud Run container from the repository root:
-
-```bash
-docker build -t fin-mcp .
-docker run --rm -p 8080:8080 --env-file apps/mcp/.env -e PORT=8080 fin-mcp
-```
+Production deploys happen through Vercel. The MCP Vercel project builds with `apps/mcp/vercel.json` and routes requests to the serverless Express function under `apps/mcp/api`.
 
 Run the local stdio transport:
 

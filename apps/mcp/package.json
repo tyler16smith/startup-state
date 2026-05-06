@@ -3,11 +3,9 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
-	"main": "dist/apps/mcp/index.js",
 	"scripts": {
 		"dev:http": "tsx src/server.ts --transport=http",
 		"dev:stdio": "tsx src/server.ts --transport=stdio",
-		"start": "node dist/apps/mcp/index.js",
 		"build": "rm -rf dist && tsc --project tsconfig.json && tsc-alias --project tsconfig.json --resolve-full-paths --resolve-full-extension .js && mkdir -p dist/apps/api && cp -R ../api/generated dist/apps/api/generated",
 		"check": "biome check .",
 		"typecheck": "tsc --noEmit"
