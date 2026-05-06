@@ -23,11 +23,16 @@ export function getStripeClient(): Stripe {
 }
 
 export function getWebOrigin(): string {
+	const defaultWebOrigin =
+		process.env.NODE_ENV === "production"
+			? "https://utah-hackathon-web.vercel.app"
+			: "http://localhost:3000";
+
 	return (
 		process.env.WEB_ORIGIN ??
 		process.env.NEXT_PUBLIC_WEB_URL ??
 		process.env.APP_BASE_URL ??
-		"http://localhost:3000"
+		defaultWebOrigin
 	).replace(/\/$/, "");
 }
 

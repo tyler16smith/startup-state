@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const PRODUCTION_WEB_ORIGINS: string[] = [];
+const PRODUCTION_WEB_ORIGINS = ["https://utah-hackathon-web.vercel.app"];
 
 const LOCAL_WEB_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 
@@ -30,13 +30,15 @@ export function getAllowedOrigins(): string[] {
 		...splitOrigins(process.env.WEB_ORIGIN),
 		...splitOrigins(process.env.NEXT_PUBLIC_WEB_URL),
 	];
-	const defaults =
-		process.env.NODE_ENV === "production"
-			? PRODUCTION_WEB_ORIGINS
-			: LOCAL_WEB_ORIGINS;
 
 	return Array.from(
-		new Set([...configuredOrigins, ...defaults].flatMap(withLocalhostVariant)),
+		new Set(
+			[
+				...PRODUCTION_WEB_ORIGINS,
+				...LOCAL_WEB_ORIGINS,
+				...configuredOrigins,
+			].flatMap(withLocalhostVariant),
+		),
 	);
 }
 

@@ -12,34 +12,13 @@ import type { listTransactionCategoriesResponse } from "./src/index";
 
 // Configuration helpers
 export function getApiBaseUrl(): string {
-	const isDevelopment = process.env.NODE_ENV === "development";
-	const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+	const publicApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+	if (publicApiUrl) return publicApiUrl;
 
-	// Browser context
-	if (typeof window !== "undefined") {
-		// In development, use relative URLs (proxied through Next.js)
-		// In production, use configured API URL.
-		if (isDevelopment) {
-			return "";
-		}
-		if (publicApiUrl) {
-			return publicApiUrl;
-		}
-		return window.location.origin;
-	}
+	const baseUrl = process.env.API_URL?.replace(/\/$/, "");
+	if (baseUrl) return baseUrl;
 
-	// Server-side (SSR) - always use full URL
-	if (publicApiUrl) {
-		return publicApiUrl;
-	}
-
-	const baseUrl = process.env.API_URL;
-	if (!baseUrl) {
-		console.warn(
-			"API_URL not set. Set NEXT_PUBLIC_API_URL or API_URL environment variable.",
-		);
-	}
-	return baseUrl || "";
+	throw new Error("NEXT_PUBLIC_API_URL or API_URL must be set");
 }
 
 /**

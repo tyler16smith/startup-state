@@ -85,8 +85,15 @@ export const billing = {
 		const { userId } = ctx;
 
 		const snapshot = await getEntitlementSnapshot(ctx.db, userId);
-		const webOrigin =
-			process.env.WEB_ORIGIN ?? process.env.NEXT_PUBLIC_WEB_URL ?? "";
+		const defaultWebOrigin =
+			process.env.NODE_ENV === "production"
+				? "https://utah-hackathon-web.vercel.app"
+				: "http://localhost:3000";
+		const webOrigin = (
+			process.env.WEB_ORIGIN ??
+			process.env.NEXT_PUBLIC_WEB_URL ??
+			defaultWebOrigin
+		).replace(/\/$/, "");
 		const referralLink = `${webOrigin}/auth/register?ref=${encodeURIComponent(snapshot.referralCode)}`;
 
 		return {

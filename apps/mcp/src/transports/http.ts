@@ -23,6 +23,12 @@ const protectedResourcePath = "/.well-known/oauth-protected-resource";
 const pathSpecificProtectedResourcePath = `${protectedResourcePath}/mcp`;
 const supportedGrantTypes = ["authorization_code", "refresh_token"] as const;
 const supportedResponseTypes = ["code"] as const;
+const localCorsOrigins = [
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+	"http://localhost:3001",
+	"http://127.0.0.1:3001",
+];
 
 const clientRegistrationInput = z.object({
 	redirect_uris: z.array(z.string().url()).min(1).max(10),
@@ -58,6 +64,39 @@ class OAuthRateLimitError extends OAuthRequestError {
 function getHeader(req: Request, name: string): string | undefined {
 	const value = req.headers[name.toLowerCase()];
 	return Array.isArray(value) ? value[0] : value;
+}
+
+function getAllowedCorsOrigins(env: ReturnType<typeof getEnv>): string[] {
+	return Array.from(
+		new Set([
+			"https://utah-hackathon-web.vercel.app",
+			"https://utah-hackathon-api.vercel.app",
+			env.WEB_ORIGIN,
+			env.API_URL,
+			...localCorsOrigins,
+		]),
+	);
+}
+
+function applyCorsHeaders(req: Request, res: Response) {
+	const origin = getHeader(req, "origin");
+	const allowedOrigins = getAllowedCorsOrigins(getEnv());
+	const isAllowedOrigin = Boolean(origin && allowedOrigins.includes(origin));
+
+	if (origin && isAllowedOrigin) {
+		res.setHeader("Access-Control-Allow-Origin", origin);
+		res.setHeader("Vary", "Origin");
+		res.setHeader(
+			"Access-Control-Allow-Methods",
+			"GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		);
+		res.setHeader(
+			"Access-Control-Allow-Headers",
+			"Content-Type, Authorization, X-MCP-Client-Profile",
+		);
+	}
+
+	return { origin, isAllowedOrigin };
 }
 
 function getRequestIdentifier(req: Request): string {
@@ -272,6 +311,25 @@ async function handleMcpRequest(req: Request, res: Response) {
 export function createHttpApp() {
 	const env = getEnv();
 	const app = express();
+	app.use((req, res, next) => {
+		const { origin, isAllowedOrigin } = applyCorsHeaders(req, res);
+		if (req.method !== "OPTIONS") {
+			next();
+			return;
+		}
+
+		if (!isAllowedOrigin) {
+			logger.warn("MCP CORS preflight rejected", {
+				feature: "mcp",
+				operation: "corsPreflight",
+				origin,
+			});
+			res.status(403).json({ error: "Origin not allowed" });
+			return;
+		}
+
+		res.status(204).end();
+	});
 	app.use(express.json({ limit: "1mb" }));
 	app.use(express.urlencoded({ extended: false }));
 
@@ -345,7 +403,7 @@ export function createHttpApp() {
 						: undefined,
 			});
 
-			const consentUrl = new URL("/mcp/oauth/authorize", env.WEB_APP_URL);
+			const consentUrl = new URL("/mcp/oauth/authorize", env.WEB_ORIGIN);
 			for (const [key, value] of Object.entries(req.query)) {
 				if (typeof value === "string") consentUrl.searchParams.set(key, value);
 			}
