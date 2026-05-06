@@ -101,7 +101,7 @@ function SignInForm() {
 					<CardDescription>
 						{referralCode
 							? "You were invited to the app. Sign in to unlock one extra week of trial."
-							: "Your financial intelligence platform"}
+							: "Your app"}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">

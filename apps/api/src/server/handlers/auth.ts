@@ -645,7 +645,11 @@ export const auth = {
 	 * client caches it and sends it as x-csrf-token on every mutating request.
 	 */
 	csrfToken: async (ctx: ApiContext) => {
-		if (ctx.isDemoMode) {
+		// Unauthenticated demo users have no session cookie, so the router
+		// never enforces CSRF for them — return null to skip token caching.
+		// Authenticated users in demo mode still carry a session cookie and
+		// the router enforces CSRF, so they need a real token.
+		if (ctx.isDemoMode && !ctx.session) {
 			return { csrfToken: null };
 		}
 

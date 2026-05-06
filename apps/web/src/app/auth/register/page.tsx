@@ -92,7 +92,7 @@ function RegisterForm() {
 					<CardDescription>
 						{referralCode
 							? "You were invited to the app. Create an account to unlock one extra week of trial."
-							: "Your financial intelligence platform"}
+							: "Your app"}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">

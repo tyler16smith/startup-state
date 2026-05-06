@@ -10,7 +10,7 @@ import { Toaster } from "~/components/ui/sonner";
 export const metadata: Metadata = {
 	title: "App",
 	description:
-		"Your financial intelligence platform to track and forecast your finances.",
+		"Your app to track and forecast your finances.",
 	icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
