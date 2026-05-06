@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run API contract tests before every commit.
+echo "Running API contract tests..."
+pnpm test
+status=$?
+if [ $status -ne 0 ]; then
+  echo "❌ Pre-commit: tests failed. Commit aborted."
+  exit 1
+fi
+echo "✅ Pre-commit: all tests passed."
+exit 0

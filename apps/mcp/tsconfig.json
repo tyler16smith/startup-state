@@ -1,0 +1,14 @@
+{
+	"extends": "../../packages/config/tsconfig.base.json",
+	"compilerOptions": {
+		"paths": {
+			"@app/mcp-contracts": ["../../packages/mcp-contracts/src/index.ts"],
+			"~/*": ["./src/*"]
+		},
+		"rootDir": "../..",
+		"outDir": "dist",
+		"noEmit": false,
+		"types": ["node"]
+	},
+	"include": ["index.ts", "src/**/*.ts"]
+}

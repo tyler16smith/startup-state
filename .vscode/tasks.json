@@ -1,0 +1,101 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "typecheck web api mcp extension",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "pnpm install refresh workspace links",
+			"type": "shell",
+			"command": "pnpm install",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "typecheck skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "typecheck skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "typecheck skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "typecheck skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "check skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run check && pnpm --filter @app/web run check:write && pnpm --filter @app/mcp run check && pnpm --filter @app/extension run check",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "fix api biome formatting",
+			"type": "shell",
+			"command": "pnpm --filter @app/api exec biome check --write .",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "check skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run check && pnpm --filter @app/web run check:write && pnpm --filter @app/mcp run check && pnpm --filter @app/extension run check",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "fix extension biome formatting",
+			"type": "shell",
+			"command": "pnpm --filter @app/extension exec biome check --write .",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "check skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run check && pnpm --filter @app/web run check:write && pnpm --filter @app/mcp run check && pnpm --filter @app/extension run check",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "typecheck skeleton workspaces",
+			"type": "shell",
+			"command": "pnpm --filter @app/api run typecheck && pnpm --filter @app/web run typecheck && pnpm --filter @app/mcp run typecheck && pnpm --filter @app/extension run typecheck",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

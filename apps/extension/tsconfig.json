@@ -1,0 +1,12 @@
+{
+	"extends": "../../packages/config/tsconfig.base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"types": ["chrome"],
+		"paths": {
+			"~/*": ["./*"]
+		}
+	},
+	"include": ["**/*.ts", "**/*.tsx", ".wxt/**/*.ts"],
+	"exclude": ["node_modules", ".output"]
+}

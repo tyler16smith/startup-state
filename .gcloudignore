@@ -1,0 +1,124 @@
+# git
+.git/
+.gitignore
+.gcloudignore
+.githooks/
+
+# dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+**/coverage/
+
+# database
+/prisma/db.sqlite
+/prisma/db.sqlite-journal
+db.sqlite
+
+# next.js
+.next/
+**/.next/
+out/
+**/out/
+next-env.d.ts
+
+# production/build outputs
+build/
+**/build/
+dist/
+**/dist/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# local env files
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel/
+
+# typescript
+*.tsbuildinfo
+
+# turbo
+.turbo/
+**/.turbo/
+
+
+
+# IDE / local tooling
+.idea/
+.claude/
+
+# prisma generated client
+generated/
+**/generated/
+
+# apps not needed by the MCP Dockerfile
+apps/web/
+apps/ios/
+apps/extension/
+apps/marketing/
+
+# local scripts/docs not needed for image
+docs/
+*.md
+fix-remaining-types.sh
+fix-types.sh
+start-database.sh
+plan.md
+SETUP_COMPLETE.md
+CLAUDE.md
+.cursorrules
+components.json
+biome.jsonc
+
+# editor/local config
+.vscode/
+.idea/
+.claude/
+
+# package managers you are not using in the Dockerfile
+package-lock.json
+
+# unrelated packages
+packages/shared/
+packages/openapi/
+packages/retail-sync/
+packages/client-ts/
+
+# API files not needed by Dockerfile
+apps/api/pages/
+apps/api/src/
+apps/api/vercel.json
+apps/api/next.config.js
+apps/api/tsconfig.json
+apps/api/.env.example
+apps/api/prisma/migrations/
+apps/api/prisma/seeds/
+apps/api/prisma/seed.ts
+apps/api/prisma/migrate-categories.ts
+apps/api/prisma/backfill-category-ids.ts
+
+# other
+.dockerignore
+.env.example
+apps/mcp/.env.example
+apps/mcp/vercel.json
+
+# keep apps/api/package.json and apps/api/prisma/**
+# keep apps/mcp/**

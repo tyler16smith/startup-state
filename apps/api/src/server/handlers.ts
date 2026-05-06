@@ -1,0 +1,31 @@
+import {
+	account,
+	agent,
+	auth,
+	billing,
+	demo,
+	extension,
+	extensionAuth,
+	household,
+	mcp,
+	mobileAuth,
+	onboarding,
+	ping,
+	twoFactor,
+} from "./handlers/index";
+
+export const handlers = {
+	account,
+	agent,
+	auth,
+	billing,
+	demo,
+	extension,
+	extensionAuth,
+	household,
+	mcp,
+	mobileAuth,
+	onboarding,
+	ping,
+	twoFactor,
+};

@@ -1,0 +1,17 @@
+{
+	"servers": {
+		"fin-local": {
+			"type": "stdio",
+			"command": "pnpm",
+			"args": ["--filter", "@app/mcp", "dev:stdio"],
+			"env": {
+				"FIN_MCP_TOKEN": "${env:FIN_MCP_TOKEN}",
+				"DATABASE_URL": "${env:DATABASE_URL}"
+			}
+		},
+		"fin-prod": {
+			"command": "npx",
+			"args": ["-y", "mcp-remote", "https://mcp.financewithfin.com/mcp"]
+		}
+	}
+}
