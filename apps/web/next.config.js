@@ -15,6 +15,18 @@ const config = {
 					source: "/api/v1/:path*",
 					destination: "http://localhost:3001/api/v1/:path*",
 				},
+				{
+					source: "/api/resources/:path*",
+					destination: "http://localhost:3001/api/resources/:path*",
+				},
+				{
+					source: "/api/companies/:path*",
+					destination: "http://localhost:3001/api/companies/:path*",
+				},
+				{
+					source: "/api/admin/:path*",
+					destination: "http://localhost:3001/api/admin/:path*",
+				},
 			];
 		}
 		return [];

@@ -3,6 +3,7 @@ import {
 	agent,
 	auth,
 	billing,
+	companies,
 	demo,
 	extension,
 	extensionAuth,
@@ -11,6 +12,7 @@ import {
 	mobileAuth,
 	onboarding,
 	ping,
+	resources,
 	twoFactor,
 } from "./handlers/index";
 
@@ -19,6 +21,7 @@ export const handlers = {
 	agent,
 	auth,
 	billing,
+	companies,
 	demo,
 	extension,
 	extensionAuth,
@@ -27,5 +30,6 @@ export const handlers = {
 	mobileAuth,
 	onboarding,
 	ping,
+	resources,
 	twoFactor,
 };

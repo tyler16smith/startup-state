@@ -46,6 +46,7 @@ model User {
   image         String?
   username      String?   @unique
   password      String?
+  role          UserRole  @default(USER)
 
   trialStartedAt                     DateTime           @default(now())
   trialEndsAt                        DateTime           @default(dbgenerated("(now() + interval '30 days')"))
@@ -90,8 +91,197 @@ model User {
   mcpOAuthAuthorizationCodes   McpOAuthAuthorizationCode[]
   mcpOAuthAccessTokens         McpOAuthAccessToken[]
   mcpToolCalls                 McpToolCall[]
+  founderProfiles              FounderProfile[]
+  savedResources               SavedResource[]
+  companyClaims                CompanyClaim[]
+  companyOwnerships            CompanyOwner[]
 
   @@index([referredByUserId])
+}
+
+model Resource {
+  id               String         @id @default(cuid())
+  name             String
+  slug             String         @unique
+  description      String
+  shortDescription String?
+  websiteUrl       String?
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  category         String?
+  subcategory      String?
+  status           ResourceStatus @default(PUBLISHED)
+
+  stages          String[] @default([])
+  sectors         String[] @default([])
+  goals           String[] @default([])
+  regions         String[] @default([])
+  businessTypes   String[] @default([])
+  eligibilityTags String[] @default([])
+
+  city   String?
+  county String?
+  state  String? @default("UT")
+
+  source       String?
+  sourceId     String?
+  lastSyncedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  embedding ResourceEmbedding?
+  savedBy   SavedResource[]
+
+  @@index([status])
+  @@index([city])
+  @@index([county])
+}
+
+model ResourceEmbedding {
+  id         String   @id @default(cuid())
+  resourceId String   @unique
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  content   String                       @db.Text
+  embedding Unsupported("vector(1536)")?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FounderProfile {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  stage         String?
+  city          String?
+  county        String?
+  region        String?
+  sectors       String[] @default([])
+  goals         String[] @default([])
+  businessTypes String[] @default([])
+  fundingNeeds  String[] @default([])
+  hiringStatus  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([region])
+}
+
+model SavedResource {
+  id         String @id @default(cuid())
+  userId     String
+  resourceId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, resourceId])
+  @@index([resourceId])
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  websiteUrl  String?
+  linkedinUrl String?
+  description String? @db.Text
+  sector      String?
+  stage       String?
+
+  employees     Int?
+  employeeRange String?
+  yearFounded   Int?
+
+  address    String?
+  city       String?
+  county     String?
+  state      String? @default("UT")
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+
+  hiringStatus   HiringStatus @default(UNKNOWN)
+  jobPostingsUrl String?
+
+  status CompanyStatus @default(PUBLISHED)
+
+  source       String?
+  sourceId     String?
+  lastSyncedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  photos CompanyPhoto[]
+  claims CompanyClaim[]
+  owners CompanyOwner[]
+
+  @@index([status])
+  @@index([city])
+  @@index([county])
+  @@index([sector])
+  @@index([latitude, longitude])
+}
+
+model CompanyPhoto {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model CompanyClaim {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workEmail     String
+  explanation   String?
+  domainMatches Boolean @default(false)
+
+  status       ClaimStatus @default(PENDING)
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+}
+
+model CompanyOwner {
+  id        String @id @default(cuid())
+  companyId String
+  userId    String
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, userId])
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -531,6 +721,47 @@ enum HouseholdInviteStatus {
   ACCEPTED
   REVOKED
   EXPIRED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  COMPANY_OWNER
+  PENDING_COMPANY_OWNER
+}
+
+enum FounderStage {
+  IDEA
+  PRE_REVENUE
+  EARLY_REVENUE
+  GROWTH
+  SCALING
+}
+
+enum HiringStatus {
+  NOT_HIRING
+  HIRING
+  ACTIVELY_HIRING
+  UNKNOWN
+}
+
+enum CompanyStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ResourceStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 enum HouseholdMembershipStatus {

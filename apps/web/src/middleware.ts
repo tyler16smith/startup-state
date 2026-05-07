@@ -10,7 +10,14 @@ export default auth((req) => {
 	const isApiRoute = nextUrl.pathname.startsWith("/api");
 	const is2FARoute = nextUrl.pathname === "/auth/verify-2fa";
 	const isDemoMode = req.cookies.get("activeAppContext")?.value === "demo";
-	const isPublic = isAuthPage || isApiRoute || isDemoMode;
+	const isStartupPublicRoute =
+		nextUrl.pathname === "/" ||
+		nextUrl.pathname.startsWith("/founder") ||
+		nextUrl.pathname.startsWith("/resources") ||
+		nextUrl.pathname.startsWith("/map") ||
+		nextUrl.pathname.startsWith("/companies");
+	const isPublic =
+		isAuthPage || isApiRoute || isDemoMode || isStartupPublicRoute;
 
 	if (!isLoggedIn && !isPublic) {
 		const url = new URL("/auth/signin", nextUrl);
@@ -20,7 +27,7 @@ export default auth((req) => {
 
 	// Redirect authenticated users away from auth pages, but not the 2FA page
 	if (isLoggedIn && isAuthPage && !is2FARoute) {
-		return Response.redirect(new URL("/dashboard", nextUrl));
+		return Response.redirect(new URL("/founder", nextUrl));
 	}
 
 	// Redirect to 2FA verification if pending
