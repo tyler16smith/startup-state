@@ -25,7 +25,10 @@ export default async function ResourceDetailPage({
 		<SiteShell>
 			<main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 				<div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
-					<section className="rounded-lg border bg-white p-6 shadow-sm sm:p-8">
+					<section
+						className="rounded-lg border bg-white p-6 shadow-sm sm:p-8"
+						id="resource-overview"
+					>
 						<div className="flex flex-wrap gap-2">
 							<TagList
 								items={[resource.category ?? "Resource", ...resource.goals]}
@@ -37,7 +40,7 @@ export default async function ResourceDetailPage({
 						<p className="mt-4 whitespace-pre-wrap text-muted-foreground leading-7">
 							{resource.description}
 						</p>
-						<div className="mt-8 grid gap-6 md:grid-cols-2">
+						<div className="mt-8 grid gap-6 md:grid-cols-2" id="resource-fit">
 							<Info title="Stage fit" values={resource.stages} />
 							<Info title="Sector fit" values={resource.sectors} />
 							<Info title="Region fit" values={resource.regions} />
@@ -45,7 +48,10 @@ export default async function ResourceDetailPage({
 						</div>
 					</section>
 					<aside className="space-y-4">
-						<div className="rounded-lg border bg-white p-5 shadow-sm">
+						<div
+							className="rounded-lg border bg-white p-5 shadow-sm"
+							id="resource-contact"
+						>
 							<h2 className="font-semibold">Contact</h2>
 							<div className="mt-4 space-y-3 text-sm">
 								{resource.websiteUrl && (
@@ -86,7 +92,7 @@ export default async function ResourceDetailPage({
 					</aside>
 				</div>
 				{resource.related?.length ? (
-					<section className="mt-10">
+					<section className="mt-10" id="resource-related">
 						<h2 className="mb-4 font-semibold text-2xl">Related resources</h2>
 						<div className="grid gap-5 md:grid-cols-3">
 							{resource.related.map((item) => (

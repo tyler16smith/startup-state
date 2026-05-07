@@ -1,4 +1,5 @@
 import { clearCsrfToken, getCsrfToken } from "@app/client-ts";
+import type { AgentReference } from "@app/mcp-contracts";
 import type { FinAiTimelineBlock } from "~/components/agent/fin-ai-timeline-block";
 import type {
 	FinWidget,
@@ -44,6 +45,16 @@ export type FinAgentStreamEvent =
 			toolCallId: string;
 			toolName: string;
 			summary: string;
+	  }
+	| {
+			type: "references_done";
+			runId: string;
+			stepId: string;
+			referenceBlockId: string;
+			toolCallId?: string;
+			toolName?: string;
+			title?: string;
+			references: AgentReference[];
 	  }
 	| {
 			type: "run_step_started";

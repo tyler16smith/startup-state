@@ -1,3 +1,4 @@
+import type { AgentReference } from "@app/mcp-contracts";
 import type { FinWidgetActionType } from "../widgets/actions";
 import type { FinWidget } from "../widgets/types";
 
@@ -38,6 +39,19 @@ export type AgentTimelineBlock =
 			stepType: "model_response" | "tool_execution" | "user_input_required";
 			stepIndex: number;
 			status: "running" | "completed";
+			runId?: string;
+			stepId?: string;
+			createdAt: string;
+	  }
+	| {
+			id: string;
+			type: "references";
+			role: "assistant";
+			referenceBlockId: string;
+			title?: string;
+			toolCallId?: string;
+			toolName?: string;
+			references: AgentReference[];
 			runId?: string;
 			stepId?: string;
 			createdAt: string;

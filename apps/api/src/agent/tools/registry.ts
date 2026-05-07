@@ -1,10 +1,12 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { AgentToolSpec } from "../providers/model-provider";
 import { placeholderTools } from "./placeholders";
+import { startupNavigatorTools } from "./startup-navigator";
 import type { FinToolDefinition } from "./types";
 
 export const finTools: Record<string, FinToolDefinition> = {
 	...placeholderTools,
+	...startupNavigatorTools,
 };
 
 export function getEnabledToolDefinitions(): FinToolDefinition[] {

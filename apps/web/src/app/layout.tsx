@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import { CustomerAgentBoundary } from "~/components/agent/customer-agent-boundary";
 import { PostHogProvider } from "~/components/providers/posthog-provider";
 import { QueryProvider } from "~/components/providers/query-provider";
 import { Toaster } from "~/components/ui/sonner";
@@ -28,7 +29,7 @@ export default function RootLayout({
 				<SessionProvider>
 					<PostHogProvider>
 						<QueryProvider>
-							{children}
+							<CustomerAgentBoundary>{children}</CustomerAgentBoundary>
 							<Toaster />
 						</QueryProvider>
 					</PostHogProvider>

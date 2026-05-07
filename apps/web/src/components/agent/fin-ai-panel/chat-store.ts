@@ -220,6 +220,36 @@ function addOrUpdateToolCallBlock(
 	});
 }
 
+function addReferenceBlock(
+	event: Extract<FinAgentStreamEvent, { type: "references_done" }>,
+) {
+	const block: FinAiTimelineBlock = {
+		id: event.referenceBlockId,
+		type: "references",
+		role: "assistant",
+		referenceBlockId: event.referenceBlockId,
+		title: event.title,
+		toolCallId: event.toolCallId,
+		toolName: event.toolName,
+		references: event.references,
+		runId: event.runId,
+		stepId: event.stepId,
+	};
+
+	useFinAiChatStore.setState((currentState) => {
+		const hasBlock = currentState.blocks.some(
+			(currentBlock) => currentBlock.id === event.referenceBlockId,
+		);
+		return {
+			blocks: hasBlock
+				? currentState.blocks.map((currentBlock) =>
+						currentBlock.id === event.referenceBlockId ? block : currentBlock,
+					)
+				: [...currentState.blocks, block],
+		};
+	});
+}
+
 function upsertConversationSummary(conversation: ConversationSummary) {
 	useFinAiChatStore.setState((currentState) => {
 		const hasConversation = currentState.conversations.some(
@@ -388,6 +418,11 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 								case "tool_call_done":
 									set({ status: event.summary });
 									addOrUpdateToolCallBlock(event);
+									scrollToBottom?.();
+									break;
+								case "references_done":
+									addReferenceBlock(event);
+									set({ status: "References ready" });
 									scrollToBottom?.();
 									break;
 								case "run_step_started":

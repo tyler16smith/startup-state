@@ -1,3 +1,4 @@
+import type { AgentReference } from "@app/mcp-contracts";
 import type { FinWidgetActionType } from "./widgets/actions";
 import type { FinWidget, FinWidgetType } from "./widgets/types";
 
@@ -39,6 +40,16 @@ export type FinStreamEvent =
 			toolCallId: string;
 			toolName: string;
 			summary: string;
+	  }
+	| {
+			type: "references_done";
+			runId: string;
+			stepId: string;
+			referenceBlockId: string;
+			toolCallId?: string;
+			toolName?: string;
+			title?: string;
+			references: AgentReference[];
 	  }
 	| {
 			type: "run_step_started";

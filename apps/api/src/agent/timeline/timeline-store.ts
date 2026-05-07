@@ -1,3 +1,7 @@
+import {
+	type AgentReference,
+	agentReferenceBlockSchema,
+} from "@app/mcp-contracts";
 import type { db as Db } from "~/server/db";
 import type { FinWidgetActionType } from "../widgets/actions";
 import { finWidgetSchema } from "../widgets/schemas";
@@ -115,6 +119,24 @@ function toTimelineBlock(row: {
 				typeof record.displayName === "string" ? record.displayName : undefined,
 			status: record.status,
 			summary: typeof record.summary === "string" ? record.summary : undefined,
+			runId,
+			stepId,
+			createdAt,
+		};
+	}
+
+	if (row.type === "references") {
+		const parsed = agentReferenceBlockSchema.safeParse(row.data);
+		if (!parsed.success) return null;
+		return {
+			id: row.id,
+			type: "references",
+			role: "assistant",
+			referenceBlockId: parsed.data.id,
+			title: parsed.data.title,
+			toolCallId: parsed.data.toolCallId,
+			toolName: parsed.data.toolName,
+			references: parsed.data.references,
 			runId,
 			stepId,
 			createdAt,
@@ -400,6 +422,48 @@ export class TimelineStore {
 				},
 			},
 		});
+	}
+
+	async createReferenceBlock(input: {
+		conversationId: string;
+		runId: string;
+		stepId: string;
+		referenceBlockId: string;
+		title?: string;
+		toolCallId?: string;
+		toolName?: string;
+		references: AgentReference[];
+	}): Promise<AgentTimelineBlock> {
+		const data = agentReferenceBlockSchema.parse({
+			id: input.referenceBlockId,
+			title: input.title,
+			toolCallId: input.toolCallId,
+			toolName: input.toolName,
+			references: input.references,
+		});
+		const row = await this.db.agentTimelineBlock.create({
+			data: {
+				conversationId: input.conversationId,
+				role: "assistant",
+				type: "references",
+				data,
+				runId: input.runId,
+				stepId: input.stepId,
+			},
+		});
+		return {
+			id: row.id,
+			type: "references",
+			role: "assistant",
+			referenceBlockId: data.id,
+			title: data.title,
+			toolCallId: data.toolCallId,
+			toolName: data.toolName,
+			references: data.references,
+			runId: optionalString(row.runId),
+			stepId: optionalString(row.stepId),
+			createdAt: row.createdAt.toISOString(),
+		};
 	}
 
 	async listConversationTimeline(input: {

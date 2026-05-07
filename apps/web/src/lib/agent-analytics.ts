@@ -9,6 +9,7 @@ type FinAiEvent =
 	| "agent_run_completed"
 	| "agent_run_aborted"
 	| "agent_run_failed"
+	| "agent_reference_clicked"
 	| "agent_conversation_reset"
 	| "agent_acknowledgement_accepted"
 	| "agent_suggested_prompt_clicked";

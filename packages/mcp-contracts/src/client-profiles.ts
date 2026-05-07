@@ -1,4 +1,4 @@
-import { mcpToolNames, type McpToolName } from "./tools";
+import { type McpToolName, mcpToolNames } from "./tools";
 
 export const mcpClientProfiles = [
 	"chatgpt",

@@ -1,7 +1,7 @@
 export const suggestedPrompts = [
-	"Say hello_world",
-	"What can this app shell do?",
-	"Show me the available tool",
+	"Find funding resources for a pre-seed founder",
+	"Show AI companies building in Utah",
+	"What resources fit a hardware startup?",
 ];
 
 export const CONVERSATION_ID_KEY = "agent-conversation-id";

@@ -353,6 +353,18 @@ export class FinAgent implements FinAgentRunner {
 					summary: event.summary,
 				});
 				break;
+			case "references_done":
+				await this.timelineStore.createReferenceBlock({
+					conversationId,
+					runId: event.runId,
+					stepId: event.stepId,
+					referenceBlockId: event.referenceBlockId,
+					title: event.title,
+					toolCallId: event.toolCallId,
+					toolName: event.toolName,
+					references: event.references,
+				});
+				break;
 			default:
 				break;
 		}

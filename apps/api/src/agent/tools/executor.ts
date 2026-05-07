@@ -1,3 +1,4 @@
+import { type AgentReference, agentReferenceSchema } from "@app/mcp-contracts";
 import { logger } from "~/lib/logger";
 
 import { AgentError, agentErrorFromAbortSignal } from "../errors";
@@ -12,6 +13,16 @@ import type { FinToolDefinition } from "./types";
 export type ToolExecutorOptions = {
 	maxToolTimeMs?: number;
 };
+
+function extractReferences(value: unknown): AgentReference[] {
+	if (!value || typeof value !== "object") return [];
+	const references = (value as { references?: unknown }).references;
+	if (!Array.isArray(references)) return [];
+	return references.flatMap((reference) => {
+		const parsed = agentReferenceSchema.safeParse(reference);
+		return parsed.success ? [parsed.data] : [];
+	});
+}
 
 export class ToolExecutor {
 	constructor(
@@ -193,6 +204,7 @@ export class ToolExecutor {
 				);
 
 				const output = { status: "success" as const, data: result };
+				const references = extractReferences(result);
 
 				await this.toolCallStore.completeToolCall({
 					id: persistedToolCall.id,
@@ -212,6 +224,18 @@ export class ToolExecutor {
 					toolName: toolCall.name,
 					status: "completed",
 				});
+
+				if (references.length > 0) {
+					await input.emit?.({
+						type: "references_done",
+						runId: input.runId,
+						stepId: input.stepId,
+						referenceBlockId: `references-${input.runId}-${toolCall.id}`,
+						toolCallId: toolCall.id,
+						toolName: toolCall.name,
+						references,
+					});
+				}
 
 				outputs.push({ toolCallId: toolCall.id, output });
 			} catch (error) {

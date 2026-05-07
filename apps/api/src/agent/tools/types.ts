@@ -30,7 +30,7 @@ export type FinToolDefinition<TInput = unknown, TOutput = unknown> = {
 	enabled: boolean;
 	capabilities: AgentToolCapability[];
 	safetyClass: ToolSafetyClass;
-	inputSchema: z.ZodType<TInput>;
+	inputSchema: z.ZodType<TInput, z.ZodTypeDef, unknown>;
 	outputSchema?: z.ZodType<TOutput>;
 	requiresConfirmation?: boolean;
 	execute(input: TInput, context: AgentToolExecutionContext): Promise<TOutput>;

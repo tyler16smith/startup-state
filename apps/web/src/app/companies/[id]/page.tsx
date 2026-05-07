@@ -32,7 +32,10 @@ export default async function CompanyProfilePage({
 	return (
 		<SiteShell>
 			<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-				<section className="overflow-hidden rounded-lg border bg-white shadow-sm">
+				<section
+					className="overflow-hidden rounded-lg border bg-white shadow-sm"
+					id="company-overview"
+				>
 					<div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
 						<div className="p-6 sm:p-8">
 							<p className="font-medium text-emerald-700 text-sm">
@@ -83,7 +86,10 @@ export default async function CompanyProfilePage({
 						</div>
 					</div>
 				</section>
-				<section className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+				<section
+					className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4"
+					id="company-facts"
+				>
 					<Fact
 						icon={Users}
 						label="Employees"
@@ -113,7 +119,10 @@ export default async function CompanyProfilePage({
 					/>
 				</section>
 				<section className="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
-					<div className="rounded-lg border bg-white p-6 shadow-sm">
+					<div
+						className="rounded-lg border bg-white p-6 shadow-sm"
+						id="company-details"
+					>
 						<h2 className="font-semibold text-2xl">Company details</h2>
 						<dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
 							<Detail label="LinkedIn" value={company.linkedinUrl} />
@@ -132,7 +141,10 @@ export default async function CompanyProfilePage({
 							<Detail label="Job postings" value={company.jobPostingsUrl} />
 						</dl>
 					</div>
-					<div className="rounded-lg border bg-white p-6 shadow-sm">
+					<div
+						className="rounded-lg border bg-white p-6 shadow-sm"
+						id="company-map"
+					>
 						<h2 className="font-semibold text-2xl">Map preview</h2>
 						<div className="mt-4 flex aspect-square items-center justify-center rounded-lg bg-slate-100 text-center text-muted-foreground text-sm">
 							{company.latitude && company.longitude
@@ -142,7 +154,7 @@ export default async function CompanyProfilePage({
 					</div>
 				</section>
 				{company.related?.length ? (
-					<section className="mt-10">
+					<section className="mt-10" id="company-related">
 						<h2 className="mb-4 font-semibold text-2xl">Related companies</h2>
 						<div className="grid gap-5 md:grid-cols-3">
 							{company.related.map((item) => (

@@ -21,7 +21,25 @@ export function CompanyMap({ token }: { token?: string }) {
 	const [stage, setStage] = useState("");
 	const [hiringStatus, setHiringStatus] = useState("");
 	const [city, setCity] = useState("");
+	const [county, setCounty] = useState("");
 	const [size, setSize] = useState("");
+
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		setQuery(params.get("q") ?? "");
+		setSector(params.get("sector") ?? "");
+		setStage(params.get("stage") ?? "");
+		setHiringStatus(params.get("hiringStatus") ?? "");
+		setCity(params.get("city") ?? "");
+		setCounty(params.get("county") ?? "");
+
+		const employeeMin = params.get("employeeMin");
+		const employeeMax = params.get("employeeMax");
+		if (employeeMin === "201") setSize("201+");
+		else if (employeeMin === "51" && employeeMax === "200") setSize("51-200");
+		else if (employeeMin === "11" && employeeMax === "50") setSize("11-50");
+		else if (employeeMax === "10") setSize("1-10");
+	}, []);
 
 	useEffect(() => {
 		apiClient<Paginated<Company>>("/api/v1/companies/list?limit=100")
@@ -53,10 +71,11 @@ export function CompanyMap({ token }: { token?: string }) {
 				(!stage || company.stage?.toLowerCase() === stage.toLowerCase()) &&
 				(!hiringStatus || company.hiringStatus === hiringStatus) &&
 				(!city || company.city?.toLowerCase() === city.toLowerCase()) &&
+				(!county || company.county?.toLowerCase() === county.toLowerCase()) &&
 				sizeMatches
 			);
 		});
-	}, [city, companies, hiringStatus, query, sector, size, stage]);
+	}, [city, companies, county, hiringStatus, query, sector, size, stage]);
 
 	useEffect(() => {
 		if (!token || !mapRef.current || !filtered.length) return;
@@ -106,6 +125,9 @@ export function CompanyMap({ token }: { token?: string }) {
 	) as string[];
 	const cities = Array.from(
 		new Set(companies.map((company) => company.city).filter(Boolean)),
+	) as string[];
+	const counties = Array.from(
+		new Set(companies.map((company) => company.county).filter(Boolean)),
 	) as string[];
 
 	if (loading) {
@@ -174,6 +196,18 @@ export function CompanyMap({ token }: { token?: string }) {
 					>
 						<option value="">All cities</option>
 						{cities.map((item) => (
+							<option key={item} value={item}>
+								{item}
+							</option>
+						))}
+					</select>
+					<select
+						className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+						onChange={(event) => setCounty(event.target.value)}
+						value={county}
+					>
+						<option value="">All counties</option>
+						{counties.map((item) => (
 							<option key={item} value={item}>
 								{item}
 							</option>
