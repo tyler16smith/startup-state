@@ -8,7 +8,8 @@
 		"build": "wxt build",
 		"check": "biome check .",
 		"typecheck": "tsc --noEmit",
-		"zip": "wxt zip"
+		"zip": "wxt zip",
+		"clean": "rm -rf .output .turbo tsconfig.tsbuildinfo"
 	},
 	"dependencies": {
 		"lucide-react": "^0.577.0",
