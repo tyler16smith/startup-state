@@ -102,6 +102,11 @@ export const resources = {
 	reindex: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
 		await requireAdmin(ctx);
 		const input = z.object({ id: z.string().optional() }).parse(body);
-		return { success: true, resourceId: input.id ?? null };
+		throw createApiError(
+			input.id
+				? "Resource reindexing is not available until embedding generation is configured."
+				: "Bulk resource reindexing is not available until embedding generation is configured.",
+			501,
+		);
 	}),
 };

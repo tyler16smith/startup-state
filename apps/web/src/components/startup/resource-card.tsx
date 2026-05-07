@@ -1,9 +1,11 @@
-import { ArrowUpRight, Bookmark, CheckCircle2 } from "lucide-react";
+"use client";
+
+import { ArrowUpRight, Bookmark, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import type { Resource } from "~/lib/startup-api";
-import { compactDate } from "~/lib/startup-api";
+import { apiClient, compactDate, type Resource } from "~/lib/startup-api";
 import { TagList } from "./tag-list";
 
 export function ResourceCard({
@@ -15,6 +17,36 @@ export function ResourceCard({
 	reasons?: string[];
 	score?: number;
 }) {
+	const [isSaved, setIsSaved] = useState(Boolean(resource.isSaved));
+	const [saving, setSaving] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	async function toggleSaved() {
+		setSaving(true);
+		setError(null);
+		try {
+			if (isSaved) {
+				await apiClient(`/api/v1/resources/unsave`, {
+					method: "POST",
+					body: JSON.stringify({ resourceId: resource.id }),
+				});
+				setIsSaved(false);
+			} else {
+				await apiClient("/api/v1/resources/save", {
+					method: "POST",
+					body: JSON.stringify({ resourceId: resource.id }),
+				});
+				setIsSaved(true);
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Sign in to save resources.",
+			);
+		} finally {
+			setSaving(false);
+		}
+	}
+
 	return (
 		<article className="flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
 			<div className="flex items-start justify-between gap-3">
@@ -35,10 +67,28 @@ export function ResourceCard({
 						</h3>
 					</Link>
 				</div>
-				{resource.isSaved && (
-					<Bookmark className="size-5 fill-amber-400 text-amber-500" />
-				)}
+				<Button
+					aria-label={isSaved ? "Unsave resource" : "Save resource"}
+					disabled={saving}
+					onClick={toggleSaved}
+					size="icon-sm"
+					type="button"
+					variant="ghost"
+				>
+					{saving ? (
+						<Loader2 className="size-4 animate-spin" />
+					) : (
+						<Bookmark
+							className={
+								isSaved
+									? "size-5 fill-amber-400 text-amber-500"
+									: "size-5 text-muted-foreground"
+							}
+						/>
+					)}
+				</Button>
 			</div>
+			{error && <p className="mt-2 text-destructive text-sm">{error}</p>}
 			<p className="mt-3 line-clamp-3 text-muted-foreground text-sm">
 				{resource.shortDescription || resource.description}
 			</p>

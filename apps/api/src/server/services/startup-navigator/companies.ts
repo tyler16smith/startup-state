@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { z } from "zod";
 import { createApiError } from "~/server/api-context";
 import type { Prisma, PrismaClient } from "../../../../generated/prisma";
 import {
@@ -139,6 +140,12 @@ export async function createCompany(
 	input: unknown,
 	options: { submittedByUserId?: string; admin?: boolean } = {},
 ) {
+	const rawInput =
+		typeof input === "object" && input !== null
+			? (input as Record<string, unknown>)
+			: {};
+	const submittedWorkEmail =
+		typeof rawInput.workEmail === "string" ? rawInput.workEmail.trim() : "";
 	const data = companyInputSchema.parse(input);
 	const slug = await createUniqueSlug(
 		data.name,
@@ -148,26 +155,52 @@ export async function createCompany(
 	);
 	const status = options.admin ? data.status : "PENDING_REVIEW";
 
-	const company = await db.company.create({
-		data: {
-			...data,
-			slug,
-			status,
-			websiteUrl: cleanOptional(data.websiteUrl),
-			linkedinUrl: cleanOptional(data.linkedinUrl),
-			jobPostingsUrl: cleanOptional(data.jobPostingsUrl),
-			state: cleanOptional(data.state) ?? "UT",
-			photos: { create: photoData(data.photos) },
-		},
-		include: { photos: true },
-	});
-
-	if (options.submittedByUserId) {
-		await db.user.update({
-			where: { id: options.submittedByUserId },
-			data: { role: "PENDING_COMPANY_OWNER" },
+	const company = await db.$transaction(async (tx) => {
+		const created = await tx.company.create({
+			data: {
+				...data,
+				slug,
+				status,
+				websiteUrl: cleanOptional(data.websiteUrl),
+				linkedinUrl: cleanOptional(data.linkedinUrl),
+				jobPostingsUrl: cleanOptional(data.jobPostingsUrl),
+				state: cleanOptional(data.state) ?? "UT",
+				photos: { create: photoData(data.photos) },
+			},
+			include: { photos: true },
 		});
-	}
+
+		if (options.submittedByUserId) {
+			const submitter = await tx.user.findUnique({
+				where: { id: options.submittedByUserId },
+				select: { email: true },
+			});
+			const workEmailCandidate = submittedWorkEmail || submitter?.email || "";
+			const workEmail = z.string().email().safeParse(workEmailCandidate);
+			if (!workEmail.success) {
+				throw createApiError("Valid work email required", 400);
+			}
+
+			const emailDomain = workEmail.data.split("@").at(1)?.toLowerCase() ?? "";
+			const websiteDomain = getDomain(created.websiteUrl);
+			await tx.companyClaim.create({
+				data: {
+					companyId: created.id,
+					userId: options.submittedByUserId,
+					workEmail: workEmail.data,
+					explanation: "Created this company listing.",
+					domainMatches: domainsMatch(emailDomain, websiteDomain),
+				},
+			});
+
+			await tx.user.update({
+				where: { id: options.submittedByUserId },
+				data: { role: "PENDING_COMPANY_OWNER" },
+			});
+		}
+
+		return created;
+	});
 
 	return company;
 }
@@ -238,6 +271,13 @@ function getDomain(value?: string | null) {
 	}
 }
 
+function domainsMatch(emailDomain: string, websiteDomain: string | null) {
+	if (!websiteDomain) return false;
+	return (
+		emailDomain === websiteDomain || emailDomain.endsWith(`.${websiteDomain}`)
+	);
+}
+
 export async function createCompanyClaim(
 	db: Db,
 	userId: string,
@@ -251,7 +291,7 @@ export async function createCompanyClaim(
 
 	const emailDomain = data.workEmail.split("@").at(1)?.toLowerCase() ?? "";
 	const websiteDomain = getDomain(company.websiteUrl);
-	const domainMatches = Boolean(websiteDomain && emailDomain === websiteDomain);
+	const domainMatches = domainsMatch(emailDomain, websiteDomain);
 
 	const claim = await db.companyClaim.create({
 		data: { ...data, userId, domainMatches },

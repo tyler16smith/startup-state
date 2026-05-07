@@ -1,11 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { createApiError } from "~/server/api-context";
 import { requireAdmin } from "~/server/services/startup-navigator/authz";
-import { assertMethod, firstQueryValue, respond } from "~/server/startup-rest";
+import { assertMethod, respond } from "~/server/startup-rest";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
 	return respond(req, res, async (ctx) => {
 		assertMethod(req, ["POST"]);
 		await requireAdmin(ctx);
-		return { success: true, resourceId: firstQueryValue(req.query.id) ?? null };
+		throw createApiError(
+			"Resource reindexing is not available until embedding generation is configured.",
+			501,
+		);
 	});
 }

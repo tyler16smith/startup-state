@@ -18,6 +18,10 @@ export function CompanyMap({ token }: { token?: string }) {
 	const [loading, setLoading] = useState(true);
 	const [query, setQuery] = useState("");
 	const [sector, setSector] = useState("");
+	const [stage, setStage] = useState("");
+	const [hiringStatus, setHiringStatus] = useState("");
+	const [city, setCity] = useState("");
+	const [size, setSize] = useState("");
 
 	useEffect(() => {
 		apiClient<Paginated<Company>>("/api/v1/companies/list?limit=100")
@@ -28,13 +32,31 @@ export function CompanyMap({ token }: { token?: string }) {
 	const filtered = useMemo(() => {
 		return companies.filter((company) => {
 			const haystack =
-				`${company.name} ${company.description ?? ""} ${company.city ?? ""} ${company.sector ?? ""}`.toLowerCase();
+				`${company.name} ${company.description ?? ""} ${company.city ?? ""} ${company.county ?? ""} ${company.sector ?? ""}`.toLowerCase();
+			const employeeCount = company.employees ?? null;
+			const sizeMatches =
+				!size ||
+				(size === "1-10" && employeeCount !== null && employeeCount <= 10) ||
+				(size === "11-50" &&
+					employeeCount !== null &&
+					employeeCount >= 11 &&
+					employeeCount <= 50) ||
+				(size === "51-200" &&
+					employeeCount !== null &&
+					employeeCount >= 51 &&
+					employeeCount <= 200) ||
+				(size === "201+" && employeeCount !== null && employeeCount >= 201) ||
+				Boolean(company.employeeRange?.toLowerCase() === size.toLowerCase());
 			return (
 				(!query || haystack.includes(query.toLowerCase())) &&
-				(!sector || company.sector?.toLowerCase() === sector.toLowerCase())
+				(!sector || company.sector?.toLowerCase() === sector.toLowerCase()) &&
+				(!stage || company.stage?.toLowerCase() === stage.toLowerCase()) &&
+				(!hiringStatus || company.hiringStatus === hiringStatus) &&
+				(!city || company.city?.toLowerCase() === city.toLowerCase()) &&
+				sizeMatches
 			);
 		});
-	}, [companies, query, sector]);
+	}, [city, companies, hiringStatus, query, sector, size, stage]);
 
 	useEffect(() => {
 		if (!token || !mapRef.current || !filtered.length) return;
@@ -79,6 +101,12 @@ export function CompanyMap({ token }: { token?: string }) {
 	const sectors = Array.from(
 		new Set(companies.map((company) => company.sector).filter(Boolean)),
 	) as string[];
+	const stages = Array.from(
+		new Set(companies.map((company) => company.stage).filter(Boolean)),
+	) as string[];
+	const cities = Array.from(
+		new Set(companies.map((company) => company.city).filter(Boolean)),
+	) as string[];
 
 	if (loading) {
 		return (
@@ -116,6 +144,52 @@ export function CompanyMap({ token }: { token?: string }) {
 							</option>
 						))}
 					</select>
+					<select
+						className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+						onChange={(event) => setStage(event.target.value)}
+						value={stage}
+					>
+						<option value="">All stages</option>
+						{stages.map((item) => (
+							<option key={item} value={item}>
+								{item.replace(/_/g, " ").toLowerCase()}
+							</option>
+						))}
+					</select>
+					<select
+						className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+						onChange={(event) => setHiringStatus(event.target.value)}
+						value={hiringStatus}
+					>
+						<option value="">All hiring</option>
+						<option value="ACTIVELY_HIRING">actively hiring</option>
+						<option value="HIRING">hiring</option>
+						<option value="NOT_HIRING">not hiring</option>
+						<option value="UNKNOWN">unknown</option>
+					</select>
+					<select
+						className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+						onChange={(event) => setCity(event.target.value)}
+						value={city}
+					>
+						<option value="">All cities</option>
+						{cities.map((item) => (
+							<option key={item} value={item}>
+								{item}
+							</option>
+						))}
+					</select>
+					<select
+						className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+						onChange={(event) => setSize(event.target.value)}
+						value={size}
+					>
+						<option value="">All sizes</option>
+						<option value="1-10">1-10</option>
+						<option value="11-50">11-50</option>
+						<option value="51-200">51-200</option>
+						<option value="201+">201+</option>
+					</select>
 				</div>
 				<div className="mt-5 space-y-3 overflow-y-auto pr-1 lg:max-h-[33rem]">
 					{filtered.map((company) => (
@@ -134,7 +208,15 @@ export function CompanyMap({ token }: { token?: string }) {
 				</div>
 			</aside>
 			<section className="relative overflow-hidden rounded-lg border bg-white shadow-sm">
-				{token ? (
+				{filtered.length === 0 ? (
+					<div className="p-6">
+						<EmptyState
+							description="Adjust your filters or add a company listing for this part of the ecosystem."
+							icon={MapPinned}
+							title="No companies found for this view"
+						/>
+					</div>
+				) : token ? (
 					<div className="h-[42rem]" ref={mapRef} />
 				) : (
 					<div className="p-6">

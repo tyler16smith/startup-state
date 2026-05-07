@@ -353,8 +353,9 @@ export async function recommendResourcesForFounderProfile(
 ) {
 	const profile = founderProfileInputSchema.parse(input);
 	if (options.userId && options.persistProfile) {
+		const { keywords: _keywords, ...profileData } = profile;
 		await db.founderProfile.create({
-			data: { ...profile, userId: options.userId },
+			data: { ...profileData, userId: options.userId },
 		});
 	}
 

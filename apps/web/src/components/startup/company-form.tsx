@@ -19,10 +19,12 @@ export function CompanyForm({
 	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [success, setSuccess] = useState<string | null>(null);
 
 	async function submit(formData: FormData) {
 		setSaving(true);
 		setError(null);
+		setSuccess(null);
 		const photos = String(formData.get("photos") ?? "")
 			.split(",")
 			.map((url) => url.trim())
@@ -37,7 +39,7 @@ export function CompanyForm({
 				: admin
 					? "/api/v1/companies/adminCreate"
 					: "/api/v1/companies/create";
-			const created = await apiClient<Company>(path, {
+			const saved = await apiClient<Company>(path, {
 				method: "POST",
 				body: JSON.stringify({
 					...body,
@@ -46,7 +48,13 @@ export function CompanyForm({
 					photos,
 				}),
 			});
-			router.push(admin ? "/admin/companies" : `/companies/${created.id}`);
+			if (!admin && !company) {
+				setSuccess(
+					"Company submitted for review. An admin can publish it and approve ownership from the claims queue.",
+				);
+				return;
+			}
+			router.push(admin ? "/admin/companies" : `/companies/${saved.id}`);
 			router.refresh();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Could not save company");
@@ -59,6 +67,15 @@ export function CompanyForm({
 		<form action={submit} className="grid gap-5">
 			<div className="grid gap-4 md:grid-cols-2">
 				<Field defaultValue={company?.name} label="Name" name="name" required />
+				{!admin && !company && (
+					<Field
+						label="Work email"
+						name="workEmail"
+						placeholder="you@company.com"
+						required
+						type="email"
+					/>
+				)}
 				<Field
 					defaultValue={company?.websiteUrl ?? ""}
 					label="Website"
@@ -174,6 +191,7 @@ export function CompanyForm({
 					placeholder="https://...jpg, https://...jpg"
 				/>
 			</div>
+			{success && <p className="text-emerald-700 text-sm">{success}</p>}
 			{error && <p className="text-destructive text-sm">{error}</p>}
 			<Button className="w-fit" disabled={saving} type="submit">
 				{saving ? (
