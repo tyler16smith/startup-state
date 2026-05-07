@@ -1,10 +1,6 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"buildCommand": "cd ../.. && pnpm run build --filter=@app/mcp",
-	"env": {
-		"WEB_ORIGIN": "https://utah-hackathon-web.vercel.app",
-		"API_URL": "https://utah-hackathon-api.vercel.app"
-	},
 	"installCommand": "pnpm install",
 	"rewrites": [
 		{

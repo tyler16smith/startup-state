@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe("API CORS policy", () => {
-	it("includes the deployed web origin by default", () => {
+	it("does not allow production browser origins without configuration", () => {
 		setEnv({
 			CORS_ORIGINS: undefined,
 			NEXT_PUBLIC_WEB_URL: undefined,
@@ -56,9 +56,7 @@ describe("API CORS policy", () => {
 			WEB_ORIGIN: undefined,
 		});
 
-		assert.ok(
-			getAllowedOrigins().includes("https://utah-hackathon-web.vercel.app"),
-		);
+		assert.deepEqual(getAllowedOrigins(), []);
 	});
 
 	it("sets credentialed CORS headers for a configured production app origin", () => {
@@ -128,17 +126,5 @@ describe("API CORS policy", () => {
 			getAllowedOrigins().filter((origin) => origin.includes("3000")),
 			["http://localhost:3000", "http://127.0.0.1:3000"],
 		);
-	});
-
-	it("allows local web origins in production for deployed API testing", () => {
-		setEnv({
-			CORS_ORIGINS: undefined,
-			NEXT_PUBLIC_WEB_URL: undefined,
-			NODE_ENV: "production",
-			WEB_ORIGIN: undefined,
-		});
-
-		assert.ok(getAllowedOrigins().includes("http://localhost:3000"));
-		assert.ok(getAllowedOrigins().includes("http://127.0.0.1:3000"));
 	});
 });

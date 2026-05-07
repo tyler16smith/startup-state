@@ -78,7 +78,7 @@ export const authConfig = {
 					: "authjs.session-token",
 			options: {
 				httpOnly: true,
-				sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+				sameSite: "lax",
 				path: "/",
 				secure: process.env.NODE_ENV === "production",
 				// Set AUTH_COOKIE_DOMAIN to share cookies across app/api subdomains.

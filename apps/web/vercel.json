@@ -1,10 +1,6 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"buildCommand": "cd ../.. && pnpm run build --filter=@app/web",
-	"env": {
-		"NEXT_PUBLIC_API_URL": "https://utah-hackathon-api.vercel.app",
-		"NEXT_PUBLIC_MCP_URL": "https://utah-hackathon-mcp.vercel.app"
-	},
 	"installCommand": "pnpm install",
 	"framework": "nextjs"
 }
