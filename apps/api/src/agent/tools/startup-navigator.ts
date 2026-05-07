@@ -7,7 +7,7 @@ import {
 import {
 	getResourceById,
 	recommendResourcesForFounderProfile,
-	searchResources,
+	searchRelevantResources,
 } from "~/server/services/startup-navigator/resources";
 import { hiringStatusSchema } from "~/server/services/startup-navigator/schemas";
 import {
@@ -136,7 +136,7 @@ export const searchResourcesTool: FinToolDefinition<
 	safetyClass: "read_only_app_data",
 	inputSchema: searchResourcesInputSchema,
 	execute: async (input, context) => {
-		const result = await searchResources(
+		const result = await searchRelevantResources(
 			db,
 			{ ...input, limit: input.limit, sort: "recent" },
 			{ userId: context.userId },

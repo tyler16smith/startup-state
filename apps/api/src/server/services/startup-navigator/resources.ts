@@ -1,7 +1,14 @@
 import Papa from "papaparse";
+import type { z } from "zod";
 import { logger } from "~/lib/logger";
 import { createApiError } from "~/server/api-context";
 import type { Prisma, PrismaClient } from "../../../../generated/prisma";
+import {
+	findRelevantResourceMatches,
+	isResourceEmbeddingConfigured,
+	type ResourceSemanticMatch,
+	upsertResourceEmbedding,
+} from "./resource-rag";
 import {
 	asArray,
 	csvImportSchema,
@@ -151,23 +158,58 @@ export async function getResourceById(
 function embeddingContent(input: {
 	name: string;
 	description: string;
+	shortDescription?: string | null;
 	category?: string | null;
+	subcategory?: string | null;
 	stages?: string[];
 	sectors?: string[];
 	goals?: string[];
 	regions?: string[];
+	businessTypes?: string[];
+	eligibilityTags?: string[];
+	city?: string | null;
+	county?: string | null;
 }) {
 	return [
-		input.name,
-		input.category,
-		input.description,
+		`Name: ${input.name}`,
+		input.shortDescription
+			? `Short description: ${input.shortDescription}`
+			: null,
+		`Description: ${input.description}`,
+		input.category ? `Category: ${input.category}` : null,
+		input.subcategory ? `Subcategory: ${input.subcategory}` : null,
+		input.city || input.county
+			? `Location: ${[input.city, input.county].filter(Boolean).join(", ")}`
+			: null,
+		...(input.eligibilityTags?.map((tag) => `Eligibility: ${tag}`) ?? []),
 		...(input.stages ?? []),
 		...(input.sectors ?? []),
 		...(input.goals ?? []),
 		...(input.regions ?? []),
+		...(input.businessTypes ?? []),
 	]
 		.filter(Boolean)
 		.join("\n");
+}
+
+async function indexResourceEmbedding(
+	db: Db,
+	resource: Parameters<typeof embeddingContent>[0] & { id: string },
+) {
+	try {
+		await upsertResourceEmbedding({
+			db,
+			resourceId: resource.id,
+			content: embeddingContent(resource),
+		});
+	} catch (error) {
+		logger.warn("Resource embedding update failed", {
+			feature: "startup-navigator",
+			operation: "indexResourceEmbedding",
+			resourceId: resource.id,
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
 }
 
 export async function createResource(db: Db, input: unknown) {
@@ -179,7 +221,7 @@ export async function createResource(db: Db, input: unknown) {
 		data.slug,
 	);
 
-	return db.resource.create({
+	const resource = await db.resource.create({
 		data: {
 			...data,
 			slug,
@@ -189,6 +231,9 @@ export async function createResource(db: Db, input: unknown) {
 			embedding: { create: { content: embeddingContent(data) } },
 		},
 	});
+
+	await indexResourceEmbedding(db, resource);
+	return resource;
 }
 
 export async function updateResource(
@@ -228,13 +273,72 @@ export async function updateResource(
 		},
 	});
 
-	await db.resourceEmbedding.upsert({
-		where: { resourceId },
-		create: { resourceId, content: embeddingContent(updated) },
-		update: { content: embeddingContent(updated) },
-	});
+	await indexResourceEmbedding(db, updated);
 
 	return updated;
+}
+
+function semanticBonus(match: ResourceSemanticMatch | undefined) {
+	if (!match) return 0;
+	if (match.rerankScore !== undefined)
+		return Math.round(match.rerankScore * 35);
+	return Math.max(0, Math.round((1 - match.distance) * 25));
+}
+
+async function findResourcesBySemanticMatches(
+	db: Db,
+	matches: ResourceSemanticMatch[],
+	options: { userId?: string | null } = {},
+) {
+	const ids = matches.map((match) => match.resourceId);
+	if (ids.length === 0) return [];
+	const order = new Map(ids.map((id, index) => [id, index]));
+	const resources = await db.resource.findMany({
+		where: { id: { in: ids }, status: "PUBLISHED" },
+		include: options.userId
+			? { savedBy: { where: { userId: options.userId } } }
+			: undefined,
+	});
+
+	return resources.sort(
+		(left, right) =>
+			(order.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+			(order.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+	);
+}
+
+export async function searchRelevantResources(
+	db: Db,
+	input: unknown,
+	options: { userId?: string | null } = {},
+) {
+	const rawInput =
+		typeof input === "object" && input !== null
+			? (input as Record<string, unknown>)
+			: {};
+	const query = resourceQuerySchema.parse({ sort: "relevance", ...rawInput });
+	const matches = await findRelevantResourceMatches({
+		db,
+		query,
+		resultLimit: query.limit,
+	});
+
+	if (matches.length === 0) {
+		return searchResources(db, query, options);
+	}
+
+	const resources = await findResourcesBySemanticMatches(db, matches, options);
+	return {
+		items: resources.map((item) => ({
+			...item,
+			isSaved: savedCount(item) > 0,
+			savedBy: undefined,
+		})),
+		total: resources.length,
+		limit: query.limit,
+		offset: query.offset,
+		semantic: true,
+	};
 }
 
 export async function archiveResource(db: Db, resourceId: string) {
@@ -271,6 +375,28 @@ function normalizeSet(values: string[]) {
 function intersect(source: string[], target: string[]) {
 	const sourceSet = normalizeSet(source);
 	return target.filter((value) => sourceSet.has(value.toLowerCase().trim()));
+}
+
+function founderSemanticQuery(
+	profile: z.infer<typeof founderProfileInputSchema>,
+) {
+	return [
+		profile.keywords,
+		profile.stage ? `Stage: ${profile.stage}` : null,
+		profile.region ? `Region: ${profile.region}` : null,
+		profile.city ? `City: ${profile.city}` : null,
+		profile.county ? `County: ${profile.county}` : null,
+		profile.sectors.length ? `Sectors: ${profile.sectors.join(", ")}` : null,
+		profile.goals.length ? `Goals: ${profile.goals.join(", ")}` : null,
+		profile.fundingNeeds.length
+			? `Funding needs: ${profile.fundingNeeds.join(", ")}`
+			: null,
+		profile.businessTypes.length
+			? `Business types: ${profile.businessTypes.join(", ")}`
+			: null,
+	]
+		.filter(Boolean)
+		.join("\n");
 }
 
 function scoreResource(resource: ResourceWithSaved, profile: unknown) {
@@ -359,6 +485,17 @@ export async function recommendResourcesForFounderProfile(
 		});
 	}
 
+	const semanticMatches = await findRelevantResourceMatches({
+		db,
+		query: {
+			q: founderSemanticQuery(profile),
+		},
+		resultLimit: 20,
+	});
+	const semanticByResourceId = new Map(
+		semanticMatches.map((match) => [match.resourceId, match]),
+	);
+
 	const resources = await db.resource.findMany({
 		where: { status: "PUBLISHED" },
 		include: options.userId
@@ -369,7 +506,18 @@ export async function recommendResourcesForFounderProfile(
 	});
 
 	const recommendations = resources
-		.map((resource) => scoreResource(resource, profile))
+		.map((resource) => {
+			const recommendation = scoreResource(resource, profile);
+			const bonus = semanticBonus(semanticByResourceId.get(resource.id));
+			return {
+				...recommendation,
+				score: recommendation.score + bonus,
+				reasons:
+					bonus > 0
+						? ["Matches your search intent.", ...recommendation.reasons]
+						: recommendation.reasons,
+			};
+		})
 		.sort(
 			(left, right) =>
 				right.score - left.score ||
@@ -380,6 +528,36 @@ export async function recommendResourcesForFounderProfile(
 		recommendations: recommendations.slice(0, 12),
 		profile,
 	};
+}
+
+export async function reindexResourceEmbeddings(
+	db: Db,
+	input: { id?: string } = {},
+) {
+	if (!isResourceEmbeddingConfigured()) {
+		throw createApiError(
+			"OPENAI_API_KEY is required for resource reindexing",
+			501,
+		);
+	}
+
+	const resources = await db.resource.findMany({
+		where: input.id ? { id: input.id } : { status: { not: "ARCHIVED" } },
+		orderBy: { updatedAt: "desc" },
+	});
+
+	let indexed = 0;
+	for (const resource of resources) {
+		const result = await upsertResourceEmbedding({
+			db,
+			resourceId: resource.id,
+			content: embeddingContent(resource),
+			requireProvider: true,
+		});
+		if (result.embedded) indexed += 1;
+	}
+
+	return { indexed, total: resources.length };
 }
 
 function pickCsvValue(row: Record<string, unknown>, names: string[]) {
