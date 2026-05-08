@@ -48,25 +48,6 @@ model User {
   password      String?
   role          UserRole  @default(USER)
 
-  trialStartedAt                     DateTime           @default(now())
-  trialEndsAt                        DateTime           @default(dbgenerated("(now() + interval '30 days')"))
-  subscriptionStatus                 SubscriptionStatus @default(NONE)
-  subscriptionPlan                   SubscriptionPlan   @default(NONE)
-  syncAccessStatus                   SyncAccessStatus   @default(ACTIVE)
-  subscriptionCurrentPeriodStart     DateTime?
-  subscriptionCurrentPeriodEnd       DateTime?
-  subscriptionCancelAtPeriodEnd      Boolean            @default(false)
-  subscriptionCanceledAt             DateTime?
-  subscriptionProviderCustomerId     String?            @unique
-  subscriptionProviderSubscriptionId String?            @unique
-  subscriptionProviderPriceId        String?
-  subscriptionLastWebhookEventId     String?
-  subscriptionInterval               String?
-  referralCode                       String?            @unique
-  referredByUserId                   String?
-  referralBonusDaysGranted           Int                @default(0)
-  successfulReferralCount            Int                @default(0)
-
   twoFactorEnabled     Boolean @default(false)
   twoFactorSecret      String? @db.Text
   twoFactorBackupCodes String? @db.Text
@@ -82,10 +63,6 @@ model User {
   householdInvitesOwned        HouseholdInvite[]           @relation("HouseholdInviteOwner")
   householdMembershipsOwned    HouseholdMembership[]       @relation("HouseholdMembershipOwner")
   householdMembershipsAsMember HouseholdMembership[]       @relation("HouseholdMembershipMember")
-  referredBy                   User?                       @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
-  referrals                    User[]                      @relation("UserReferrals")
-  referralRedemptionsSent      ReferralRedemption[]        @relation("ReferralRedemptionsSent")
-  referralRedemptionReceived   ReferralRedemption?         @relation("ReferralRedemptionReceived")
   agentConversations           AgentConversation[]
   mcpPersonalAccessTokens      McpPersonalAccessToken[]
   mcpOAuthAuthorizationCodes   McpOAuthAuthorizationCode[]
@@ -95,8 +72,6 @@ model User {
   savedResources               SavedResource[]
   companyClaims                CompanyClaim[]
   companyOwnerships            CompanyOwner[]
-
-  @@index([referredByUserId])
 }
 
 model Resource {
@@ -406,21 +381,6 @@ model HouseholdMembership {
   @@unique([ownerUserId, memberUserId])
   @@index([ownerUserId])
   @@index([memberUserId])
-}
-
-model ReferralRedemption {
-  id                  String   @id @default(cuid())
-  referrerUserId      String
-  referredUserId      String   @unique
-  qualifiedAt         DateTime @default(now())
-  bonusDaysToReferrer Int      @default(7)
-  bonusDaysToReferred Int      @default(7)
-  createdAt           DateTime @default(now())
-
-  referrer User @relation("ReferralRedemptionsSent", fields: [referrerUserId], references: [id], onDelete: Cascade)
-  referred User @relation("ReferralRedemptionReceived", fields: [referredUserId], references: [id], onDelete: Cascade)
-
-  @@index([referrerUserId])
 }
 
 model McpPersonalAccessToken {
