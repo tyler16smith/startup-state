@@ -106,7 +106,7 @@ button { font: inherit; }
 @media (min-width: 760px) {
 	.nav-links, .nav-actions { display: flex; }
 	.mobile-menu-btn { display: none; }
-	.hero-grid { grid-template-columns: minmax(0, 0.95fr) minmax(540px, 1.05fr); }
+	.hero-grid { grid-template-columns: 3fr 2fr; }
 	.section-grid { grid-template-columns: 0.95fr 1.05fr; align-items: start; }
 	.cards-three { grid-template-columns: repeat(3, 1fr); }
 }
