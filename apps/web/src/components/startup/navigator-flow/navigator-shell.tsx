@@ -18,7 +18,6 @@ export function NavigatorShell({
 	direction,
 	onBack,
 	onNext,
-	onSkip,
 	nextDisabled,
 	nextLabel = "Next",
 	brandLabel = "Startup State Navigator",
@@ -29,7 +28,6 @@ export function NavigatorShell({
 	direction: number;
 	onBack?: () => void;
 	onNext: () => void;
-	onSkip?: () => void;
 	nextDisabled?: boolean;
 	nextLabel?: string;
 	brandLabel?: string;
@@ -46,8 +44,8 @@ export function NavigatorShell({
 					<p className="font-medium text-muted-foreground text-xs sm:text-sm">
 						Step {step + 1} of {totalSteps}
 					</p>
-					<Button disabled={!onSkip} onClick={onSkip} size="sm" variant="ghost">
-						Skip
+					<Button asChild size="sm" variant="ghost">
+						<Link href="/resources">Skip</Link>
 					</Button>
 				</div>
 				<div className="h-0.5 bg-slate-200">

@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import type React from "react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -26,7 +27,7 @@ import { USER_ROLE } from "~/lib/user-role";
 import { cn } from "~/lib/utils";
 
 const navItems = [
-	{ href: "/founder", label: "Navigator", icon: Compass },
+	{ href: "/", label: "Navigator", icon: Compass },
 	{ href: "/resources", label: "Resources", icon: Sparkles },
 	{ href: "/map", label: "Map", icon: MapIcon },
 	{ href: "/companies/new", label: "Add company", icon: Building2 },
@@ -37,31 +38,52 @@ function NavLink({
 	label,
 	icon: Icon,
 	pathname,
+	isAdminLink = false,
+	onClick,
 }: {
 	href: string;
 	label: string;
 	icon: React.ComponentType<{ className?: string }>;
 	pathname: string;
+	isAdminLink?: boolean;
+	onClick?: () => void;
 }) {
 	const active =
-		pathname === href || (href !== "/" && pathname.startsWith(href));
+		href === "/"
+			? pathname === "/" || pathname === "/plan"
+			: pathname === href || pathname.startsWith(href);
 	return (
 		<Link
 			className={cn(
 				"flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+				isAdminLink && "justify-between",
 				active
 					? "bg-slate-950 text-white"
 					: "text-slate-800 hover:bg-slate-100",
 			)}
 			href={href}
+			onClick={onClick}
 		>
-			<Icon className="h-4 w-4" />
-			{label}
+			<span className="flex min-w-0 items-center gap-3">
+				<Icon className="h-4 w-4 shrink-0" />
+				<span className="truncate">{label}</span>
+			</span>
+			{isAdminLink && (
+				<span className="shrink-0 rounded-sm bg-amber-100 px-1.5 py-0.5 font-medium text-amber-700 text-xs leading-none">
+					Admin only
+				</span>
+			)}
 		</Link>
 	);
 }
 
-export function StartupSidebar() {
+export function StartupSidebar({
+	className,
+	onClose,
+}: {
+	className?: string;
+	onClose?: () => void;
+} = {}) {
 	const pathname = usePathname();
 	const { data: session } = useSession();
 	const [popoverOpen, setPopoverOpen] = useState(false);
@@ -70,16 +92,26 @@ export function StartupSidebar() {
 	const email = session?.user?.email ?? "";
 	const initials = name
 		.split(" ")
-		.map((n) => n[0])
+		.map((part) => part[0])
 		.join("")
 		.toUpperCase()
 		.slice(0, 2);
+	const isAdmin = session?.user?.role === USER_ROLE.ADMIN;
 
 	return (
-		<aside className="flex w-64 flex-shrink-0 flex-col border-slate-200 border-r bg-gray-50">
+		<aside
+			className={cn(
+				"flex h-full w-64 flex-shrink-0 flex-col border-slate-200 border-r bg-gray-50",
+				className,
+			)}
+		>
 			{/* Logo */}
 			<div className="flex h-16 items-center px-6">
-				<Link className="flex items-center gap-2 font-semibold" href="/">
+				<Link
+					className="flex items-center gap-2 font-semibold"
+					href="/"
+					onClick={onClose}
+				>
 					<span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-white">
 						<ShieldCheck className="size-4" />
 					</span>
@@ -89,16 +121,23 @@ export function StartupSidebar() {
 
 			{/* Nav */}
 			<nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-				{session?.user?.role === USER_ROLE.ADMIN && (
+				{isAdmin && (
 					<NavLink
 						href="/admin"
 						icon={Shield}
+						isAdminLink={true}
 						label="Admin Tools"
+						onClick={onClose}
 						pathname={pathname}
 					/>
 				)}
 				{navItems.map((item) => (
-					<NavLink key={item.href} {...item} pathname={pathname} />
+					<NavLink
+						key={item.href}
+						{...item}
+						onClick={onClose}
+						pathname={pathname}
+					/>
 				))}
 			</nav>
 
@@ -107,6 +146,7 @@ export function StartupSidebar() {
 					<Link
 						className="flex w-full items-center justify-center gap-2 rounded-md bg-gray-200 px-3 py-2 text-sm transition-colors hover:bg-gray-300"
 						href="/auth/signin"
+						onClick={onClose}
 					>
 						<User className="h-4 w-4" />
 						Sign in
@@ -148,14 +188,21 @@ export function StartupSidebar() {
 							<Link
 								className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
 								href="/settings"
-								onClick={() => setPopoverOpen(false)}
+								onClick={() => {
+									setPopoverOpen(false);
+									onClose?.();
+								}}
 							>
 								<Settings className="h-4 w-4" />
 								Account settings
 							</Link>
 							<button
 								className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
-								onClick={() => void signOut({ callbackUrl: "/auth/signin" })}
+								onClick={() => {
+									setPopoverOpen(false);
+									onClose?.();
+									void signOut({ callbackUrl: "/auth/signin" });
+								}}
 								type="button"
 							>
 								<LogOut className="h-4 w-4" />

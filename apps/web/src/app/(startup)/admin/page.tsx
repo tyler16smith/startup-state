@@ -1,4 +1,7 @@
+import { BookOpen, Building2 } from "lucide-react";
 import Link from "next/link";
+import type React from "react";
+import { EditPencilLink } from "~/app/(startup)/admin/edit-pencil-link";
 import { Button } from "~/components/ui/button";
 import type { Company, Resource } from "~/lib/startup-api";
 import { apiServer } from "~/lib/startup-server-api";
@@ -17,7 +20,7 @@ export default async function AdminPage() {
 		"/api/v1/companies/adminSummary",
 	);
 	return (
-		<main className="w-full px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+		<main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
 			<div className="mb-8">
 				<p className="font-medium text-emerald-700 text-sm">Admin</p>
 				<h1 className="mt-2 font-semibold text-4xl tracking-normal">
@@ -30,6 +33,8 @@ export default async function AdminPage() {
 			<section className="grid gap-6 lg:grid-cols-2">
 				<DashboardCard
 					addHref="/admin/resources/new"
+					editBasePath="/admin/resources"
+					icon={BookOpen}
 					items={summary.resources}
 					manageHref="/admin/resources"
 					title="Resources"
@@ -37,6 +42,8 @@ export default async function AdminPage() {
 				/>
 				<DashboardCard
 					addHref="/admin/companies/new"
+					editBasePath="/admin/companies"
+					icon={Building2}
 					items={summary.companies}
 					manageHref="/admin/companies"
 					title="Companies"
@@ -53,17 +60,25 @@ function DashboardCard({
 	items,
 	manageHref,
 	addHref,
+	editBasePath,
+	icon,
 }: {
 	title: string;
 	total: number;
 	items: Array<{ id: string; name: string; status: string }>;
 	manageHref: string;
 	addHref: string;
+	editBasePath: string;
+	icon?: React.ComponentType<{ className?: string }>;
 }) {
+	const Icon = icon;
 	return (
 		<div className="rounded-lg border bg-white p-5 shadow-sm">
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="font-semibold text-lg">{title}</h2>
+				<h2 className="flex items-center gap-1 font-semibold text-lg">
+					{Icon ? <Icon className="size-5 text-emerald-500" /> : null}
+					{title}
+				</h2>
 				<div className="flex gap-2">
 					<Button asChild size="sm" variant="outline">
 						<Link href={manageHref}>Manage</Link>
@@ -78,11 +93,17 @@ function DashboardCard({
 			<div className="space-y-2">
 				{items.map((item) => (
 					<div
-						className="rounded-lg border p-3"
+						className="flex items-center justify-between rounded-lg border p-3"
 						key={item.id}
 					>
-						<p className="font-medium text-sm">{item.name}</p>
-						<p className="text-muted-foreground text-xs">{item.status}</p>
+						<div>
+							<p className="font-medium text-sm">{item.name}</p>
+							<p className="text-muted-foreground text-xs">{item.status}</p>
+						</div>
+						<EditPencilLink
+							href={`${editBasePath}/${item.id}/edit`}
+							label={`Edit ${item.name}`}
+						/>
 					</div>
 				))}
 			</div>

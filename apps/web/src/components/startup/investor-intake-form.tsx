@@ -154,15 +154,6 @@ export function InvestorIntakeForm() {
 		setStep((current) => Math.max(0, current - 1));
 	}
 
-	function skipStep() {
-		if (step === 2) {
-			goNext();
-			return;
-		}
-		setDirection(1);
-		setStep((current) => current + 1);
-	}
-
 	const nextDisabled =
 		(step === 0 && values.stages.length === 0) ||
 		(step === 1 && values.sectors.length === 0);
@@ -174,7 +165,6 @@ export function InvestorIntakeForm() {
 			nextLabel={step === 2 ? "Load recommendations" : "Continue"}
 			onBack={step > 0 ? goBack : undefined}
 			onNext={goNext}
-			onSkip={skipStep}
 			step={step}
 			totalSteps={3}
 		>

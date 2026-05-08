@@ -142,7 +142,7 @@ export function ResourceCard({
 							<ArrowUpRight className="size-4" />
 						</a>
 					</Button>
-			) : (
+				) : (
 					<Button asChild size="sm" variant="outline">
 						<Link href={`/resources/${resource.id}`}>
 							Open

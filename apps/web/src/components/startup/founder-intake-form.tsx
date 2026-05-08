@@ -181,15 +181,6 @@ export function FounderIntakeForm() {
 		setStep((current) => Math.max(0, current - 1));
 	}
 
-	function skipStep() {
-		if (step === 3) {
-			goNext();
-			return;
-		}
-		setDirection(1);
-		setStep((current) => current + 1);
-	}
-
 	const nextDisabled =
 		(step === 0 && values.sectors.length === 0) ||
 		(step === 1 && values.goals.length === 0) ||
@@ -204,7 +195,6 @@ export function FounderIntakeForm() {
 			nextLabel={step === 3 ? "Show my action plan" : "Continue"}
 			onBack={step > 0 ? goBack : undefined}
 			onNext={goNext}
-			onSkip={skipStep}
 			step={step}
 			totalSteps={4}
 		>
