@@ -2,7 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 import { StartupSidebar } from "~/components/startup/startup-sidebar";
@@ -48,22 +48,7 @@ export function StartupLayoutShell({
 				Skip to content
 			</a>
 			<div className="flex h-12 shrink-0 items-center gap-3 border-slate-200 border-b bg-gray-50 px-4 md:hidden">
-				<Sheet onOpenChange={setOpen} open={open}>
-					<SheetTrigger asChild>
-						<Button aria-label="Open navigation" size="icon" variant="ghost">
-							<Menu className="h-5 w-5" />
-						</Button>
-					</SheetTrigger>
-					<SheetContent className="w-64 p-0" side="left">
-						<SheetHeader className="sr-only">
-							<SheetTitle>Navigation</SheetTitle>
-							<SheetDescription>
-								Primary navigation for Startup State Navigator.
-							</SheetDescription>
-						</SheetHeader>
-						<StartupSidebar onClose={() => setOpen(false)} />
-					</SheetContent>
-				</Sheet>
+				<MobileNavigationSheet onOpenChange={setOpen} open={open} />
 				<span className="font-semibold text-sm">Startup State Navigator</span>
 			</div>
 			<StartupSidebar className="hidden md:flex" />
@@ -80,6 +65,43 @@ export function StartupLayoutShell({
 					</StartupStateAIWorkspace>
 				</StartupStateAIPanelProvider>
 			</Suspense>
+		</div>
+	);
+}
+
+function MobileNavigationSheet({
+	open,
+	onOpenChange,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	return (
+		<div className="flex size-9 shrink-0 items-center justify-center">
+			{mounted ? (
+				<Sheet onOpenChange={onOpenChange} open={open}>
+					<SheetTrigger asChild>
+						<Button aria-label="Open navigation" size="icon" variant="ghost">
+							<Menu className="h-5 w-5" />
+						</Button>
+					</SheetTrigger>
+					<SheetContent className="w-64 p-0" side="left">
+						<SheetHeader className="sr-only">
+							<SheetTitle>Navigation</SheetTitle>
+							<SheetDescription>
+								Primary navigation for Startup State Navigator.
+							</SheetDescription>
+						</SheetHeader>
+						<StartupSidebar onClose={() => onOpenChange(false)} />
+					</SheetContent>
+				</Sheet>
+			) : null}
 		</div>
 	);
 }

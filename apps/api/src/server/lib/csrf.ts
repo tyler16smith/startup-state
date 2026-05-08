@@ -1,18 +1,7 @@
 import crypto from "node:crypto";
 import { decode } from "next-auth/jwt";
 
-/**
- * Parse a raw Cookie header string into a key-value map.
- * Values are URL-decoded.
- */
-function parseCookieHeader(cookieHeader: string): Record<string, string> {
-	const cookies: Record<string, string> = {};
-	for (const part of cookieHeader.split(";")) {
-		const [key, ...rest] = part.trim().split("=");
-		if (key) cookies[key.trim()] = decodeURIComponent(rest.join("=").trim());
-	}
-	return cookies;
-}
+import { extractSessionCookie, parseCookieHeader } from "./auth-session-cookie";
 
 /**
  * Extract the raw NextAuth session token string from a Cookie header.
@@ -20,11 +9,7 @@ function parseCookieHeader(cookieHeader: string): Record<string, string> {
  */
 export function extractSessionToken(cookieHeader: string): string | null {
 	const cookies = parseCookieHeader(cookieHeader);
-	return (
-		cookies["__Secure-authjs.session-token"] ??
-		cookies["authjs.session-token"] ??
-		null
-	);
+	return extractSessionCookie(cookies)?.token ?? null;
 }
 
 /**
@@ -71,16 +56,14 @@ export async function computeCsrfToken(cookieHeader: string): Promise<string> {
 	if (!secret) throw new Error("AUTH_SECRET not configured");
 
 	const cookies = parseCookieHeader(cookieHeader);
-	const isSecure = "__Secure-authjs.session-token" in cookies;
-	const salt = isSecure
-		? "__Secure-authjs.session-token"
-		: "authjs.session-token";
-	const sessionToken =
-		cookies["__Secure-authjs.session-token"] ?? cookies["authjs.session-token"];
+	const sessionCookie = extractSessionCookie(cookies);
 
-	if (!sessionToken)
+	if (!sessionCookie)
 		throw new Error("CSRF validation failed: no active session");
 
-	const stableKey = await extractStableSessionKey(sessionToken, salt);
+	const stableKey = await extractStableSessionKey(
+		sessionCookie.token,
+		sessionCookie.salt,
+	);
 	return crypto.createHmac("sha256", secret).update(stableKey).digest("hex");
 }

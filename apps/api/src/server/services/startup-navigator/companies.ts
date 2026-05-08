@@ -198,8 +198,8 @@ export async function createCompany(
 				},
 			});
 
-			await tx.user.update({
-				where: { id: options.submittedByUserId },
+			await tx.user.updateMany({
+				where: { id: options.submittedByUserId, role: "USER" },
 				data: { role: "PENDING_COMPANY_OWNER" },
 			});
 		}
@@ -410,8 +410,8 @@ export async function createCompanyClaim(
 		},
 	});
 
-	await db.user.update({
-		where: { id: userId },
+	await db.user.updateMany({
+		where: { id: userId, role: "USER" },
 		data: { role: "PENDING_COMPANY_OWNER" },
 	});
 

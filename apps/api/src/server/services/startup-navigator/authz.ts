@@ -3,6 +3,7 @@ import { createApiError } from "~/server/api-context";
 
 export async function getCurrentUser(ctx: ApiContext) {
 	if (!ctx.userId) return null;
+
 	return ctx.db.user.findUnique({
 		where: { id: ctx.userId },
 		select: { id: true, email: true, name: true, role: true },
@@ -14,6 +15,7 @@ export async function requireAdmin(ctx: ApiContext) {
 	if (!user || user.role !== "ADMIN") {
 		throw createApiError("Admin access required", 403);
 	}
+
 	return user;
 }
 

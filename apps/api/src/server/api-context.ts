@@ -5,6 +5,10 @@ import { decode } from "next-auth/jwt";
 
 import { logger } from "~/lib/logger";
 import { db } from "./db";
+import {
+	extractSessionCookie,
+	parseCookieHeader,
+} from "./lib/auth-session-cookie";
 import { validateAccessToken } from "./lib/token-manager";
 
 type JWTPayload = {
@@ -14,15 +18,6 @@ type JWTPayload = {
 	iat: number;
 	exp: number;
 };
-
-function parseCookieHeader(cookieHeader: string): Record<string, string> {
-	const cookies: Record<string, string> = {};
-	for (const part of cookieHeader.split(";")) {
-		const [key, ...rest] = part.trim().split("=");
-		if (key) cookies[key.trim()] = decodeURIComponent(rest.join("=").trim());
-	}
-	return cookies;
-}
 
 async function validateJWT(token: string): Promise<JWTPayload | null> {
 	try {
@@ -57,12 +52,9 @@ async function getUserIdFromSessionCookie(
 	cookies: Record<string, string>,
 ): Promise<string | null> {
 	try {
-		// NextAuth v5 uses JWT sessions by default
-		const sessionToken =
-			cookies["authjs.session-token"] ||
-			cookies["__Secure-authjs.session-token"];
+		const sessionCookie = extractSessionCookie(cookies);
 
-		if (!sessionToken) {
+		if (!sessionCookie) {
 			return null;
 		}
 
@@ -74,18 +66,11 @@ async function getUserIdFromSessionCookie(
 			return null;
 		}
 
-		// Determine the correct salt based on the cookie name being used
-		// In production, NextAuth uses __Secure- prefix
-		const isSecure = "__Secure-authjs.session-token" in cookies;
-		const salt = isSecure
-			? "__Secure-authjs.session-token"
-			: "authjs.session-token";
-
 		// Decode the NextAuth JWT using the AUTH_SECRET
 		const decoded = await decode({
-			token: sessionToken,
+			token: sessionCookie.token,
 			secret: process.env.AUTH_SECRET,
-			salt,
+			salt: sessionCookie.salt,
 		});
 
 		const userId = (decoded?.sub as string | undefined) ?? null;

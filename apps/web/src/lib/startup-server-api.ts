@@ -33,11 +33,10 @@ export async function apiServer<T>(
 	path: string,
 	params?: Record<string, unknown>,
 ): Promise<T> {
+	const apiBaseUrl = getServerApiBaseUrl();
+	const url = `${apiBaseUrl}${path}${queryString(params)}`;
 	const options = await getServerFetchOptions();
-	const response = await fetch(
-		`${getServerApiBaseUrl()}${path}${queryString(params)}`,
-		{ ...options, cache: "no-store" },
-	);
+	const response = await fetch(url, { ...options, cache: "no-store" });
 	return parseApiResponse<T>(response);
 }
 
