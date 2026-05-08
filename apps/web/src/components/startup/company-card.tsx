@@ -36,7 +36,7 @@ export function CompanyCard({ company }: { company: Company }) {
 					</Badge>
 				</div>
 				<Link href={`/companies/${company.id}`}>
-					<h3 className="mt-3 font-semibold text-xl leading-tight hover:text-emerald-700">
+					<h3 className="mt-3 truncate font-semibold text-xl leading-tight hover:text-emerald-700">
 						{company.name}
 					</h3>
 				</Link>

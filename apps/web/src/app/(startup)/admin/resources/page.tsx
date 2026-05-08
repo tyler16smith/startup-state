@@ -39,7 +39,11 @@ export default async function AdminResourcesPage() {
 						<TableBody>
 							{resources.items.map((resource) => (
 								<TableRow key={resource.id}>
-									<TableCell className="font-medium">{resource.name}</TableCell>
+									<TableCell className="max-w-[14rem] font-medium">
+										<span className="block truncate" title={resource.name}>
+											{resource.name}
+										</span>
+									</TableCell>
 									<TableCell>{resource.status}</TableCell>
 									<TableCell>{resource.category ?? "-"}</TableCell>
 									<TableCell>{resource.sourceId ?? "-"}</TableCell>

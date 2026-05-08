@@ -104,7 +104,7 @@ export default async function PlanPage() {
 									</Badge>
 								)}
 							</div>
-							<h2 className="mt-4 font-semibold text-xl leading-tight">
+							<h2 className="mt-4 truncate font-semibold text-xl leading-tight">
 								{item.resource.name}
 							</h2>
 							<p className="mt-3 line-clamp-3 text-muted-foreground text-sm">
@@ -136,7 +136,7 @@ export default async function PlanPage() {
 								</Badge>
 								<Building2 className="size-4 text-muted-foreground" />
 							</div>
-							<h2 className="mt-4 font-semibold text-lg leading-tight">
+							<h2 className="mt-4 truncate font-semibold text-lg leading-tight">
 								{item.company.name}
 							</h2>
 							<p className="mt-2 text-muted-foreground text-sm">

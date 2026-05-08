@@ -76,7 +76,7 @@ export function ResourceCard({
 						)}
 					</div>
 					<Link href={`/resources/${resource.id}`}>
-						<h3 className="mt-3 font-semibold text-xl leading-tight hover:text-emerald-700">
+						<h3 className="mt-3 truncate font-semibold text-xl leading-tight hover:text-emerald-700">
 							{resource.name}
 						</h3>
 					</Link>

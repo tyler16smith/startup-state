@@ -44,7 +44,11 @@ export default async function AdminCompaniesPage() {
 						<TableBody>
 							{companies.items.map((company) => (
 								<TableRow key={company.id}>
-									<TableCell className="font-medium">{company.name}</TableCell>
+									<TableCell className="max-w-[14rem] font-medium">
+										<span className="block truncate" title={company.name}>
+											{company.name}
+										</span>
+									</TableCell>
 									<TableCell>{company.status}</TableCell>
 									<TableCell>{company.sector ?? "-"}</TableCell>
 									<TableCell className="text-right">

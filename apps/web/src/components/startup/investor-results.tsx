@@ -225,7 +225,7 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 										</Badge>
 									)}
 								</div>
-								<h2 className="mt-3 font-semibold text-base leading-tight">
+								<h2 className="mt-3 truncate font-semibold text-base leading-tight">
 									{recommendation.company.name}
 								</h2>
 								<p className="mt-1 text-muted-foreground text-xs">

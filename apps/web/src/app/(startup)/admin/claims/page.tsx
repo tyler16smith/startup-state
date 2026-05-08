@@ -44,8 +44,10 @@ export default async function AdminClaimsPage() {
 					<TableBody>
 						{claims.map((claim) => (
 							<TableRow key={claim.id}>
-								<TableCell className="font-medium">
-									{claim.company.name}
+								<TableCell className="max-w-[14rem] font-medium">
+									<span className="block truncate" title={claim.company.name}>
+										{claim.company.name}
+									</span>
 								</TableCell>
 								<TableCell>
 									{claim.user.name ?? claim.user.email ?? "-"}

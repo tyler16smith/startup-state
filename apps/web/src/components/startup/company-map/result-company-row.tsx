@@ -24,7 +24,7 @@ export function ResultCompanyRow({
 			data-active={active}
 		>
 			<button className="w-full text-left" onClick={onSelect} type="button">
-				<p className="font-medium text-slate-950">{company.name}</p>
+				<p className="truncate font-medium text-slate-950">{company.name}</p>
 				{summary && (
 					<p className="mt-1 text-muted-foreground text-sm">{summary}</p>
 				)}
