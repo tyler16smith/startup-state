@@ -234,7 +234,6 @@ export const auth = {
 	 */
 	register: async (ctx: ApiContext, body: unknown) => {
 		const input = registerInput.parse(body);
-		const normalizedReferralCode = input.referralCode?.trim().toUpperCase();
 
 		const existing = await ctx.db.user.findUnique({
 			where: { email: input.email },

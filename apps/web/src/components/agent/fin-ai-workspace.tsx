@@ -5,19 +5,8 @@ import { type ReactNode, useEffect, useState } from "react";
 import { useFinAiPanel } from "~/components/agent/fin-ai-context";
 import { FinAiPanel } from "~/components/agent/fin-ai-panel";
 import { Button } from "~/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "~/components/ui/dialog";
 import { Sheet, SheetContent } from "~/components/ui/sheet";
-import { trackFinAi } from "~/lib/agent-analytics";
 import { cn } from "~/lib/utils";
-
-const ACKNOWLEDGEMENT_KEY = "agent-guidance-acknowledged";
 
 function useIsMobile() {
 	const [isMobile, setIsMobile] = useState(false);
@@ -82,42 +71,6 @@ export function FinAiWorkspace({ children }: { children: ReactNode }) {
 					</SheetContent>
 				</Sheet>
 			</div>
-
-			<FinAiAcknowledgementGate />
 		</>
-	);
-}
-
-function FinAiAcknowledgementGate() {
-	const [hasAcknowledged, setHasAcknowledged] = useState<boolean | null>(null);
-
-	useEffect(() => {
-		setHasAcknowledged(localStorage.getItem(ACKNOWLEDGEMENT_KEY) === "true");
-	}, []);
-
-	const acknowledge = () => {
-		localStorage.setItem(ACKNOWLEDGEMENT_KEY, "true");
-		setHasAcknowledged(true);
-		trackFinAi("agent_acknowledgement_accepted");
-	};
-
-	if (hasAcknowledged === null) return null;
-	if (hasAcknowledged) return null;
-
-	return (
-		<Dialog open>
-			<DialogContent showCloseButton={false}>
-				<DialogHeader>
-					<DialogTitle>Agent guidance</DialogTitle>
-					<DialogDescription className="leading-6">
-						Agent can help you test the app shell and future product workflows.
-						It can make mistakes, so review outputs before relying on them.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter>
-					<Button onClick={acknowledge}>I understand</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
 	);
 }

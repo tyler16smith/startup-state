@@ -16,7 +16,7 @@ export function MapSearchInput({
 		<div className="relative w-full md:max-w-96">
 			<Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-500" />
 			<Input
-				className="h-10 rounded-full border-slate-200 border-2 border-gray-200 bg-white pr-11 pl-12 text-base shadow-lg"
+				className="h-10 rounded-full border-2 border-gray-200 border-slate-200 bg-white pr-11 pl-12 text-base shadow-lg"
 				onChange={(event) => onQueryChange(event.target.value)}
 				onFocus={onFocus}
 				placeholder="Search Utah companies"

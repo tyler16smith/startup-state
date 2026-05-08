@@ -181,12 +181,18 @@ function embeddingContent(input: {
 		input.city || input.county
 			? `Location: ${[input.city, input.county].filter(Boolean).join(", ")}`
 			: null,
-		...(input.eligibilityTags?.map((tag) => `Eligibility: ${tag}`) ?? []),
-		...(input.stages ?? []),
-		...(input.sectors ?? []),
-		...(input.goals ?? []),
-		...(input.regions ?? []),
-		...(input.businessTypes ?? []),
+		input.stages?.length ? `Founder stages: ${input.stages.join(", ")}` : null,
+		input.sectors?.length ? `Sectors: ${input.sectors.join(", ")}` : null,
+		input.goals?.length ? `Goals: ${input.goals.join(", ")}` : null,
+		input.regions?.length
+			? `Regions served: ${input.regions.join(", ")}`
+			: null,
+		input.businessTypes?.length
+			? `Business types: ${input.businessTypes.join(", ")}`
+			: null,
+		input.eligibilityTags?.length
+			? `Eligibility: ${input.eligibilityTags.join(", ")}`
+			: null,
 	]
 		.filter(Boolean)
 		.join("\n");
@@ -228,7 +234,6 @@ export async function createResource(db: Db, input: unknown) {
 			websiteUrl: cleanOptional(data.websiteUrl),
 			contactEmail: cleanOptional(data.contactEmail),
 			state: cleanOptional(data.state) ?? "UT",
-			embedding: { create: { content: embeddingContent(data) } },
 		},
 	});
 
