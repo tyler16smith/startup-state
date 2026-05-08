@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import {
 	type KeyboardEvent,
 	useCallback,
@@ -160,18 +160,36 @@ export function FilterSelect({
 		</div>
 	);
 
+	const isActive = value !== "";
+
 	return (
 		<div className="relative shrink-0">
 			<button
 				aria-expanded={open}
 				aria-label={label}
-				className="flex h-10 max-w-52 items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 font-medium text-slate-800 text-sm shadow-sm outline-none transition hover:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+				className={[
+					"flex h-10 max-w-52 items-center gap-2 rounded-full border px-4 font-medium text-sm shadow-sm outline-none transition focus:ring-2",
+					isActive
+						? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100/80 focus:border-emerald-500 focus:ring-emerald-500/20"
+						: "border-slate-200 bg-white/95 text-slate-800 hover:bg-white focus:border-emerald-500 focus:ring-emerald-500/20",
+				].join(" ")}
 				onClick={() => setOpen((current) => !current)}
 				ref={triggerRef}
 				type="button"
 			>
 				<span className="truncate">{selectedLabel}</span>
-				<ChevronDown className="size-4 shrink-0 text-slate-500" />
+				{isActive ? (
+					<X
+						aria-label={`Clear ${label} filter`}
+						className="size-4 shrink-0 text-emerald-700"
+						onClick={(event) => {
+							event.stopPropagation();
+							commit("");
+						}}
+					/>
+				) : (
+					<ChevronDown className="size-4 shrink-0 text-slate-500" />
+				)}
 			</button>
 			{typeof document === "undefined"
 				? popover

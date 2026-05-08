@@ -65,11 +65,11 @@ export function MapFilterBar({
 			/>
 			{activeFilterCount > 0 && (
 				<Button
-					className="h-10 shrink-0 rounded-full bg-white/95 px-4 shadow-sm"
+					className="h-10 shrink-0 rounded-full border-emerald-300 bg-emerald-100 px-4 text-emerald-900 shadow-sm hover:bg-emerald-100/80"
 					onClick={onClearFilters}
 					variant="outline"
 				>
-					Clear
+					Reset all
 				</Button>
 			)}
 		</div>

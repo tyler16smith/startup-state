@@ -38,7 +38,7 @@ export function ResultsPanel({
 				</div>
 				<button
 					aria-label="Close results"
-					className="flex size-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/75 hover:text-slate-950"
+					className="flex size-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-gray-200 hover:text-slate-950 transition-all fade-in-out duration-300"
 					onClick={onClose}
 					type="button"
 				>
