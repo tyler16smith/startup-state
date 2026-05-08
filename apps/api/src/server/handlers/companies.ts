@@ -18,7 +18,9 @@ import {
 	getCompanyById,
 	importCompaniesFromCsv,
 	listCompanyClaims,
+	listCompanySubmissions,
 	rejectCompanyClaim,
+	reviewCompanySubmission,
 	searchCompanies,
 	updateCompany,
 } from "../services/startup-navigator/companies";
@@ -113,6 +115,18 @@ export const companies = {
 		await requireAdmin(ctx);
 		return listCompanyClaims(ctx.db, body);
 	}),
+
+	submissions: withAuth(async (ctx: AuthenticatedContext) => {
+		await requireAdmin(ctx);
+		return listCompanySubmissions(ctx.db);
+	}),
+
+	reviewSubmission: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
+			await requireAdmin(ctx);
+			return reviewCompanySubmission(ctx.db, body, ctx.userId);
+		},
+	),
 
 	approveClaim: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
 		await requireAdmin(ctx);

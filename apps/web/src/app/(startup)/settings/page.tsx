@@ -11,7 +11,7 @@ export default async function SecurityPage() {
 	if (!session?.user) redirect("/auth/signin");
 
 	return (
-		<div className="mx-auto max-w-2xl space-y-10 py-8">
+		<main className="mx-auto max-w-2xl space-y-10 py-8">
 			<div>
 				<h1 className="font-semibold text-2xl">Account settings</h1>
 				<p className="text-muted-foreground text-sm">
@@ -23,6 +23,6 @@ export default async function SecurityPage() {
 			<SecuritySettings />
 			<McpSettingsSection />
 			<AccountDeletionSettings />
-		</div>
+		</main>
 	);
 }

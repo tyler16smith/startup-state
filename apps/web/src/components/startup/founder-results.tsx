@@ -222,7 +222,11 @@ export function FounderResults() {
 				onOpenChange={setSaveDialogOpen}
 				open={saveDialogOpen}
 			/>
-			{saveError && <p className="text-destructive text-sm">{saveError}</p>}
+			{saveError && (
+				<p className="text-destructive text-sm" role="alert">
+					{saveError}
+				</p>
+			)}
 			{recommendations.length ? (
 				<div className="grid gap-5 lg:grid-cols-3">
 					{recommendations.map((recommendation) => (

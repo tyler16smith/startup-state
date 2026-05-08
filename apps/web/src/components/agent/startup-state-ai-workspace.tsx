@@ -5,7 +5,13 @@ import { type ReactNode, useEffect, useState } from "react";
 import { useStartupStateAIPanel } from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIPanel } from "~/components/agent/startup-state-ai-panel";
 import { Button } from "~/components/ui/button";
-import { Sheet, SheetContent } from "~/components/ui/sheet";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 
 function useIsMobile() {
@@ -49,9 +55,11 @@ export function StartupStateAIWorkspace({ children }: { children: ReactNode }) {
 					isOpen ? "w-96" : "w-0 border-l-0",
 				)}
 			>
-				<div className="h-full w-96 shrink-0">
-					<StartupStateAIPanel onClose={close} />
-				</div>
+				{isOpen && (
+					<div className="h-full w-96 shrink-0">
+						<StartupStateAIPanel onClose={close} />
+					</div>
+				)}
 			</aside>
 
 			<Sheet
@@ -63,6 +71,12 @@ export function StartupStateAIWorkspace({ children }: { children: ReactNode }) {
 					showCloseButton={false}
 					side="right"
 				>
+					<SheetHeader className="sr-only">
+						<SheetTitle>Startup State Agent</SheetTitle>
+						<SheetDescription>
+							Chat with the Startup State Agent about the current workspace.
+						</SheetDescription>
+					</SheetHeader>
 					<StartupStateAIPanel onClose={close} />
 				</SheetContent>
 			</Sheet>

@@ -217,6 +217,11 @@ export const claimCompanyInputSchema = z.object({
 	explanation: z.string().max(1000).optional(),
 });
 
+export const reviewCompanySubmissionInputSchema = z.object({
+	companyId: z.string().min(1),
+	action: z.enum(["approve", "reject", "hold"]),
+});
+
 export const idInputSchema = z.object({
 	id: z.string().min(1).optional(),
 	resourceId: z.string().min(1).optional(),

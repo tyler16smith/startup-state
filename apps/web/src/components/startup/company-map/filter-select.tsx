@@ -37,6 +37,7 @@ export function FilterSelect({
 	const inputRef = useRef<HTMLInputElement>(null);
 	const selectedLabel =
 		options.find((option) => option.value === value)?.label ?? label;
+	const popoverId = `${label.toLowerCase().replace(/\s+/g, "-")}-filter-options`;
 
 	const suggestions = useMemo(
 		() => getFilterSuggestions({ inputValue, label, options, value }),
@@ -115,10 +116,12 @@ export function FilterSelect({
 	const popover = open && popoverPosition && (
 		<div
 			className="fixed z-[80] w-56 overflow-hidden rounded-lg border border-white/70 bg-white/90 shadow-xl backdrop-blur-md"
+			id={popoverId}
 			style={{ left: popoverPosition.left, top: popoverPosition.top }}
 		>
 			<div className="p-2">
 				<input
+					aria-label={`Search ${label} filter options`}
 					className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
 					onBlur={handleBlur}
 					onChange={(event) => {
@@ -164,33 +167,36 @@ export function FilterSelect({
 
 	return (
 		<div className="relative shrink-0">
-			<button
-				aria-expanded={open}
-				aria-label={label}
-				className={[
-					"flex h-10 max-w-52 items-center gap-2 rounded-full border px-4 font-medium text-sm shadow-sm outline-none transition focus:ring-2",
-					isActive
-						? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100/80 focus:border-emerald-500 focus:ring-emerald-500/20"
-						: "border-slate-200 bg-white/95 text-slate-800 hover:bg-white focus:border-emerald-500 focus:ring-emerald-500/20",
-				].join(" ")}
-				onClick={() => setOpen((current) => !current)}
-				ref={triggerRef}
-				type="button"
-			>
-				<span className="truncate">{selectedLabel}</span>
-				{isActive ? (
-					<X
-						aria-label={`Clear ${label} filter`}
-						className="size-4 shrink-0 text-emerald-700"
-						onClick={(event) => {
-							event.stopPropagation();
-							commit("");
-						}}
-					/>
-				) : (
+			<div className="flex shadow-sm">
+				<button
+					aria-controls={popoverId}
+					aria-expanded={open}
+					aria-label={label}
+					className={[
+						"flex h-10 max-w-52 items-center gap-2 border px-4 font-medium text-sm outline-none transition focus:ring-2",
+						isActive ? "rounded-l-full" : "rounded-full",
+						isActive
+							? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100/80 focus:border-emerald-500 focus:ring-emerald-500/20"
+							: "border-slate-200 bg-white/95 text-slate-800 hover:bg-white focus:border-emerald-500 focus:ring-emerald-500/20",
+					].join(" ")}
+					onClick={() => setOpen((current) => !current)}
+					ref={triggerRef}
+					type="button"
+				>
+					<span className="truncate">{selectedLabel}</span>
 					<ChevronDown className="size-4 shrink-0 text-slate-500" />
+				</button>
+				{isActive && (
+					<button
+						aria-label={`Clear ${label} filter`}
+						className="flex h-10 w-10 items-center justify-center rounded-r-full border-emerald-300 border-y border-r bg-emerald-100 text-emerald-800 outline-none transition hover:bg-emerald-100/80 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+						onClick={() => commit("")}
+						type="button"
+					>
+						<X className="size-4" />
+					</button>
 				)}
-			</button>
+			</div>
 			{typeof document === "undefined"
 				? popover
 				: createPortal(popover, document.body)}

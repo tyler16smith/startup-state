@@ -9,10 +9,13 @@ import {
 	companyInputSchema,
 	companyQuerySchema,
 	csvImportSchema,
+	reviewCompanySubmissionInputSchema,
 } from "./schemas";
 import { createUniqueSlug, slugify } from "./slug";
 
 type Db = PrismaClient;
+
+const PUBLIC_COMPANY_SUBMISSION_SOURCE = "public_company_submission";
 
 function cleanOptional(value: string | null | undefined): string | undefined {
 	if (!value) return undefined;
@@ -154,7 +157,7 @@ export async function createCompany(
 			Boolean(await db.company.findUnique({ where: { slug: candidate } })),
 		data.slug,
 	);
-	const status = options.admin ? data.status : "PENDING_REVIEW";
+	const status = options.admin ? "PUBLISHED" : "PENDING_REVIEW";
 
 	const company = await db.$transaction(async (tx) => {
 		const created = await tx.company.create({
@@ -162,6 +165,7 @@ export async function createCompany(
 				...data,
 				slug,
 				status,
+				source: options.admin ? data.source : PUBLIC_COMPANY_SUBMISSION_SOURCE,
 				websiteUrl: cleanOptional(data.websiteUrl),
 				linkedinUrl: cleanOptional(data.linkedinUrl),
 				jobPostingsUrl: cleanOptional(data.jobPostingsUrl),
@@ -204,6 +208,110 @@ export async function createCompany(
 	});
 
 	return company;
+}
+
+function publicCompanySubmissionWhere(
+	status: "PENDING_REVIEW" | "DRAFT" = "PENDING_REVIEW",
+): Prisma.CompanyWhereInput {
+	return {
+		status,
+		OR: [
+			{ source: PUBLIC_COMPANY_SUBMISSION_SOURCE },
+			{ claims: { some: {} } },
+		],
+	};
+}
+
+export async function listCompanySubmissions(db: Db) {
+	return db.company.findMany({
+		where: publicCompanySubmissionWhere(),
+		include: {
+			photos: { orderBy: { sortOrder: "asc" } },
+			claims: {
+				orderBy: { createdAt: "asc" },
+				include: { user: { select: { id: true, email: true, name: true } } },
+			},
+		},
+		orderBy: { createdAt: "asc" },
+	});
+}
+
+export async function reviewCompanySubmission(
+	db: Db,
+	input: unknown,
+	reviewerId: string,
+) {
+	const data = reviewCompanySubmissionInputSchema.parse(input);
+
+	return db.$transaction(async (tx) => {
+		const company = await tx.company.findFirst({
+			where: { id: data.companyId, ...publicCompanySubmissionWhere() },
+			include: { claims: true },
+		});
+
+		if (!company) throw createApiError("Company submission not found", 404);
+
+		if (data.action === "hold") {
+			return tx.company.update({
+				where: { id: company.id },
+				data: { status: "DRAFT" },
+				include: { photos: true },
+			});
+		}
+
+		if (data.action === "reject") {
+			await tx.companyClaim.updateMany({
+				where: { companyId: company.id, status: "PENDING" },
+				data: {
+					status: "REJECTED",
+					reviewedAt: new Date(),
+					reviewedById: reviewerId,
+				},
+			});
+
+			return tx.company.update({
+				where: { id: company.id },
+				data: { status: "ARCHIVED" },
+				include: { photos: true },
+			});
+		}
+
+		const pendingClaims = company.claims.filter(
+			(claim) => claim.status === "PENDING",
+		);
+		for (const claim of pendingClaims) {
+			await tx.companyOwner.upsert({
+				where: {
+					companyId_userId: {
+						companyId: company.id,
+						userId: claim.userId,
+					},
+				},
+				create: { companyId: company.id, userId: claim.userId },
+				update: {},
+			});
+
+			await tx.user.update({
+				where: { id: claim.userId },
+				data: { role: "COMPANY_OWNER" },
+			});
+		}
+
+		await tx.companyClaim.updateMany({
+			where: { companyId: company.id, status: "PENDING" },
+			data: {
+				status: "APPROVED",
+				reviewedAt: new Date(),
+				reviewedById: reviewerId,
+			},
+		});
+
+		return tx.company.update({
+			where: { id: company.id },
+			data: { status: "PUBLISHED" },
+			include: { photos: true },
+		});
+	});
 }
 
 export async function updateCompany(db: Db, companyId: string, input: unknown) {
@@ -383,7 +491,7 @@ export async function getAdminSummary(db: Db) {
 		db.resource.count({ where: { status: { not: "ARCHIVED" } } }),
 		db.company.count({ where: { status: { not: "ARCHIVED" } } }),
 		db.companyClaim.count({ where: { status: "PENDING" } }),
-		db.company.count({ where: { status: "PENDING_REVIEW" } }),
+		db.company.count({ where: publicCompanySubmissionWhere() }),
 		db.resource.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
 		db.company.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
 	]);

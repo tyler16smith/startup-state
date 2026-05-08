@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import {
 	Table,
 	TableBody,
+	TableCaption,
 	TableCell,
 	TableHead,
 	TableHeader,
@@ -33,6 +34,7 @@ export default async function AdminCompaniesPage() {
 			<div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
 				<div className="rounded-lg border bg-white p-4 shadow-sm">
 					<Table>
+						<TableCaption>Companies awaiting admin management</TableCaption>
 						<TableHeader>
 							<TableRow>
 								<TableHead>Name</TableHead>
@@ -53,7 +55,10 @@ export default async function AdminCompaniesPage() {
 									<TableCell>{company.sector ?? "-"}</TableCell>
 									<TableCell className="text-right">
 										<Button asChild size="sm" variant="outline">
-											<Link href={`/admin/companies/${company.id}/edit`}>
+											<Link
+												aria-label={`Edit ${company.name}`}
+												href={`/admin/companies/${company.id}/edit`}
+											>
 												Edit
 											</Link>
 										</Button>

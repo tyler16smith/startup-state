@@ -15,7 +15,12 @@ export function MessageList() {
 
 	return (
 		<ScrollArea className="min-h-0 flex-1">
-			<div className="space-y-4 p-4">
+			<div
+				aria-label="Agent conversation"
+				aria-live="polite"
+				className="space-y-4 p-4"
+				role="log"
+			>
 				{blocks.length === 0 ? (
 					<EmptyPromptList onSelectPrompt={selectSuggestedPrompt} />
 				) : (

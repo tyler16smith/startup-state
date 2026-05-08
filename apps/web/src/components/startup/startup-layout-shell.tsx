@@ -7,7 +7,14 @@ import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai
 import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 import { StartupSidebar } from "~/components/startup/startup-sidebar";
 import { Button } from "~/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "~/components/ui/sheet";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "~/components/ui/sheet";
 
 const fullPageRoutes = new Set([
 	"/",
@@ -34,6 +41,12 @@ export function StartupLayoutShell({
 
 	return (
 		<div className="flex h-screen flex-col bg-gray-50 text-slate-950 md:flex-row">
+			<a
+				className="sr-only z-[100] rounded-md bg-white px-3 py-2 font-medium text-slate-950 shadow focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+				href="#startup-main-content"
+			>
+				Skip to content
+			</a>
 			<div className="flex h-12 shrink-0 items-center gap-3 border-slate-200 border-b bg-gray-50 px-4 md:hidden">
 				<Sheet onOpenChange={setOpen} open={open}>
 					<SheetTrigger asChild>
@@ -42,6 +55,12 @@ export function StartupLayoutShell({
 						</Button>
 					</SheetTrigger>
 					<SheetContent className="w-64 p-0" side="left">
+						<SheetHeader className="sr-only">
+							<SheetTitle>Navigation</SheetTitle>
+							<SheetDescription>
+								Primary navigation for Startup State Navigator.
+							</SheetDescription>
+						</SheetHeader>
 						<StartupSidebar onClose={() => setOpen(false)} />
 					</SheetContent>
 				</Sheet>
@@ -49,7 +68,15 @@ export function StartupLayoutShell({
 			</div>
 			<StartupSidebar className="hidden md:flex" />
 			<StartupStateAIPanelProvider>
-				<StartupStateAIWorkspace>{children}</StartupStateAIWorkspace>
+				<StartupStateAIWorkspace>
+					<div
+						className="h-full min-h-full"
+						id="startup-main-content"
+						tabIndex={-1}
+					>
+						{children}
+					</div>
+				</StartupStateAIWorkspace>
 			</StartupStateAIPanelProvider>
 		</div>
 	);

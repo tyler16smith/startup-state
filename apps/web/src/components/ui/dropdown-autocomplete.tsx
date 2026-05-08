@@ -1,14 +1,17 @@
 "use client";
 
 import { ChevronDown, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 
 type DropdownAutocompleteProps = {
 	allowCreate?: boolean;
+	"aria-describedby"?: string;
+	"aria-labelledby"?: string;
 	className?: string;
 	defaultValue?: string;
 	emptyMessage?: string;
+	id?: string;
 	multiple?: boolean;
 	name: string;
 	onValueChange?: (value: string) => void;
@@ -22,9 +25,12 @@ const visibleOptionCount = 5;
 
 export function DropdownAutocomplete({
 	allowCreate = true,
+	"aria-describedby": ariaDescribedBy,
+	"aria-labelledby": ariaLabelledBy,
 	className,
 	defaultValue = "",
 	emptyMessage = "No options found",
+	id,
 	multiple = false,
 	name,
 	onValueChange,
@@ -33,6 +39,9 @@ export function DropdownAutocomplete({
 	required,
 	single = false,
 }: DropdownAutocompleteProps) {
+	const generatedId = useId();
+	const inputId = id ?? `${name}-${generatedId}`;
+	const listboxId = `${inputId}-listbox`;
 	const isMultiple = multiple && !single;
 	const [selectedValues, setSelectedValues] = useState<string[]>(() =>
 		isMultiple ? splitValues(defaultValue) : defaultValue ? [defaultValue] : [],
@@ -83,6 +92,10 @@ export function DropdownAutocomplete({
 		!selectedLower.has(trimmedInput.toLowerCase());
 	const itemCount = suggestions.length + (showCreateOption ? 1 : 0);
 	const fieldValue = selectedValues.join(", ");
+	const activeOptionId =
+		dropdownOpen && itemCount > 0
+			? `${inputId}-option-${activeIndex}`
+			: undefined;
 
 	useEffect(() => {
 		if (itemCount === 0) setActiveIndex(0);
@@ -198,7 +211,14 @@ export function DropdownAutocomplete({
 						</span>
 					))}
 				<input
+					aria-activedescendant={activeOptionId}
+					aria-autocomplete="list"
+					aria-controls={listboxId}
+					aria-describedby={ariaDescribedBy}
+					aria-expanded={dropdownOpen}
+					aria-labelledby={ariaLabelledBy}
 					className="h-7 min-w-20 flex-1 bg-transparent px-1 outline-none placeholder:text-muted-foreground"
+					id={inputId}
 					onBlur={handleBlur}
 					onChange={(event) => {
 						setInputValue(event.target.value);
@@ -216,9 +236,12 @@ export function DropdownAutocomplete({
 							: placeholder
 					}
 					ref={inputRef}
+					role="combobox"
 					value={inputValue}
 				/>
 				<button
+					aria-controls={listboxId}
+					aria-expanded={dropdownOpen}
 					aria-label="Open options"
 					className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 					onMouseDown={(event) => {
@@ -233,56 +256,64 @@ export function DropdownAutocomplete({
 			</div>
 			{dropdownOpen && (
 				<div className="absolute top-full left-0 z-50 mt-1 w-full min-w-48 rounded-md border bg-popover shadow-md">
-					<ul className="py-1">
+					<div className="py-1" id={listboxId} role="listbox">
 						{suggestions.map((name, optionIndex) => (
-							<li key={name}>
+							<div key={name}>
 								<button
+									aria-selected={optionIndex === activeIndex}
 									className={cn(
 										"w-full px-3 py-1.5 text-left text-xs transition-colors",
 										optionIndex === activeIndex
 											? "bg-accent text-accent-foreground"
 											: "text-popover-foreground hover:bg-accent hover:text-accent-foreground",
 									)}
+									id={`${inputId}-option-${optionIndex}`}
 									onMouseDown={(event) => {
 										event.preventDefault();
 										commit(name);
 									}}
+									role="option"
+									tabIndex={-1}
 									type="button"
 								>
 									{name}
 								</button>
-							</li>
+							</div>
 						))}
 						{showCreateOption && (
 							<>
-								<li>
+								<div>
 									<hr className="my-1 border-border" />
-								</li>
-								<li>
+								</div>
+								<div>
 									<button
+										aria-selected={activeIndex === suggestions.length}
 										className={cn(
 											"w-full px-3 py-1.5 text-left text-xs transition-colors",
 											activeIndex === suggestions.length
 												? "bg-accent text-accent-foreground"
 												: "text-popover-foreground hover:bg-accent hover:text-accent-foreground",
 										)}
+										id={`${inputId}-option-${suggestions.length}`}
 										onMouseDown={(event) => {
 											event.preventDefault();
 											commit(inputValue);
 										}}
+										role="option"
+										tabIndex={-1}
 										type="button"
 									>
 										+ Create "{trimmedInput}"
 									</button>
-								</li>
+								</div>
 							</>
 						)}
 						{suggestions.length === 0 && !showCreateOption && (
-							<li className="px-3 py-2 text-muted-foreground text-xs">
+							<div className="px-3 py-2 text-muted-foreground text-xs">
 								{emptyMessage}
-							</li>
+							</div>
 						)}
-					</ul>
+					</div>
 				</div>
 			)}
 		</div>

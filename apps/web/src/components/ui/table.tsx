@@ -73,6 +73,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
 				className,
 			)}
 			data-slot="table-head"
+			scope="col"
 			{...props}
 		/>
 	);

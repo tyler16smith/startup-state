@@ -11,10 +11,14 @@ import { apiClient } from "~/lib/startup-api";
 export function ClaimCompanyForm({ companyId }: { companyId: string }) {
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const [messageType, setMessageType] = useState<"error" | "success" | null>(
+		null,
+	);
 
 	async function submit(formData: FormData) {
 		setSaving(true);
 		setMessage(null);
+		setMessageType(null);
 		try {
 			await apiClient(`/api/v1/companies/claim`, {
 				method: "POST",
@@ -25,10 +29,12 @@ export function ClaimCompanyForm({ companyId }: { companyId: string }) {
 				}),
 			});
 			setMessage("Claim submitted for admin review.");
+			setMessageType("success");
 		} catch (error) {
 			setMessage(
 				error instanceof Error ? error.message : "Could not submit claim",
 			);
+			setMessageType("error");
 		} finally {
 			setSaving(false);
 		}
@@ -47,8 +53,11 @@ export function ClaimCompanyForm({ companyId }: { companyId: string }) {
 				</p>
 			</div>
 			<div className="space-y-2">
-				<Label>Work email</Label>
+				<Label htmlFor="claim-work-email">
+					Work email <span aria-hidden="true">*</span>
+				</Label>
 				<Input
+					id="claim-work-email"
 					name="workEmail"
 					placeholder="you@company.com"
 					required
@@ -56,10 +65,22 @@ export function ClaimCompanyForm({ companyId }: { companyId: string }) {
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label>Explanation</Label>
-				<Textarea name="explanation" rows={5} />
+				<Label htmlFor="claim-explanation">Explanation</Label>
+				<Textarea id="claim-explanation" name="explanation" rows={5} />
 			</div>
-			{message && <p className="text-emerald-700 text-sm">{message}</p>}
+			{message && (
+				<p
+					aria-live={messageType === "success" ? "polite" : undefined}
+					className={
+						messageType === "error"
+							? "text-destructive text-sm"
+							: "text-emerald-700 text-sm"
+					}
+					role={messageType === "error" ? "alert" : "status"}
+				>
+					{message}
+				</p>
+			)}
 			<Button disabled={saving} type="submit">
 				{saving ? (
 					<Loader2 className="size-4 animate-spin" />

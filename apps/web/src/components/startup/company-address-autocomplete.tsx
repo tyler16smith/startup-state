@@ -62,9 +62,11 @@ declare global {
 
 export function CompanyAddressAutocomplete({
 	defaultValue,
+	id,
 	onAddressChange,
 }: {
 	defaultValue?: string;
+	id?: string;
 	onAddressChange: (selection: CompanyAddressSelection) => void;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +105,7 @@ export function CompanyAddressAutocomplete({
 		<Input
 			autoComplete="street-address"
 			defaultValue={defaultValue}
+			id={id}
 			name="address"
 			onChange={(event) =>
 				onAddressChange({

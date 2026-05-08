@@ -14,9 +14,16 @@ export function MapSearchInput({
 }: MapSearchInputProps) {
 	return (
 		<div className="relative w-full md:max-w-96">
-			<Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-500" />
+			<label className="sr-only" htmlFor="company-map-search">
+				Search Utah companies
+			</label>
+			<Search
+				aria-hidden="true"
+				className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-500"
+			/>
 			<Input
 				className="h-10 rounded-full border-2 border-gray-200 border-slate-200 bg-white pr-11 pl-12 text-base shadow-lg"
+				id="company-map-search"
 				onChange={(event) => onQueryChange(event.target.value)}
 				onFocus={onFocus}
 				placeholder="Search Utah companies"

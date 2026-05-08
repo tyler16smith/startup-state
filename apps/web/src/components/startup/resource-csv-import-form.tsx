@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import {
 	Table,
 	TableBody,
+	TableCaption,
 	TableCell,
 	TableHead,
 	TableHeader,
@@ -104,9 +106,13 @@ export function ResourceCsvImportForm() {
 					Upload, review, then commit Utah startup resource records.
 				</p>
 			</div>
+			<Label className="sr-only" htmlFor="resource-csv-import">
+				Resource CSV file
+			</Label>
 			<input
 				accept=".csv,text/csv"
 				className="hidden"
+				id="resource-csv-import"
 				onChange={(event) => {
 					const file = event.target.files?.[0];
 					if (file) void previewFile(file);
@@ -137,7 +143,11 @@ export function ResourceCsvImportForm() {
 				)}
 			</div>
 
-			{message && <p className="text-destructive text-sm">{message}</p>}
+			{message && (
+				<p className="text-destructive text-sm" role="alert">
+					{message}
+				</p>
+			)}
 
 			{preview && (
 				<div className="space-y-4">
@@ -152,18 +162,25 @@ export function ResourceCsvImportForm() {
 					<TaxonomyPreview preview={preview} />
 					<div className="flex items-center justify-between gap-3 rounded-md border bg-slate-50 px-3 py-2">
 						<div>
-							<p className="font-medium text-sm">Publish immediately</p>
+							<Label
+								className="font-medium text-sm"
+								htmlFor="publish-import-now"
+							>
+								Publish immediately
+							</Label>
 							<p className="text-muted-foreground text-xs">
 								Off keeps new imports in draft for review.
 							</p>
 						</div>
 						<Switch
 							checked={publishImmediately}
+							id="publish-import-now"
 							onCheckedChange={setPublishImmediately}
 						/>
 					</div>
 					<div className="max-h-72 overflow-auto rounded-md border">
 						<Table>
+							<TableCaption>Preview of the first 50 imported rows</TableCaption>
 							<TableHeader>
 								<TableRow>
 									<TableHead>Row</TableHead>
@@ -210,7 +227,7 @@ export function ResourceCsvImportForm() {
 			)}
 
 			{result && (
-				<p className="text-muted-foreground text-sm">
+				<p className="text-muted-foreground text-sm" role="status">
 					Imported {result.imported} rows: {result.created} created and{" "}
 					{result.updated} updated.
 				</p>

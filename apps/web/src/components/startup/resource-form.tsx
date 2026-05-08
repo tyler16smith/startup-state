@@ -154,10 +154,11 @@ export function ResourceForm({
 						name="county"
 					/>
 					<div className="space-y-2">
-						<Label>Status</Label>
+						<Label htmlFor="resource-status">Status</Label>
 						<select
 							className="h-9 w-full rounded-md border bg-white px-3 text-sm"
 							defaultValue={previewValues.status}
+							id="resource-status"
 							name="status"
 						>
 							<option>PUBLISHED</option>
@@ -167,16 +168,20 @@ export function ResourceForm({
 					</div>
 				</div>
 				<div className="space-y-2">
-					<Label>Short description</Label>
+					<Label htmlFor="resource-short-description">Short description</Label>
 					<Input
 						defaultValue={previewValues.shortDescription}
+						id="resource-short-description"
 						name="shortDescription"
 					/>
 				</div>
 				<div className="space-y-2">
-					<Label>Description</Label>
+					<Label htmlFor="resource-description">
+						Description <span aria-hidden="true">*</span>
+					</Label>
 					<Textarea
 						defaultValue={previewValues.description}
+						id="resource-description"
 						name="description"
 						required
 						rows={6}
@@ -209,7 +214,11 @@ export function ResourceForm({
 							/>
 						))}
 				</div>
-				{error && <p className="text-destructive text-sm">{error}</p>}
+				{error && (
+					<p className="text-destructive text-sm" role="alert">
+						{error}
+					</p>
+				)}
 				<Button className="w-fit" disabled={saving} type="submit">
 					{saving ? (
 						<Loader2 className="size-4 animate-spin" />
@@ -307,7 +316,7 @@ function ResourcePreview({
 					Preview
 				</span>
 			</div>
-			<div className="pointer-events-none select-none opacity-90">
+			<div className="pointer-events-none select-none">
 				<ResourceCard resource={previewResource} />
 			</div>
 		</aside>
@@ -329,12 +338,19 @@ function ResourceArrayField({
 	onValueChange: (name: string, value: string) => void;
 	options: string[];
 }) {
+	const fieldId = `${name}-autocomplete`;
+	const labelId = `${fieldId}-label`;
+
 	return (
 		<div className="space-y-2">
-			<Label className="capitalize">{label}</Label>
+			<Label className="capitalize" htmlFor={fieldId} id={labelId}>
+				{label}
+			</Label>
 			<DropdownAutocomplete
+				aria-labelledby={labelId}
 				defaultValue={defaultValue}
 				emptyMessage={emptyMessage}
+				id={fieldId}
 				multiple
 				name={name}
 				onValueChange={(value) => onValueChange(name, value)}
@@ -349,10 +365,14 @@ function Field(
 	props: React.ComponentProps<typeof Input> & { label: string; name: string },
 ) {
 	const { label, ...inputProps } = props;
+	const fieldId = inputProps.id ?? inputProps.name;
 	return (
 		<div className="space-y-2">
-			<Label className="capitalize">{label}</Label>
-			<Input {...inputProps} />
+			<Label className="capitalize" htmlFor={fieldId}>
+				{label}
+				{inputProps.required ? <span aria-hidden="true"> *</span> : null}
+			</Label>
+			<Input id={fieldId} {...inputProps} />
 		</div>
 	);
 }

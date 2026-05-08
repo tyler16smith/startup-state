@@ -3,6 +3,7 @@ import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import {
 	Table,
 	TableBody,
+	TableCaption,
 	TableCell,
 	TableHead,
 	TableHeader,
@@ -38,6 +39,7 @@ export default async function AdminClaimsPage() {
 			</div>
 			<div className="rounded-lg border bg-white p-4 shadow-sm">
 				<Table>
+					<TableCaption>Company ownership claims awaiting review</TableCaption>
 					<TableHeader>
 						<TableRow>
 							<TableHead>Company</TableHead>

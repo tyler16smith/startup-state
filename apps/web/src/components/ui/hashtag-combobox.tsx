@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 function fuzzyScore(text: string, query: string): number | null {
 	const haystack = text.toLowerCase();
@@ -23,6 +23,9 @@ export type HashtagComboboxItem = { id?: string; name: string };
 
 interface HashtagComboboxProps {
 	allHashtags: HashtagComboboxItem[];
+	"aria-label"?: string;
+	"aria-labelledby"?: string;
+	id?: string;
 	onSelect: (name: string, id: string | null) => void;
 	placeholder?: string;
 	// Single-select
@@ -36,6 +39,9 @@ interface HashtagComboboxProps {
 
 export function HashtagCombobox({
 	allHashtags,
+	"aria-label": ariaLabel,
+	"aria-labelledby": ariaLabelledBy,
+	id,
 	onSelect,
 	onClear,
 	placeholder = "#tagname",
@@ -44,6 +50,9 @@ export function HashtagCombobox({
 	selectedNames = [],
 	onRemove,
 }: HashtagComboboxProps) {
+	const generatedId = useId();
+	const inputId = id ?? `hashtag-${generatedId}`;
+	const listboxId = `${inputId}-listbox`;
 	const [inputValue, setInputValue] = useState("");
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -72,6 +81,11 @@ export function HashtagCombobox({
 	}, [inputValue, allHashtags]);
 
 	const showCreateOption = inputValue.trim().length > 0 && !matchesExisting;
+	const itemCount = suggestions.length + (showCreateOption ? 1 : 0);
+	const activeOptionId =
+		dropdownOpen && itemCount > 0
+			? `${inputId}-option-${activeIndex}`
+			: undefined;
 
 	function handleCommit(name: string) {
 		const cleanName = name.trim().replace(/^#/, "");
@@ -122,51 +136,63 @@ export function HashtagCombobox({
 
 	const dropdown = dropdownOpen &&
 		(suggestions.length > 0 || showCreateOption) && (
-			<ul className="absolute top-full left-0 z-50 mt-1 w-48 min-w-[8rem] rounded-md border bg-popover py-1 shadow-md">
+			<div
+				className="absolute top-full left-0 z-50 mt-1 w-48 min-w-[8rem] rounded-md border bg-popover py-1 shadow-md"
+				id={listboxId}
+				role="listbox"
+			>
 				{suggestions.map((name, i) => (
-					<li key={name}>
+					<div key={name}>
 						<button
+							aria-selected={i === activeIndex}
 							className={[
 								"w-full px-3 py-1 text-left text-xs transition-colors",
 								i === activeIndex
 									? "bg-accent text-accent-foreground"
 									: "text-popover-foreground hover:bg-accent hover:text-accent-foreground",
 							].join(" ")}
+							id={`${inputId}-option-${i}`}
 							onMouseDown={(e) => {
 								e.preventDefault();
 								handleCommit(name);
 							}}
+							role="option"
+							tabIndex={-1}
 							type="button"
 						>
 							#{name}
 						</button>
-					</li>
+					</div>
 				))}
 				{showCreateOption && (
 					<>
-						<li>
+						<div>
 							<hr className="my-1 border-border" />
-						</li>
-						<li>
+						</div>
+						<div>
 							<button
+								aria-selected={activeIndex === suggestions.length}
 								className={[
 									"w-full truncate px-3 py-1 text-left text-xs transition-colors",
 									activeIndex === suggestions.length
 										? "bg-accent text-accent-foreground"
 										: "text-popover-foreground hover:bg-accent hover:text-accent-foreground",
 								].join(" ")}
+								id={`${inputId}-option-${suggestions.length}`}
 								onMouseDown={(e) => {
 									e.preventDefault();
 									handleCommit(inputValue);
 								}}
+								role="option"
+								tabIndex={-1}
 								type="button"
 							>
 								+ Create "#{inputValue.trim().replace(/^#/, "")}"
 							</button>
-						</li>
+						</div>
 					</>
 				)}
-			</ul>
+			</div>
 		);
 
 	// ── Multi-select: pill chip input ────────────────────────────────────────
@@ -198,7 +224,14 @@ export function HashtagCombobox({
 				))}
 				<div className="relative min-w-[80px] flex-1">
 					<input
+						aria-activedescendant={activeOptionId}
+						aria-autocomplete="list"
+						aria-controls={listboxId}
+						aria-expanded={dropdownOpen}
+						aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : "Hashtag")}
+						aria-labelledby={ariaLabelledBy}
 						className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+						id={inputId}
 						onBlur={() =>
 							setTimeout(() => {
 								setDropdownOpen(false);
@@ -218,6 +251,7 @@ export function HashtagCombobox({
 						onKeyDown={handleKeyDown}
 						placeholder={selectedNames.length > 0 ? "Add more..." : placeholder}
 						ref={inputRef}
+						role="combobox"
 						value={inputValue}
 					/>
 					{dropdown}
@@ -246,7 +280,14 @@ export function HashtagCombobox({
 	return (
 		<div className="relative flex-1">
 			<input
+				aria-activedescendant={activeOptionId}
+				aria-autocomplete="list"
+				aria-controls={listboxId}
+				aria-expanded={dropdownOpen}
+				aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : "Hashtag")}
+				aria-labelledby={ariaLabelledBy}
 				className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs outline-none placeholder:text-muted-foreground"
+				id={inputId}
 				onBlur={() =>
 					setTimeout(() => {
 						setDropdownOpen(false);
@@ -266,6 +307,7 @@ export function HashtagCombobox({
 				onKeyDown={handleKeyDown}
 				placeholder={placeholder}
 				ref={inputRef}
+				role="combobox"
 				value={inputValue}
 			/>
 			{dropdown}

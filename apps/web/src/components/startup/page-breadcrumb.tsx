@@ -17,10 +17,14 @@ export function PageBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
 				return (
 					<span className="flex items-center gap-1.5" key={item.label}>
 						{index > 0 && (
-							<ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+							<ChevronRight
+								aria-hidden="true"
+								className="size-3.5 shrink-0 text-muted-foreground"
+							/>
 						)}
 						{isLast || !item.href ? (
 							<span
+								aria-current={isLast ? "page" : undefined}
 								className={
 									isLast
 										? "font-medium text-slate-950"

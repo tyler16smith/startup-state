@@ -35,6 +35,7 @@ function Verify2FAForm() {
 	const [isBackupCode, setIsBackupCode] = useState(false);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const errorId = "verify-2fa-error";
 
 	const verify = useMutation({
 		mutationFn: async (input: { token: string; isBackupCode: boolean }) => {
@@ -69,6 +70,7 @@ function Verify2FAForm() {
 		<div className="flex min-h-screen items-center justify-center bg-background p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
+					<h1 className="sr-only">Verify two-factor authentication</h1>
 					<CardTitle className="flex items-center justify-center">
 						<Logo size="lg" />
 					</CardTitle>
@@ -85,6 +87,8 @@ function Verify2FAForm() {
 								{isBackupCode ? "Backup code" : "Authentication code"}
 							</Label>
 							<Input
+								aria-describedby={error ? errorId : undefined}
+								aria-invalid={!!error}
 								autoComplete="one-time-code"
 								autoFocus
 								id="code"
@@ -97,7 +101,11 @@ function Verify2FAForm() {
 							/>
 						</div>
 
-						{error && <p className="text-destructive text-sm">{error}</p>}
+						{error && (
+							<p className="text-destructive text-sm" id={errorId} role="alert">
+								{error}
+							</p>
+						)}
 
 						<Button className="w-full" disabled={loading} type="submit">
 							{loading ? "Verifying…" : "Verify"}

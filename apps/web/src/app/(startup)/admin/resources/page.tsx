@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import {
 	Table,
 	TableBody,
+	TableCaption,
 	TableCell,
 	TableHead,
 	TableHeader,
@@ -27,6 +28,7 @@ export default async function AdminResourcesPage() {
 			<div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
 				<div className="rounded-lg border bg-white p-4 shadow-sm">
 					<Table>
+						<TableCaption>Resources awaiting admin management</TableCaption>
 						<TableHeader>
 							<TableRow>
 								<TableHead>Name</TableHead>
@@ -49,7 +51,10 @@ export default async function AdminResourcesPage() {
 									<TableCell>{resource.sourceId ?? "-"}</TableCell>
 									<TableCell className="text-right">
 										<Button asChild size="sm" variant="outline">
-											<Link href={`/admin/resources/${resource.id}/edit`}>
+											<Link
+												aria-label={`Edit ${resource.name}`}
+												href={`/admin/resources/${resource.id}/edit`}
+											>
 												Edit
 											</Link>
 										</Button>

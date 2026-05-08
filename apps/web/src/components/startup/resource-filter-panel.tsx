@@ -149,9 +149,16 @@ export function ResourceFilterPanel({
 		<div className="mb-6 space-y-3 rounded-lg border bg-white p-4 shadow-sm">
 			<div className="grid gap-3 lg:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))]">
 				<form className="relative" onSubmit={submitSearch}>
-					<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+					<Label className="sr-only" htmlFor="resource-search">
+						Search resources
+					</Label>
+					<Search
+						aria-hidden="true"
+						className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+					/>
 					<Input
 						className="pr-20 pl-9"
+						id="resource-search"
 						name="q"
 						onChange={(event) => setSearchValue(event.target.value)}
 						placeholder="Search resources"

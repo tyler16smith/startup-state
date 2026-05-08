@@ -37,6 +37,7 @@ function SignInForm() {
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const errorId = "signin-error";
 
 	async function handleCredentialsSignIn(e: React.FormEvent) {
 		e.preventDefault();
@@ -69,6 +70,7 @@ function SignInForm() {
 		<div className="flex min-h-screen items-center justify-center bg-background p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader className="py-5 text-center">
+					<h1 className="sr-only">Sign in</h1>
 					<CardTitle className="flex items-center justify-center pb-5">
 						<Logo size="lg" />
 					</CardTitle>
@@ -119,6 +121,8 @@ function SignInForm() {
 						<div className="space-y-2">
 							<Label htmlFor="email">Email</Label>
 							<Input
+								aria-describedby={error ? errorId : undefined}
+								aria-invalid={!!error}
 								autoComplete="email"
 								id="email"
 								onChange={(e) => setEmail(e.target.value)}
@@ -132,6 +136,8 @@ function SignInForm() {
 							<Label htmlFor="password">Password</Label>
 							<div className="relative">
 								<Input
+									aria-describedby={error ? errorId : undefined}
+									aria-invalid={!!error}
 									autoComplete="current-password"
 									id="password"
 									onChange={(e) => setPassword(e.target.value)}
@@ -155,7 +161,11 @@ function SignInForm() {
 							</div>
 						</div>
 
-						{error && <p className="text-destructive text-sm">{error}</p>}
+						{error && (
+							<p className="text-destructive text-sm" id={errorId} role="alert">
+								{error}
+							</p>
+						)}
 
 						<Button className="w-full" disabled={loading} type="submit">
 							{loading ? "Signing in…" : "Sign in"}

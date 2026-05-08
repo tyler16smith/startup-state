@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { USER_ROLE } from "~/lib/user-role";
 
 // Startup check for AUTH_SECRET
 if (typeof process !== "undefined" && !process.env.AUTH_SECRET) {
@@ -48,6 +49,7 @@ export const edgeAuthConfig = {
 			if (token.id) {
 				session.user.id = token.id as string;
 			}
+			session.user.role = token.role ?? USER_ROLE.USER;
 			if (token.requiresTwoFactor !== undefined) {
 				session.requiresTwoFactor = token.requiresTwoFactor as boolean;
 			}

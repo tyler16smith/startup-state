@@ -27,6 +27,9 @@ export function ChatComposer() {
 	return (
 		<form className="shrink-0 px-3 pb-2" onSubmit={handleSubmit}>
 			<div className="flex items-center gap-2 rounded-xl border bg-background py-1.5 pr-1.5 pl-4 shadow-sm focus-within:ring-1 focus-within:ring-ring">
+				<label className="sr-only" htmlFor="agent-input">
+					Message Startup State Agent
+				</label>
 				<Textarea
 					className="max-h-48 min-h-5 resize-none border-0 bg-transparent p-1 pr-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
 					id="agent-input"
@@ -61,7 +64,7 @@ export function ChatComposer() {
 					</Button>
 				)}
 			</div>
-			<p className="mx-auto mt-1.5 max-w-xs text-center text-[11px] text-muted-foreground/70 leading-3">
+			<p className="mx-auto mt-1.5 max-w-xs text-center text-[11px] text-muted-foreground leading-3">
 				Agent can make mistakes. Review outputs before relying on them.
 			</p>
 		</form>

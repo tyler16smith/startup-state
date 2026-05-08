@@ -1,4 +1,4 @@
-import { BookOpen, Building2 } from "lucide-react";
+import { ArrowRight, BookOpen, Building2 } from "lucide-react";
 import Link from "next/link";
 import type React from "react";
 import { EditPencilLink } from "~/app/(startup)/admin/edit-pencil-link";
@@ -30,6 +30,19 @@ export default async function AdminPage() {
 					Update resources, companies, imports, and claims without redeploying.
 				</p>
 			</div>
+			{summary.pendingCompanies > 0 || summary.pendingClaims > 0 ? (
+				<section className="mb-6 flex w-full flex-col gap-3 rounded-lg border bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+				<p className="font-semibold text-lg">
+					{summary.pendingCompanies} company submissions need a review
+				</p>
+				<Button asChild>
+					<Link href="/admin/company-submissions">
+						Review now
+						<ArrowRight className="size-4" />
+					</Link>
+				</Button>
+			</section>
+			) : null}
 			<section className="grid gap-6 lg:grid-cols-2">
 				<DashboardCard
 					addHref="/admin/resources/new"

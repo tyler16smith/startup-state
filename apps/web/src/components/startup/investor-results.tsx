@@ -192,7 +192,11 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 				onOpenChange={setSaveDialogOpen}
 				open={saveDialogOpen}
 			/>
-			{saveError && <p className="text-destructive text-sm">{saveError}</p>}
+			{saveError && (
+				<p className="text-destructive text-sm" role="alert">
+					{saveError}
+				</p>
+			)}
 			{recommendations.length ? (
 				<div className="relative h-[680px] overflow-hidden rounded-xl border shadow-sm">
 					{/* Map fills the full container */}

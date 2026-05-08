@@ -32,6 +32,7 @@ export function OptionGrid({
 				const isSelected = selected.includes(id);
 				return (
 					<button
+						aria-pressed={isSelected}
 						className={cn(
 							"flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 bg-white p-4 text-center transition-all hover:bg-emerald-50",
 							isSelected

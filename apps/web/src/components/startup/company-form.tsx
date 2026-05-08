@@ -151,8 +151,20 @@ export function CompanyForm({
 					/>
 				)}
 
-				{success && <p className="text-emerald-700 text-sm">{success}</p>}
-				{error && <p className="text-destructive text-sm">{error}</p>}
+				{success && (
+					<p
+						aria-live="polite"
+						className="text-emerald-700 text-sm"
+						role="status"
+					>
+						{success}
+					</p>
+				)}
+				{error && (
+					<p className="text-destructive text-sm" role="alert">
+						{error}
+					</p>
+				)}
 				<Button className="w-fit" disabled={saving} type="submit">
 					{saving ? (
 						<Loader2 className="size-4 animate-spin" />
@@ -198,17 +210,21 @@ function SubmissionFields({
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label>Address</Label>
+				<Label htmlFor="company-address">Address</Label>
 				<CompanyAddressAutocomplete
 					defaultValue={values.address}
+					id="company-address"
 					onAddressChange={onAddressChange}
 				/>
 			</div>
 			<HiddenAddressFields fields={addressFields} />
 			<div className="space-y-2">
-				<Label>Company description</Label>
+				<Label htmlFor="company-description">
+					Company description <span aria-hidden="true">*</span>
+				</Label>
 				<Textarea
 					defaultValue={values.description}
+					id="company-description"
 					name="description"
 					required
 					rows={6}
@@ -330,25 +346,28 @@ function FullFields({
 				)}
 			</div>
 			<div className="space-y-2">
-				<Label>Address</Label>
+				<Label htmlFor="company-address">Address</Label>
 				<CompanyAddressAutocomplete
 					defaultValue={values.address}
+					id="company-address"
 					onAddressChange={onAddressChange}
 				/>
 			</div>
 			<HiddenAddressFields fields={addressFields} />
 			<div className="space-y-2">
-				<Label>Description</Label>
+				<Label htmlFor="company-description">Description</Label>
 				<Textarea
 					defaultValue={values.description}
+					id="company-description"
 					name="description"
 					rows={5}
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label>Photo URLs</Label>
+				<Label htmlFor="company-photos">Photo URLs</Label>
 				<Input
 					defaultValue={values.photos}
+					id="company-photos"
 					name="photos"
 					placeholder="https://...jpg, https://...jpg"
 				/>
@@ -479,7 +498,7 @@ function CompanyPreview({
 					Preview
 				</span>
 			</div>
-			<div className="pointer-events-none select-none opacity-90">
+			<div className="pointer-events-none select-none">
 				<CompanyCard company={previewCompany} />
 			</div>
 		</aside>
@@ -503,11 +522,18 @@ function AutocompleteField({
 	placeholder?: string;
 	single?: boolean;
 }) {
+	const fieldId = `${name}-autocomplete`;
+	const labelId = `${fieldId}-label`;
+
 	return (
 		<div className="space-y-2">
-			<Label>{label}</Label>
+			<Label htmlFor={fieldId} id={labelId}>
+				{label}
+			</Label>
 			<DropdownAutocomplete
+				aria-labelledby={labelId}
 				defaultValue={defaultValue}
+				id={fieldId}
 				name={name}
 				onValueChange={(value) => onValueChange(name, value)}
 				options={options}
@@ -533,12 +559,18 @@ function SelectField({
 	placeholder?: string;
 	required?: boolean;
 }) {
+	const fieldId = name;
+
 	return (
 		<div className="space-y-2">
-			<Label>{label}</Label>
+			<Label htmlFor={fieldId}>
+				{label}
+				{required ? <span aria-hidden="true"> *</span> : null}
+			</Label>
 			<select
 				className="h-9 w-full rounded-md border bg-white px-3 text-sm"
 				defaultValue={defaultValue}
+				id={fieldId}
 				name={name}
 				required={required}
 			>
@@ -557,10 +589,14 @@ function Field(
 	props: React.ComponentProps<typeof Input> & { label: string; name: string },
 ) {
 	const { label, ...inputProps } = props;
+	const fieldId = inputProps.id ?? inputProps.name;
 	return (
 		<div className="space-y-2">
-			<Label>{label}</Label>
-			<Input {...inputProps} />
+			<Label htmlFor={fieldId}>
+				{label}
+				{inputProps.required ? <span aria-hidden="true"> *</span> : null}
+			</Label>
+			<Input id={fieldId} {...inputProps} />
 		</div>
 	);
 }

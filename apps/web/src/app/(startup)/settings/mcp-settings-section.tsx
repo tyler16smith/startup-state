@@ -298,9 +298,9 @@ function CreateTokenDialog({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Expiration</Label>
+								<Label htmlFor="mcp-token-expiration">Expiration</Label>
 								<Select onValueChange={setExpiresInDays} value={expiresInDays}>
-									<SelectTrigger className="w-full">
+									<SelectTrigger className="w-full" id="mcp-token-expiration">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -314,8 +314,10 @@ function CreateTokenDialog({
 							</div>
 						</div>
 
-						<div className="space-y-2">
-							<Label>Scopes</Label>
+						<fieldset className="space-y-2">
+							<legend className="font-medium text-sm leading-none">
+								Scopes
+							</legend>
 							<div className="grid gap-2 sm:grid-cols-2">
 								{mcpScopes.map((scope) => {
 									const scopeId = `mcp-scope-${scope.replace(/:/g, "-")}`;
@@ -336,7 +338,7 @@ function CreateTokenDialog({
 									);
 								})}
 							</div>
-						</div>
+						</fieldset>
 
 						<div className="flex justify-end gap-2">
 							<Button

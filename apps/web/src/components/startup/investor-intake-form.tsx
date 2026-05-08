@@ -207,8 +207,8 @@ export function InvestorIntakeForm() {
 						description="Optional filters help narrow the shortlist before ranking."
 						title="Add advanced filters"
 					/>
-					<div className="space-y-4">
-						<Label>Region</Label>
+					<fieldset className="space-y-4">
+						<legend className="font-medium text-sm leading-none">Region</legend>
 						<OptionGrid
 							onToggle={(id) =>
 								update({ regions: toggleValue(values.regions, id) })
@@ -216,10 +216,12 @@ export function InvestorIntakeForm() {
 							options={regionOptions}
 							selected={values.regions}
 						/>
-					</div>
+					</fieldset>
 					<div className="grid gap-8 lg:grid-cols-2">
-						<div className="space-y-4">
-							<Label>Hiring signal</Label>
+						<fieldset className="space-y-4">
+							<legend className="font-medium text-sm leading-none">
+								Hiring signal
+							</legend>
 							<OptionGrid
 								onToggle={(id) =>
 									update({
@@ -229,9 +231,11 @@ export function InvestorIntakeForm() {
 								options={hiringOptions}
 								selected={values.hiringStatuses}
 							/>
-						</div>
-						<div className="space-y-4">
-							<Label>Research intent</Label>
+						</fieldset>
+						<fieldset className="space-y-4">
+							<legend className="font-medium text-sm leading-none">
+								Research intent
+							</legend>
 							<OptionGrid
 								onToggle={(id) =>
 									update({
@@ -241,7 +245,7 @@ export function InvestorIntakeForm() {
 								options={researchGoalOptions}
 								selected={values.researchGoals}
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div className="grid gap-4 md:grid-cols-3">
 						<div className="space-y-2">

@@ -236,8 +236,10 @@ export function FounderIntakeForm() {
 						description="Add the capital path and business model signals that matter."
 						title="What kind of support fits?"
 					/>
-					<div className="space-y-4">
-						<Label>Funding needs</Label>
+					<fieldset className="space-y-4">
+						<legend className="font-medium text-sm leading-none">
+							Funding needs
+						</legend>
 						<OptionGrid
 							onToggle={(id) =>
 								update({ fundingNeeds: toggleValue(values.fundingNeeds, id) })
@@ -245,9 +247,11 @@ export function FounderIntakeForm() {
 							options={fundingOptions}
 							selected={values.fundingNeeds}
 						/>
-					</div>
-					<div className="space-y-4">
-						<Label>Business type</Label>
+					</fieldset>
+					<fieldset className="space-y-4">
+						<legend className="font-medium text-sm leading-none">
+							Business type
+						</legend>
 						<OptionGrid
 							columns="four"
 							onToggle={(id) =>
@@ -256,7 +260,7 @@ export function FounderIntakeForm() {
 							options={businessTypeOptions}
 							selected={values.businessTypes}
 						/>
-					</div>
+					</fieldset>
 				</div>
 			)}
 
@@ -267,22 +271,26 @@ export function FounderIntakeForm() {
 						title="Where are you right now?"
 					/>
 					<div className="grid gap-8 lg:grid-cols-2">
-						<div className="space-y-4">
-							<Label>Company stage</Label>
+						<fieldset className="space-y-4">
+							<legend className="font-medium text-sm leading-none">
+								Company stage
+							</legend>
 							<OptionGrid
 								onToggle={(id) => update({ stage: id })}
 								options={stageOptions}
 								selected={values.stage ? [values.stage] : []}
 							/>
-						</div>
-						<div className="space-y-4">
-							<Label>Utah region</Label>
+						</fieldset>
+						<fieldset className="space-y-4">
+							<legend className="font-medium text-sm leading-none">
+								Utah region
+							</legend>
 							<OptionGrid
 								onToggle={(id) => update({ region: id })}
 								options={regionOptions}
 								selected={values.region ? [values.region] : []}
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div className="grid gap-4 md:grid-cols-3">
 						<div className="space-y-2">
@@ -313,15 +321,17 @@ export function FounderIntakeForm() {
 							/>
 						</div>
 					</div>
-					<div className="space-y-4">
-						<Label>Hiring status</Label>
+					<fieldset className="space-y-4">
+						<legend className="font-medium text-sm leading-none">
+							Hiring status
+						</legend>
 						<OptionGrid
 							columns="four"
 							onToggle={(id) => update({ hiringStatus: id })}
 							options={hiringOptions}
 							selected={values.hiringStatus ? [values.hiringStatus] : []}
 						/>
-					</div>
+					</fieldset>
 				</div>
 			)}
 		</NavigatorShell>
