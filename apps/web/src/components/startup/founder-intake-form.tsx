@@ -30,6 +30,7 @@ import {
 	type NavigatorOption,
 	OptionGrid,
 } from "~/components/startup/navigator-flow/option-grid";
+import { DropdownAutocomplete } from "~/components/ui/dropdown-autocomplete";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import type { FounderProfileInput } from "~/lib/startup-api";
@@ -111,6 +112,7 @@ const defaultValues: FounderProfileInput = {
 	goals: [],
 	businessTypes: [],
 	fundingNeeds: [],
+	founderIdentities: [],
 };
 
 function toggleValue(values: string[], value: string) {
@@ -291,15 +293,6 @@ export function FounderIntakeForm() {
 					</div>
 					<div className="grid gap-4 md:grid-cols-3">
 						<div className="space-y-2">
-							<Label htmlFor="city">City</Label>
-							<Input
-								id="city"
-								onChange={(event) => update({ city: event.target.value })}
-								placeholder="Salt Lake City"
-								value={values.city ?? ""}
-							/>
-						</div>
-						<div className="space-y-2">
 							<Label htmlFor="county">County</Label>
 							<Input
 								id="county"
@@ -315,6 +308,34 @@ export function FounderIntakeForm() {
 								onChange={(event) => update({ keywords: event.target.value })}
 								placeholder="Clean energy grants"
 								value={values.keywords ?? ""}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="founderIdentities">Are any of these relevant to you?</Label>
+							<DropdownAutocomplete
+								allowCreate={false}
+								defaultValue={(values.founderIdentities ?? []).join(", ")}
+								id="founderIdentities"
+								multiple
+								name="founderIdentities"
+								onValueChange={(value) =>
+									update({
+										founderIdentities: value
+											? value.split(", ").filter(Boolean)
+											: [],
+									})
+								}
+								options={[
+									"Student founder",
+									"Veteran founder / veteran-owned business",
+									"Woman founder / woman-owned business",
+									"New American / immigrant founder",
+									"Rural business",
+									"Multicultural or community-specific business support",
+									"None of these",
+									"Prefer not to say",
+								]}
+								placeholder="Select all that apply"
 							/>
 						</div>
 					</div>

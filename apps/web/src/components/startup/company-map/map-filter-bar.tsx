@@ -26,7 +26,7 @@ export function MapFilterBar({
 	onFilterChange,
 }: MapFilterBarProps) {
 	return (
-		<div className="flex gap-2 overflow-x-auto px-1 py-2">
+		<div className="flex gap-2 overflow-x-auto pb-2">
 			<FilterSelect
 				label="Sector"
 				onChange={(value) => onFilterChange("sector", value)}

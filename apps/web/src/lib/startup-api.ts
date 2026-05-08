@@ -76,6 +76,7 @@ export type FounderProfileInput = {
 	fundingNeeds: string[];
 	hiringStatus?: string;
 	keywords?: string;
+	founderIdentities?: string[];
 };
 
 export type InvestorProfileInput = {
