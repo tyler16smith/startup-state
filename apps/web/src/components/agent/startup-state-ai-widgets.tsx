@@ -1,8 +1,8 @@
 "use client";
 
-export type FinWidgetActionType = "noop";
+export type StartupStateWidgetActionType = "noop";
 
-export type FinWidget = {
+export type StartupStateWidget = {
 	id: string;
 	type: "insight_card";
 	widgetSchemaVersion: string;
@@ -21,11 +21,11 @@ export type FinWidget = {
 
 export type WidgetActionSubmit = (input: {
 	widgetId: string;
-	actionType: FinWidgetActionType;
+	actionType: StartupStateWidgetActionType;
 	values: Record<string, unknown>;
 }) => void | Promise<void>;
 
-function InsightCardWidget({ widget }: { widget: FinWidget }) {
+function InsightCardWidget({ widget }: { widget: StartupStateWidget }) {
 	return (
 		<div className="w-full rounded-md border bg-card p-3 text-card-foreground shadow-sm">
 			<div className="mb-3 min-w-0">
@@ -56,7 +56,11 @@ function InsightCardWidget({ widget }: { widget: FinWidget }) {
 	);
 }
 
-export function FinWidgetRenderer({ widget }: { widget: FinWidget }) {
+export function StartupStateWidgetRenderer({
+	widget,
+}: {
+	widget: StartupStateWidget;
+}) {
 	if (widget.type !== "insight_card") return null;
 	return <InsightCardWidget widget={widget} />;
 }

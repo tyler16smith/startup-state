@@ -24,7 +24,7 @@ export default async function AdminResourcesPage() {
 				label="New resource"
 				title="Resources"
 			/>
-			<div className="grid gap-6 lg:grid-cols-[1fr_24rem]">
+			<div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
 				<div className="rounded-lg border bg-white p-4 shadow-sm">
 					<Table>
 						<TableHeader>

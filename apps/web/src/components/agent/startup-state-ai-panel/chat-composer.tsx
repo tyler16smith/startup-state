@@ -3,12 +3,12 @@ import { usePathname } from "next/navigation";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { useFinAiComposerState } from "./chat-store";
+import { useStartupStateAIComposerState } from "./chat-store";
 
 export function ChatComposer() {
 	const pathname = usePathname();
 	const { input, isRunning, setInput, sendMessage, stopRun } =
-		useFinAiComposerState();
+		useStartupStateAIComposerState();
 
 	const submitMessage = () =>
 		void sendMessage({ pathname, messageText: input });

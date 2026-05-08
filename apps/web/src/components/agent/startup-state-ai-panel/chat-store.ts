@@ -1,17 +1,22 @@
+import {
+	type MessageReference,
+	mergeMessageReferences,
+	normalizeMessageReferences,
+} from "@app/mcp-contracts";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { FinAiTimelineBlock } from "~/components/agent/fin-ai-timeline-block";
-import type { WidgetActionSubmit } from "~/components/agent/fin-ai-widgets";
-import { trackFinAi } from "~/lib/agent-analytics";
+import type { StartupStateAITimelineBlock } from "~/components/agent/startup-state-ai-timeline-block";
+import type { WidgetActionSubmit } from "~/components/agent/startup-state-ai-widgets";
+import { trackStartupStateAI } from "~/lib/agent-analytics";
 import {
 	type ConversationSummary,
-	type FinAgentStreamEvent,
 	fetchConversationList,
-	fetchFinAgentTimeline,
+	fetchStartupStateAgentTimeline,
 	renameConversation,
-	streamFinAgentMessage,
-	streamFinWidgetAction,
+	type StartupStateAgentStreamEvent,
+	streamStartupStateAgentMessage,
+	streamStartupStateWidgetAction,
 } from "~/lib/api/agent";
 import {
 	createClientId,
@@ -30,9 +35,9 @@ type WidgetActionInput = Parameters<WidgetActionSubmit>[0] & {
 	scrollToBottom?: () => void;
 };
 
-type FinAiChatState = {
+type StartupStateAIChatState = {
 	conversationId: string | undefined;
-	blocks: FinAiTimelineBlock[];
+	blocks: StartupStateAITimelineBlock[];
 	input: string;
 	status: string;
 	isRunning: boolean;
@@ -41,7 +46,7 @@ type FinAiChatState = {
 	historySearch: string;
 };
 
-type FinAiChatActions = {
+type StartupStateAIChatActions = {
 	setInput: (input: string) => void;
 	setHistoryOpen: (open: boolean) => void;
 	setHistorySearch: (search: string) => void;
@@ -60,32 +65,112 @@ type FinAiChatActions = {
 	selectSuggestedPrompt: (prompt: string) => void;
 };
 
-type FinAiChatStore = FinAiChatState & FinAiChatActions;
+type StartupStateAIChatStore = StartupStateAIChatState &
+	StartupStateAIChatActions;
 
 let abortController: AbortController | null = null;
 const assistantBlockIdsByStep = new Map<string, string>();
+const pendingReferencesByRun = new Map<string, MessageReference[]>();
 
 function getAssistantStepKey(event: { runId?: string; stepId?: string }) {
 	return `${event.runId ?? "unknown-run"}:${event.stepId ?? "unknown-step"}`;
 }
 
+function getRunKey(runId: string | undefined) {
+	return runId ?? "unknown-run";
+}
+
+function getPendingReferences(runId: string | undefined) {
+	return pendingReferencesByRun.get(getRunKey(runId)) ?? [];
+}
+
+function addPendingReferences(
+	runId: string | undefined,
+	references: MessageReference[],
+) {
+	const runKey = getRunKey(runId);
+	pendingReferencesByRun.set(
+		runKey,
+		mergeMessageReferences(pendingReferencesByRun.get(runKey), references),
+	);
+}
+
+function attachReferenceBlocksToMarkdownBlocks(
+	blocks: StartupStateAITimelineBlock[],
+): StartupStateAITimelineBlock[] {
+	const referencesByRun = new Map<string, MessageReference[]>();
+	const assistantMarkdownRuns = new Set<string>();
+
+	for (const block of blocks) {
+		if (block.type === "markdown" && block.role === "assistant") {
+			assistantMarkdownRuns.add(getRunKey(block.runId));
+		}
+		if (block.type === "references") {
+			const references = normalizeMessageReferences(block.references, {
+				toolName: block.toolName,
+			});
+			if (references.length === 0) continue;
+			const runKey = getRunKey(block.runId);
+			referencesByRun.set(
+				runKey,
+				mergeMessageReferences(referencesByRun.get(runKey), references),
+			);
+		}
+	}
+
+	const attachedBlocks: StartupStateAITimelineBlock[] = [];
+
+	for (const block of blocks) {
+		if (block.type === "references") {
+			const references = normalizeMessageReferences(block.references, {
+				toolName: block.toolName,
+			});
+			if (references.length === 0) continue;
+			if (assistantMarkdownRuns.has(getRunKey(block.runId))) continue;
+			attachedBlocks.push({ ...block, references });
+			continue;
+		}
+
+		if (block.type === "markdown" && block.role === "assistant") {
+			const references = referencesByRun.get(getRunKey(block.runId)) ?? [];
+			attachedBlocks.push({
+				...block,
+				references: mergeMessageReferences(block.references, references),
+			});
+			continue;
+		}
+
+		attachedBlocks.push(block);
+	}
+
+	return attachedBlocks;
+}
+
 function setStoredConversationId(conversationId: string | undefined) {
 	persistConversationId(conversationId);
-	useFinAiChatStore.setState({ conversationId });
+	useStartupStateAIChatStore.setState({ conversationId });
 }
 
 function appendAssistantDelta(
-	event: Extract<FinAgentStreamEvent, { type: "message_delta" }>,
+	event: Extract<StartupStateAgentStreamEvent, { type: "message_delta" }>,
 	scrollToBottom?: () => void,
 ) {
 	const stepKey = getAssistantStepKey(event);
 	const existingBlockId = assistantBlockIdsByStep.get(stepKey);
+	const pendingReferences = getPendingReferences(event.runId);
 
 	if (existingBlockId) {
-		useFinAiChatStore.setState((currentState) => ({
+		useStartupStateAIChatStore.setState((currentState) => ({
 			blocks: currentState.blocks.map((message) =>
 				message.id === existingBlockId && message.type === "markdown"
-					? { ...message, content: `${message.content}${event.content}` }
+					? {
+							...message,
+							content: `${message.content}${event.content}`,
+							references: mergeMessageReferences(
+								message.references,
+								pendingReferences,
+							),
+						}
 					: message,
 			),
 		}));
@@ -95,7 +180,7 @@ function appendAssistantDelta(
 
 	const blockId = createClientId();
 	assistantBlockIdsByStep.set(stepKey, blockId);
-	useFinAiChatStore.setState((currentState) => ({
+	useStartupStateAIChatStore.setState((currentState) => ({
 		blocks: [
 			...currentState.blocks,
 			{
@@ -103,6 +188,7 @@ function appendAssistantDelta(
 				type: "markdown",
 				role: "assistant",
 				content: event.content,
+				references: pendingReferences,
 				runId: event.runId,
 				stepId: event.stepId,
 			},
@@ -115,7 +201,7 @@ function replaceAssistantMessage(content: string, tone?: "error") {
 	const assistantBlockIds = Array.from(
 		assistantBlockIdsByStep.values(),
 	).reverse();
-	useFinAiChatStore.setState((currentState) => {
+	useStartupStateAIChatStore.setState((currentState) => {
 		const targetId = assistantBlockIds.find((blockId) =>
 			currentState.blocks.some(
 				(block) => block.id === blockId && block.type === "markdown",
@@ -149,13 +235,13 @@ function replaceAssistantMessage(content: string, tone?: "error") {
 
 function addOrUpdateRunStepBlock(
 	event: Extract<
-		FinAgentStreamEvent,
+		StartupStateAgentStreamEvent,
 		{ type: "run_step_started" | "run_step_done" }
 	>,
 ) {
 	const blockId = `run-step-${event.runId}-${event.stepId}`;
 	const status = event.type === "run_step_started" ? "running" : "completed";
-	const block: FinAiTimelineBlock = {
+	const block: StartupStateAITimelineBlock = {
 		id: blockId,
 		type: "run_step",
 		role: "assistant",
@@ -166,7 +252,7 @@ function addOrUpdateRunStepBlock(
 		stepId: event.stepId,
 	};
 
-	useFinAiChatStore.setState((currentState) => {
+	useStartupStateAIChatStore.setState((currentState) => {
 		const hasBlock = currentState.blocks.some(
 			(currentBlock) => currentBlock.id === blockId,
 		);
@@ -182,13 +268,13 @@ function addOrUpdateRunStepBlock(
 
 function addOrUpdateToolCallBlock(
 	event: Extract<
-		FinAgentStreamEvent,
+		StartupStateAgentStreamEvent,
 		{ type: "tool_call_started" | "tool_call_done" }
 	>,
 ) {
 	const blockId = `tool-call-${event.runId}-${event.toolCallId}`;
 	const status = event.type === "tool_call_started" ? "running" : "completed";
-	const block: FinAiTimelineBlock = {
+	const block: StartupStateAITimelineBlock = {
 		id: blockId,
 		type: "tool_call",
 		role: "assistant",
@@ -202,7 +288,7 @@ function addOrUpdateToolCallBlock(
 		stepId: event.stepId,
 	};
 
-	useFinAiChatStore.setState((currentState) => {
+	useStartupStateAIChatStore.setState((currentState) => {
 		const hasBlock = currentState.blocks.some(
 			(currentBlock) => currentBlock.id === blockId,
 		);
@@ -217,37 +303,29 @@ function addOrUpdateToolCallBlock(
 }
 
 function addReferenceBlock(
-	event: Extract<FinAgentStreamEvent, { type: "references_done" }>,
+	event: Extract<StartupStateAgentStreamEvent, { type: "references_done" }>,
 ) {
-	const block: FinAiTimelineBlock = {
-		id: event.referenceBlockId,
-		type: "references",
-		role: "assistant",
-		referenceBlockId: event.referenceBlockId,
-		title: event.title,
-		toolCallId: event.toolCallId,
-		toolName: event.toolName,
-		references: event.references,
-		runId: event.runId,
-		stepId: event.stepId,
-	};
-
-	useFinAiChatStore.setState((currentState) => {
-		const hasBlock = currentState.blocks.some(
-			(currentBlock) => currentBlock.id === event.referenceBlockId,
-		);
-		return {
-			blocks: hasBlock
-				? currentState.blocks.map((currentBlock) =>
-						currentBlock.id === event.referenceBlockId ? block : currentBlock,
-					)
-				: [...currentState.blocks, block],
-		};
-	});
+	if (event.references.length === 0) return;
+	addPendingReferences(event.runId, event.references);
+	useStartupStateAIChatStore.setState((currentState) => ({
+		blocks: currentState.blocks.map((block) =>
+			block.type === "markdown" &&
+			block.role === "assistant" &&
+			getRunKey(block.runId) === getRunKey(event.runId)
+				? {
+						...block,
+						references: mergeMessageReferences(
+							block.references,
+							event.references,
+						),
+					}
+				: block,
+		),
+	}));
 }
 
 function upsertConversationSummary(conversation: ConversationSummary) {
-	useFinAiChatStore.setState((currentState) => {
+	useStartupStateAIChatStore.setState((currentState) => {
 		const hasConversation = currentState.conversations.some(
 			(currentConversation) => currentConversation.id === conversation.id,
 		);
@@ -267,9 +345,10 @@ function abortRun() {
 	abortController?.abort();
 	abortController = null;
 	assistantBlockIdsByStep.clear();
+	pendingReferencesByRun.clear();
 }
 
-export const useFinAiChatStore = create<FinAiChatStore>()(
+export const useStartupStateAIChatStore = create<StartupStateAIChatStore>()(
 	devtools(
 		(set, get) => ({
 			conversationId: loadStoredConversationId(),
@@ -293,8 +372,12 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				const conversationId = get().conversationId;
 				if (!conversationId || get().blocks.length > 0) return;
 				try {
-					const blocks = await fetchFinAgentTimeline({ conversationId });
-					if (get().conversationId === conversationId) set({ blocks });
+					const blocks = await fetchStartupStateAgentTimeline({
+						conversationId,
+					});
+					if (get().conversationId === conversationId) {
+						set({ blocks: attachReferenceBlocksToMarkdownBlocks(blocks) });
+					}
 				} catch {
 					return;
 				}
@@ -318,7 +401,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 					isRunning: false,
 					historyOpen: false,
 				});
-				trackFinAi("agent_conversation_reset");
+				trackStartupStateAI("agent_conversation_reset");
 			},
 
 			loadConversation: async (conversationId) => {
@@ -333,8 +416,12 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 					historySearch: "",
 				});
 				try {
-					const blocks = await fetchFinAgentTimeline({ conversationId });
-					if (get().conversationId === conversationId) set({ blocks });
+					const blocks = await fetchStartupStateAgentTimeline({
+						conversationId,
+					});
+					if (get().conversationId === conversationId) {
+						set({ blocks: attachReferenceBlocksToMarkdownBlocks(blocks) });
+					}
 				} catch {
 					return;
 				}
@@ -345,20 +432,21 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				if (!trimmed || get().isRunning) return;
 
 				const conversationId = get().conversationId;
-				const userMessage: FinAiTimelineBlock = {
+				const userMessage: StartupStateAITimelineBlock = {
 					id: createClientId(),
 					type: "markdown",
 					role: "user",
 					content: trimmed,
 				};
 				assistantBlockIdsByStep.clear();
+				pendingReferencesByRun.clear();
 				set((currentState) => ({
 					blocks: [...currentState.blocks, userMessage],
 					input: "",
 					status: "Thinking...",
 					isRunning: true,
 				}));
-				trackFinAi("agent_message_sent", {
+				trackStartupStateAI("agent_message_sent", {
 					hasConversation: Boolean(conversationId),
 					messageLength: trimmed.length,
 				});
@@ -367,7 +455,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				abortController = controller;
 
 				try {
-					await streamFinAgentMessage({
+					await streamStartupStateAgentMessage({
 						input: {
 							conversationId,
 							message: trimmed,
@@ -422,7 +510,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 									break;
 								case "message_done":
 									set({ status: "Ready" });
-									trackFinAi("agent_run_completed");
+									trackStartupStateAI("agent_run_completed");
 									void get().refreshConversationList();
 									break;
 								case "widget_done":
@@ -470,7 +558,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 								case "error":
 									replaceAssistantMessage(event.error.message, "error");
 									set({ status: "Ready" });
-									trackFinAi("agent_run_failed", {
+									trackStartupStateAI("agent_run_failed", {
 										code: event.error.code,
 									});
 									break;
@@ -487,13 +575,14 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 							"error",
 						);
 						set({ status: "Ready" });
-						trackFinAi("agent_run_failed", {
+						trackStartupStateAI("agent_run_failed", {
 							code: "stream_error",
 						});
 					}
 				} finally {
 					if (abortController === controller) abortController = null;
 					assistantBlockIdsByStep.clear();
+					pendingReferencesByRun.clear();
 					set({ isRunning: false });
 				}
 			},
@@ -501,7 +590,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 			stopRun: () => {
 				abortRun();
 				set({ isRunning: false, status: "Stopped" });
-				trackFinAi("agent_run_aborted");
+				trackStartupStateAI("agent_run_aborted");
 			},
 
 			submitWidgetAction: async ({
@@ -516,7 +605,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				const controller = new AbortController();
 				abortController = controller;
 				try {
-					await streamFinWidgetAction({
+					await streamStartupStateWidgetAction({
 						input: {
 							conversationId,
 							widgetId,
@@ -622,18 +711,18 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 
 			selectSuggestedPrompt: (prompt) => {
 				set({ input: prompt });
-				trackFinAi("agent_suggested_prompt_clicked");
+				trackStartupStateAI("agent_suggested_prompt_clicked");
 			},
 		}),
-		{ name: "fin-ai-chat-store" },
+		{ name: "startup-state-ai-chat-store" },
 	),
 );
 
-export const useFinAiConversationId = () =>
-	useFinAiChatStore((state) => state.conversationId);
+export const useStartupStateAIConversationId = () =>
+	useStartupStateAIChatStore((state) => state.conversationId);
 
-export const useFinAiPanelState = () =>
-	useFinAiChatStore(
+export const useStartupStateAIPanelState = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			blocks: state.blocks,
 			status: state.status,
@@ -642,8 +731,8 @@ export const useFinAiPanelState = () =>
 		})),
 	);
 
-export const useFinAiComposerState = () =>
-	useFinAiChatStore(
+export const useStartupStateAIComposerState = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			input: state.input,
 			isRunning: state.isRunning,
@@ -653,8 +742,8 @@ export const useFinAiComposerState = () =>
 		})),
 	);
 
-export const useFinAiHeaderState = () =>
-	useFinAiChatStore(
+export const useStartupStateAIHeaderState = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			blocks: state.blocks,
 			conversationId: state.conversationId,
@@ -663,8 +752,8 @@ export const useFinAiHeaderState = () =>
 		})),
 	);
 
-export const useFinAiHistoryState = () =>
-	useFinAiChatStore(
+export const useStartupStateAIHistoryState = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			conversationId: state.conversationId,
 			conversations: state.conversations,
@@ -677,8 +766,8 @@ export const useFinAiHistoryState = () =>
 		})),
 	);
 
-export const useFinAiMessageListState = () =>
-	useFinAiChatStore(
+export const useStartupStateAIMessageListState = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			blocks: state.blocks,
 			status: state.status,
@@ -687,8 +776,8 @@ export const useFinAiMessageListState = () =>
 		})),
 	);
 
-export const useFinAiChatActions = () =>
-	useFinAiChatStore(
+export const useStartupStateAIChatActions = () =>
+	useStartupStateAIChatStore(
 		useShallow((state) => ({
 			abortActiveRun: state.abortActiveRun,
 			loadStoredTimeline: state.loadStoredTimeline,

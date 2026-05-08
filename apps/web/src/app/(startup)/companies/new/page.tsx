@@ -2,7 +2,7 @@ import { CompanyForm } from "~/components/startup/company-form";
 
 export default function NewCompanyPage() {
 	return (
-		<main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 			<div className="mb-8">
 				<p className="font-medium text-emerald-700 text-sm">
 					Company submission
@@ -15,9 +15,7 @@ export default function NewCompanyPage() {
 					publish it when the details are verified.
 				</p>
 			</div>
-			<div className="rounded-lg border bg-white p-6 shadow-sm">
-				<CompanyForm />
-			</div>
+			<CompanyForm mode="submission" showPreview />
 		</main>
 	);
 }

@@ -129,15 +129,12 @@ export function ResourceCsvImportForm() {
 					)}
 					Choose CSV
 				</Button>
-				<Button
-					disabled={!errorCount}
-					onClick={downloadErrors}
-					type="button"
-					variant="ghost"
-				>
-					<Download className="size-4" />
-					Error report
-				</Button>
+				{errorCount > 0 && (
+					<Button onClick={downloadErrors} type="button" variant="ghost">
+						<Download className="size-4" />
+						Error report
+					</Button>
+				)}
 			</div>
 
 			{message && <p className="text-destructive text-sm">{message}</p>}

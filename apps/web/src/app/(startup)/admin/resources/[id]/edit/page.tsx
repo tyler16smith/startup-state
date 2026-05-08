@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ResourceForm } from "~/components/startup/resource-form";
 import type { Resource } from "~/lib/startup-api";
-import { apiServer } from "~/lib/startup-server-api";
+import { apiServer, getResourceTaxonomy } from "~/lib/startup-server-api";
 
 export default async function EditResourcePage({
 	params,
@@ -10,6 +10,7 @@ export default async function EditResourcePage({
 }) {
 	const { id } = await params;
 	let resource: Resource;
+	const taxonomy = await getResourceTaxonomy();
 	try {
 		resource = await apiServer<Resource>("/api/v1/resources/adminGet", { id });
 	} catch {
@@ -21,7 +22,7 @@ export default async function EditResourcePage({
 				Edit resource
 			</h1>
 			<div className="rounded-lg border bg-white p-6 shadow-sm">
-				<ResourceForm resource={resource} />
+				<ResourceForm resource={resource} taxonomy={taxonomy} />
 			</div>
 		</main>
 	);

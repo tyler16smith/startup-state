@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { FinAiPanelProvider } from "~/components/agent/fin-ai-context";
-import { FinAiWorkspace } from "~/components/agent/fin-ai-workspace";
+import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
+import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 
 const CUSTOMER_ROUTE_PREFIXES = [
 	"/explore",
@@ -22,10 +22,10 @@ export function CustomerAgentBoundary({ children }: { children: ReactNode }) {
 	if (!isCustomerRoute(pathname)) return children;
 
 	return (
-		<FinAiPanelProvider>
-			<div className="flex min-h-screen bg-background">
-				<FinAiWorkspace>{children}</FinAiWorkspace>
+		<StartupStateAIPanelProvider>
+			<div className="flex h-screen bg-background">
+				<StartupStateAIWorkspace>{children}</StartupStateAIWorkspace>
 			</div>
-		</FinAiPanelProvider>
+		</StartupStateAIPanelProvider>
 	);
 }

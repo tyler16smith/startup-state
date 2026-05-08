@@ -1,7 +1,4 @@
-import { Sparkles } from "lucide-react";
-import { EmptyState } from "~/components/startup/empty-state";
-import { ResourceCard } from "~/components/startup/resource-card";
-import { ResourceFilterPanel } from "~/components/startup/resource-filter-panel";
+import { ResourceDirectoryResults } from "~/components/startup/resource-directory-results";
 import { getResourceTaxonomy, listResources } from "~/lib/startup-server-api";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -65,20 +62,11 @@ export default async function ResourcesPage({
 					</p>
 				</div>
 			</div>
-			<ResourceFilterPanel selected={selected} taxonomy={taxonomy} />
-			{resources.items.length ? (
-				<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-					{resources.items.map((resource) => (
-						<ResourceCard key={resource.id} resource={resource} />
-					))}
-				</div>
-			) : (
-				<EmptyState
-					description="Try removing a filter or importing resources from the admin panel."
-					icon={Sparkles}
-					title="No resources match these filters yet"
-				/>
-			)}
+			<ResourceDirectoryResults
+				resources={resources}
+				selected={selected}
+				taxonomy={taxonomy}
+			/>
 		</main>
 	);
 }

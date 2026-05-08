@@ -1,13 +1,16 @@
 import { clearCsrfToken, getCsrfToken } from "@app/client-ts";
-import type { AgentReference } from "@app/mcp-contracts";
-import type { FinAiTimelineBlock } from "~/components/agent/fin-ai-timeline-block";
+import {
+	type MessageReference,
+	normalizeMessageReferences,
+} from "@app/mcp-contracts";
+import type { StartupStateAITimelineBlock } from "~/components/agent/startup-state-ai-timeline-block";
 import type {
-	FinWidget,
-	FinWidgetActionType,
-} from "~/components/agent/fin-ai-widgets";
+	StartupStateWidget,
+	StartupStateWidgetActionType,
+} from "~/components/agent/startup-state-ai-widgets";
 import { toApiUrl } from "~/lib/api-url";
 
-export type FinAgentStreamEvent =
+export type StartupStateAgentStreamEvent =
 	| {
 			type: "run_started";
 			conversationId: string;
@@ -54,7 +57,7 @@ export type FinAgentStreamEvent =
 			toolCallId?: string;
 			toolName?: string;
 			title?: string;
-			references: AgentReference[];
+			references: MessageReference[];
 	  }
 	| {
 			type: "run_step_started";
@@ -81,14 +84,14 @@ export type FinAgentStreamEvent =
 			type: "widget_done";
 			runId: string;
 			stepId: string;
-			widget: FinWidget;
+			widget: StartupStateWidget;
 	  }
 	| {
 			type: "action_done";
 			runId: string;
 			stepId: string;
 			actionId: string;
-			actionType: FinWidgetActionType;
+			actionType: StartupStateWidgetActionType;
 			summary: string;
 			result?: unknown;
 	  }
@@ -116,7 +119,7 @@ export type FinAgentStreamEvent =
 			};
 	  };
 
-export type FinAgentStreamInput = {
+export type StartupStateAgentStreamInput = {
 	conversationId?: string;
 	message: string;
 	clientRequestId: string;
@@ -126,10 +129,10 @@ export type FinAgentStreamInput = {
 	};
 };
 
-export type FinWidgetActionStreamInput = {
+export type StartupStateWidgetActionStreamInput = {
 	conversationId: string;
 	widgetId: string;
-	actionType: FinWidgetActionType;
+	actionType: StartupStateWidgetActionType;
 	values: Record<string, unknown>;
 	clientRequestId?: string;
 };
@@ -162,6 +165,11 @@ function recordValue(
 	return isRecord(value) ? value : undefined;
 }
 
+function arrayValue(record: Record<string, unknown>, key: string): unknown[] {
+	const value = record[key];
+	return Array.isArray(value) ? value : [];
+}
+
 function errorValue(record: Record<string, unknown>) {
 	const error = recordValue(record, "error");
 	if (!error) return undefined;
@@ -183,7 +191,9 @@ function stepTypeValue(
 	return undefined;
 }
 
-function parseFinAgentEvent(rawData: string): FinAgentStreamEvent | null {
+function parseStartupStateAgentEvent(
+	rawData: string,
+): StartupStateAgentStreamEvent | null {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(rawData);
@@ -250,6 +260,28 @@ function parseFinAgentEvent(rawData: string): FinAgentStreamEvent | null {
 				return null;
 			return { type, runId, stepId, toolCallId, toolName, summary };
 		}
+		case "references_done": {
+			const runId = stringValue(parsed, "runId");
+			const stepId = stringValue(parsed, "stepId");
+			const referenceBlockId = stringValue(parsed, "referenceBlockId");
+			const toolName = stringValue(parsed, "toolName");
+			if (!runId || !stepId || !referenceBlockId) return null;
+			return {
+				type,
+				runId,
+				stepId,
+				referenceBlockId,
+				toolCallId: stringValue(parsed, "toolCallId"),
+				toolName,
+				title: stringValue(parsed, "title"),
+				references: normalizeMessageReferences(
+					arrayValue(parsed, "references"),
+					{
+						toolName,
+					},
+				),
+			};
+		}
 		case "run_step_started":
 		case "run_step_done": {
 			const runId = stringValue(parsed, "runId");
@@ -279,14 +311,14 @@ function parseFinAgentEvent(rawData: string): FinAgentStreamEvent | null {
 			const stepId = stringValue(parsed, "stepId");
 			const widget = recordValue(parsed, "widget");
 			if (!runId || !stepId || !widget) return null;
-			return { type, runId, stepId, widget: widget as FinWidget };
+			return { type, runId, stepId, widget: widget as StartupStateWidget };
 		}
 		case "action_done": {
 			const runId = stringValue(parsed, "runId");
 			const stepId = stringValue(parsed, "stepId");
 			const actionId = stringValue(parsed, "actionId");
 			const actionType = stringValue(parsed, "actionType") as
-				| FinWidgetActionType
+				| StartupStateWidgetActionType
 				| undefined;
 			const summary = stringValue(parsed, "summary");
 			if (!runId || !stepId || !actionId || !actionType || !summary)
@@ -383,13 +415,13 @@ async function readErrorMessage(response: Response): Promise<string> {
 	}
 }
 
-export async function streamFinAgentMessage({
+export async function streamStartupStateAgentMessage({
 	input,
 	onEvent,
 	signal,
 }: {
-	input: FinAgentStreamInput;
-	onEvent: (event: FinAgentStreamEvent) => void;
+	input: StartupStateAgentStreamInput;
+	onEvent: (event: StartupStateAgentStreamEvent) => void;
 	signal?: AbortSignal;
 }): Promise<void> {
 	// Always fetch a fresh CSRF token. The server now derives it from userId
@@ -423,7 +455,7 @@ export async function streamFinAgentMessage({
 	const processBlock = (block: string) => {
 		const data = getSseData(block.trim());
 		if (!data) return;
-		const event = parseFinAgentEvent(data);
+		const event = parseStartupStateAgentEvent(data);
 		if (event) onEvent(event);
 	};
 
@@ -445,13 +477,13 @@ export async function streamFinAgentMessage({
 	if (buffer.trim()) processBlock(buffer);
 }
 
-export async function streamFinWidgetAction({
+export async function streamStartupStateWidgetAction({
 	input,
 	onEvent,
 	signal,
 }: {
-	input: FinWidgetActionStreamInput;
-	onEvent: (event: FinAgentStreamEvent) => void;
+	input: StartupStateWidgetActionStreamInput;
+	onEvent: (event: StartupStateAgentStreamEvent) => void;
 	signal?: AbortSignal;
 }): Promise<void> {
 	const csrfToken = await getCsrfToken();
@@ -481,7 +513,7 @@ export async function streamFinWidgetAction({
 	const processBlock = (block: string) => {
 		const data = getSseData(block.trim());
 		if (!data) return;
-		const event = parseFinAgentEvent(data);
+		const event = parseStartupStateAgentEvent(data);
 		if (event) onEvent(event);
 	};
 
@@ -503,12 +535,12 @@ export async function streamFinWidgetAction({
 	if (buffer.trim()) processBlock(buffer);
 }
 
-export async function fetchFinAgentTimeline(input: {
+export async function fetchStartupStateAgentTimeline(input: {
 	conversationId: string;
-}): Promise<FinAiTimelineBlock[]> {
+}): Promise<StartupStateAITimelineBlock[]> {
 	const result = await postJson<
 		{ conversationId: string; limit: number },
-		{ blocks: FinAiTimelineBlock[] }
+		{ blocks: StartupStateAITimelineBlock[] }
 	>("/api/v1/agent/listTimeline", {
 		conversationId: input.conversationId,
 		limit: 200,

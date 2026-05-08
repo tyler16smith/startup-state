@@ -18,6 +18,7 @@ import {
 import { logger, normalizeError } from "~/lib/logger";
 import { createFinMcpServer } from "~/mcp-server";
 import { checkAnonymousRateLimit } from "~/rate-limit/rate-limit";
+import { getRegisteredTools } from "~/tools/registry";
 
 const protectedResourcePath = "/.well-known/oauth-protected-resource";
 const pathSpecificProtectedResourcePath = `${protectedResourcePath}/mcp`;
@@ -75,11 +76,45 @@ function getMcpResource(env: ReturnType<typeof getEnv>) {
 function getProtectedResourceMetadata(env: ReturnType<typeof getEnv>) {
 	return {
 		resource: getMcpResource(env),
-		resource_name: "Fin MCP",
+		resource_name: "Startup State MCP",
 		bearer_methods_supported: ["header"],
 		authorization_servers: [env.MCP_OAUTH_ISSUER ?? env.MCP_BASE_URL],
 		scopes_supported: [...mcpScopes],
 		resource_documentation: `${env.MCP_BASE_URL}/docs/mcp`,
+	};
+}
+
+function getRegisteredToolDocs() {
+	return getRegisteredTools().map((tool) => ({
+		name: tool.contract.name,
+		title: tool.contract.title,
+		description: tool.contract.description,
+		requiredScopes: [...tool.contract.requiredScopes],
+		readOnly: tool.contract.safetyClass === "read_only_app_data",
+	}));
+}
+
+function getMcpDocumentation(env: ReturnType<typeof getEnv>) {
+	return {
+		name: "Startup State MCP",
+		description:
+			"Connect external agents to Startup State Navigator with scoped read access.",
+		resource: getMcpResource(env),
+		health: `${env.MCP_BASE_URL}/health`,
+		scopes: [...mcpScopes],
+		tools: getRegisteredToolDocs(),
+		connectionExamples: {
+			remote: {
+				command: "npx",
+				args: ["-y", "mcp-remote", getMcpResource(env)],
+			},
+			stdio: {
+				type: "stdio",
+				command: "pnpm",
+				args: ["--filter", "@app/mcp", "dev:stdio"],
+				env: ["FIN_MCP_TOKEN", "DATABASE_URL", "MCP_TOKEN_PEPPER"],
+			},
+		},
 	};
 }
 
@@ -285,6 +320,10 @@ export function createHttpApp() {
 			res.json(getProtectedResourceMetadata(env));
 		},
 	);
+
+	app.get("/docs/mcp", (_req, res) => {
+		res.json(getMcpDocumentation(env));
+	});
 
 	app.get("/.well-known/oauth-authorization-server", (_req, res) => {
 		const issuer = env.MCP_OAUTH_ISSUER ?? env.MCP_BASE_URL;

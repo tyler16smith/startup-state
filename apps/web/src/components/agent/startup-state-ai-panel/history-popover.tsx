@@ -8,7 +8,7 @@ import {
 	PopoverTrigger,
 } from "~/components/ui/popover";
 import type { ConversationSummary } from "~/lib/api/agent";
-import { useFinAiHistoryState } from "./chat-store";
+import { useStartupStateAIHistoryState } from "./chat-store";
 import { focusChatInput } from "./utils";
 
 export function ConversationHistoryPopover({
@@ -25,7 +25,7 @@ export function ConversationHistoryPopover({
 		setHistorySearch,
 		loadConversation,
 		renameConversationTitle,
-	} = useFinAiHistoryState();
+	} = useStartupStateAIHistoryState();
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [draftTitle, setDraftTitle] = useState("");
 	const [savingId, setSavingId] = useState<string | null>(null);

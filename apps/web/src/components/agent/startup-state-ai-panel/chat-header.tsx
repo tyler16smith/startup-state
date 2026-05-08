@@ -1,11 +1,11 @@
 import { History, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useFinAiHeaderState } from "./chat-store";
+import { useStartupStateAIHeaderState } from "./chat-store";
 import { ConversationHistoryPopover } from "./history-popover";
 import { focusChatInput } from "./utils";
 
 export function ChatHeader({ onClose }: { onClose: () => void }) {
-	const { status, startNewConversation } = useFinAiHeaderState();
+	const { status, startNewConversation } = useStartupStateAIHeaderState();
 
 	return (
 		<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">

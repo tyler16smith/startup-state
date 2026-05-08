@@ -1,8 +1,11 @@
 import type { z } from "zod";
-import { emptyInputSchema } from "./schemas";
+import { emptyInputSchema, supportDocumentationInputSchema } from "./schemas";
 import type { McpScope } from "./scopes";
 
-export const mcpToolNames = ["mcp.get_profile"] as const;
+export const mcpToolNames = [
+	"mcp.get_profile",
+	"mcp.get_support_documentation",
+] as const;
 
 export type McpToolName = (typeof mcpToolNames)[number];
 
@@ -28,6 +31,17 @@ export const mcpToolContracts = {
 		title: "Get profile",
 		description: "Return basic profile info for the authenticated user.",
 		inputSchema: emptyInputSchema,
+		requiredScopes: ["mcp:read"],
+		safetyClass: "read_only_app_data",
+		requiresConfirmation: false,
+		widgetReady: true,
+	},
+	"mcp.get_support_documentation": {
+		name: "mcp.get_support_documentation",
+		title: "Get support documentation",
+		description:
+			"Return concise support documentation that helps users navigate and use Startup State Navigator.",
+		inputSchema: supportDocumentationInputSchema,
 		requiredScopes: ["mcp:read"],
 		safetyClass: "read_only_app_data",
 		requiresConfirmation: false,

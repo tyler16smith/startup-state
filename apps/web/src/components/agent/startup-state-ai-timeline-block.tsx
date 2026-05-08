@@ -1,4 +1,9 @@
-import type { AgentReference } from "@app/mcp-contracts";
+import {
+	createMessageReferenceLookup,
+	getReferenceKey,
+	type MessageReference,
+	parseMessageContentReferences,
+} from "@app/mcp-contracts";
 import type { LucideIcon } from "lucide-react";
 import {
 	Building2,
@@ -8,33 +13,37 @@ import {
 	LayoutDashboard,
 	LineChart,
 	Loader2,
-	Map as MapIcon,
 	Receipt,
-	Search,
 	Sparkles,
 	TrendingUp,
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useFinAiPanel } from "~/components/agent/fin-ai-context";
+import {
+	GroupedMessageReferences,
+	InlineReferenceBadge,
+} from "~/components/agent/message-reference-ui";
+import { useStartupStateAIPanel } from "~/components/agent/startup-state-ai-context";
 import {
 	ActionResultBlock,
-	type FinWidget,
-	FinWidgetRenderer,
-} from "~/components/agent/fin-ai-widgets";
+	type StartupStateWidget,
+	StartupStateWidgetRenderer,
+} from "~/components/agent/startup-state-ai-widgets";
 import { Button } from "~/components/ui/button";
-import { trackFinAi } from "~/lib/agent-analytics";
+import { trackStartupStateAI } from "~/lib/agent-analytics";
 import { cn } from "~/lib/utils";
 
-export type FinAiTimelineBlock =
+export type StartupStateAITimelineBlock =
 	| {
 			id: string;
 			type: "markdown";
 			role: "user" | "assistant";
 			content: string;
 			tone?: "default" | "error";
+			references?: MessageReference[];
 			runId?: string;
 			stepId?: string;
 	  }
@@ -42,7 +51,7 @@ export type FinAiTimelineBlock =
 			id: string;
 			type: "widget";
 			role: "assistant";
-			widget: FinWidget;
+			widget: StartupStateWidget;
 			runId?: string;
 			stepId?: string;
 	  }
@@ -64,7 +73,7 @@ export type FinAiTimelineBlock =
 			title?: string;
 			toolCallId?: string;
 			toolName?: string;
-			references: AgentReference[];
+			references: MessageReference[];
 			runId?: string;
 			stepId?: string;
 	  }
@@ -150,15 +159,15 @@ const TOOL_CALL_DISPLAY_MAP: Record<string, ToolDisplayConfig> = {
 	},
 };
 
-export function FinAiTimelineBlockRenderer({
+export function StartupStateAITimelineBlockRenderer({
 	block,
 }: {
-	block: FinAiTimelineBlock;
+	block: StartupStateAITimelineBlock;
 }) {
 	if (block.type === "widget") {
 		return (
 			<div className="min-w-0 max-w-[92%] flex-1">
-				<FinWidgetRenderer widget={block.widget} />
+				<StartupStateWidgetRenderer widget={block.widget} />
 			</div>
 		);
 	}
@@ -186,23 +195,19 @@ export function FinAiTimelineBlockRenderer({
 	return <MarkdownBlock block={block} />;
 }
 
-function referenceIcon(kind: AgentReference["kind"]): LucideIcon {
+function referenceIcon(kind: MessageReference["kind"]): LucideIcon {
 	switch (kind) {
 		case "resource":
 			return Sparkles;
 		case "company":
 			return Building2;
-		case "map_search":
-			return MapIcon;
-		case "resource_search":
-			return Search;
-		case "founder_intake":
-		case "founder_results":
+		case "url":
 			return Compass;
 	}
 }
 
-function isCustomerHref(href: string) {
+function isCustomerHref(href: string | null | undefined) {
+	if (!href) return false;
 	if (!href.startsWith("/")) return false;
 	return (
 		href === "/" ||
@@ -215,14 +220,15 @@ function isCustomerHref(href: string) {
 
 function useNavigateReference() {
 	const router = useRouter();
-	const { close } = useFinAiPanel();
+	const { close } = useStartupStateAIPanel();
 
-	return (reference: AgentReference) => {
+	return (reference: MessageReference) => {
+		if (!reference.href) return;
 		if (!isCustomerHref(reference.href)) return;
-		trackFinAi("agent_reference_clicked", {
+		trackStartupStateAI("agent_reference_clicked", {
 			kind: reference.kind,
 			toolName: reference.toolName,
-			hasSection: Boolean(reference.section),
+			hasSection: Boolean(reference.sourceField),
 		});
 		router.push(reference.href);
 		if (window.matchMedia("(max-width: 767px)").matches) close();
@@ -232,7 +238,7 @@ function useNavigateReference() {
 function ReferenceBlock({
 	block,
 }: {
-	block: Extract<FinAiTimelineBlock, { type: "references" }>;
+	block: Extract<StartupStateAITimelineBlock, { type: "references" }>;
 }) {
 	const navigateReference = useNavigateReference();
 	return (
@@ -290,8 +296,58 @@ function ReferenceBlock({
 	);
 }
 
+const REFERENCE_LINK_PREFIX = "#startup-state-reference:";
+const MISSING_REFERENCE_LINK_PREFIX = "#startup-state-reference-missing:";
+
+function prepareMarkdownReferences(
+	content: string,
+	references: MessageReference[] | undefined,
+) {
+	const lookup = createMessageReferenceLookup(references);
+	const citationNumberByKey = new Map<string, number>();
+	const referenceByCitationHref = new Map<
+		string,
+		{ index: number; reference?: MessageReference }
+	>();
+	let hasReferenceMarkers = false;
+	let nextCitationNumber = 1;
+
+	const markdown = parseMessageContentReferences(content)
+		.map((segment) => {
+			if (segment.type === "text") return segment.text;
+			hasReferenceMarkers = true;
+			const reference = lookup.get(segment.key);
+			if (!reference) {
+				const missingHref = `${MISSING_REFERENCE_LINK_PREFIX}${encodeURIComponent(segment.key)}`;
+				referenceByCitationHref.set(missingHref, { index: 0 });
+				return `[?](${missingHref})`;
+			}
+
+			const resolvedKey = getReferenceKey(reference.kind, reference.id);
+			const citationNumber =
+				citationNumberByKey.get(resolvedKey) ?? nextCitationNumber;
+			if (!citationNumberByKey.has(resolvedKey)) {
+				citationNumberByKey.set(resolvedKey, citationNumber);
+				nextCitationNumber += 1;
+			}
+			const citationHref = `${REFERENCE_LINK_PREFIX}${encodeURIComponent(resolvedKey)}`;
+			referenceByCitationHref.set(citationHref, {
+				index: citationNumber,
+				reference,
+			});
+			return `[${citationNumber}](${citationHref})`;
+		})
+		.join("");
+
+	return {
+		hasReferenceMarkers,
+		markdown,
+		referenceByCitationHref,
+	};
+}
+
 function RunStepBlock(_props: {
-	block: Extract<FinAiTimelineBlock, { type: "run_step" }>;
+	block: Extract<StartupStateAITimelineBlock, { type: "run_step" }>;
 }) {
 	return null;
 }
@@ -299,7 +355,7 @@ function RunStepBlock(_props: {
 function ToolCallBlock({
 	block,
 }: {
-	block: Extract<FinAiTimelineBlock, { type: "tool_call" }>;
+	block: Extract<StartupStateAITimelineBlock, { type: "tool_call" }>;
 }) {
 	const isRunning = block.status === "running";
 	const isFailed = block.summary?.startsWith("status=error") ?? false;
@@ -334,11 +390,16 @@ function ToolCallBlock({
 function MarkdownBlock({
 	block,
 }: {
-	block: Extract<FinAiTimelineBlock, { type: "markdown" }>;
+	block: Extract<StartupStateAITimelineBlock, { type: "markdown" }>;
 }) {
 	const isUser = block.role === "user";
 	const isError = block.tone === "error";
 	const router = useRouter();
+	const references = block.references ?? [];
+	const { hasReferenceMarkers, markdown, referenceByCitationHref } = useMemo(
+		() => prepareMarkdownReferences(block.content, references),
+		[block.content, references],
+	);
 
 	return (
 		<div className={cn("flex", isUser && "flex-row-reverse")}>
@@ -354,33 +415,50 @@ function MarkdownBlock({
 				{isUser || isError ? (
 					<div className="whitespace-pre-wrap break-words">{block.content}</div>
 				) : (
-					<div className="fin-ai-markdown break-words text-sm leading-6">
-						<ReactMarkdown
-							components={{
-								a: ({ children, href }) => {
-									if (href && isCustomerHref(href)) {
+					<div className="grid gap-2">
+						<div className="startup-state-ai-markdown break-words text-sm leading-6">
+							<ReactMarkdown
+								components={{
+									a: ({ children, href }) => {
+										if (href?.startsWith(REFERENCE_LINK_PREFIX)) {
+											const citation = referenceByCitationHref.get(href);
+											return (
+												<InlineReferenceBadge
+													index={citation?.index ?? 0}
+													reference={citation?.reference}
+												/>
+											);
+										}
+										if (href?.startsWith(MISSING_REFERENCE_LINK_PREFIX)) {
+											return <InlineReferenceBadge index={0} />;
+										}
+										if (href && isCustomerHref(href)) {
+											return (
+												<Button
+													className="h-auto p-0 align-baseline text-emerald-700 underline"
+													onClick={() => router.push(href)}
+													type="button"
+													variant="link"
+												>
+													{children}
+												</Button>
+											);
+										}
 										return (
-											<Button
-												className="h-auto p-0 align-baseline text-emerald-700 underline"
-												onClick={() => router.push(href)}
-												type="button"
-												variant="link"
-											>
+											<a href={href} rel="noreferrer" target="_blank">
 												{children}
-											</Button>
+											</a>
 										);
-									}
-									return (
-										<a href={href} rel="noreferrer" target="_blank">
-											{children}
-										</a>
-									);
-								},
-							}}
-							remarkPlugins={[remarkGfm]}
-						>
-							{block.content}
-						</ReactMarkdown>
+									},
+								}}
+								remarkPlugins={[remarkGfm]}
+							>
+								{markdown}
+							</ReactMarkdown>
+						</div>
+						{references.length > 0 && !hasReferenceMarkers ? (
+							<GroupedMessageReferences references={references} />
+						) : null}
 					</div>
 				)}
 			</div>

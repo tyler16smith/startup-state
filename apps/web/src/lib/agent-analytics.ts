@@ -2,7 +2,7 @@
 
 import { posthog } from "~/lib/posthog";
 
-type FinAiEvent =
+type StartupStateAIEvent =
 	| "agent_panel_opened"
 	| "agent_panel_closed"
 	| "agent_message_sent"
@@ -14,8 +14,8 @@ type FinAiEvent =
 	| "agent_acknowledgement_accepted"
 	| "agent_suggested_prompt_clicked";
 
-export function trackFinAi(
-	event: FinAiEvent,
+export function trackStartupStateAI(
+	event: StartupStateAIEvent,
 	properties: Record<string, unknown> = {},
 ) {
 	try {

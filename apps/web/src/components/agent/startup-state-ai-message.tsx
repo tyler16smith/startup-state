@@ -2,14 +2,18 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "~/lib/utils";
 
-export type FinAiChatMessage = {
+export type StartupStateAIChatMessage = {
 	id: string;
 	role: "user" | "assistant";
 	content: string;
 	tone?: "default" | "error";
 };
 
-export function FinAiMessage({ message }: { message: FinAiChatMessage }) {
+export function StartupStateAIMessage({
+	message,
+}: {
+	message: StartupStateAIChatMessage;
+}) {
 	const isUser = message.role === "user";
 	const isError = message.tone === "error";
 
@@ -34,7 +38,7 @@ export function FinAiMessage({ message }: { message: FinAiChatMessage }) {
 
 function MarkdownContent({ content }: { content: string }) {
 	return (
-		<div className="fin-ai-markdown break-words text-sm leading-6">
+		<div className="startup-state-ai-markdown break-words text-sm leading-6">
 			<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
 		</div>
 	);

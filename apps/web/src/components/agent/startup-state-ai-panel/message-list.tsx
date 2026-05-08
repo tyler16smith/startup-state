@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
-import { FinAiTimelineBlockRenderer } from "~/components/agent/fin-ai-timeline-block";
+import { StartupStateAITimelineBlockRenderer } from "~/components/agent/startup-state-ai-timeline-block";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { useFinAiMessageListState } from "./chat-store";
+import { useStartupStateAIMessageListState } from "./chat-store";
 import { suggestedPrompts } from "./utils";
 
 export function MessageList() {
-	const { blocks, selectSuggestedPrompt } = useFinAiMessageListState();
+	const { blocks, selectSuggestedPrompt } = useStartupStateAIMessageListState();
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll should fire on every new message/chunk
@@ -20,7 +20,7 @@ export function MessageList() {
 					<EmptyPromptList onSelectPrompt={selectSuggestedPrompt} />
 				) : (
 					blocks.map((block) => (
-						<FinAiTimelineBlockRenderer block={block} key={block.id} />
+						<StartupStateAITimelineBlockRenderer block={block} key={block.id} />
 					))
 				)}
 				<div ref={bottomRef} />

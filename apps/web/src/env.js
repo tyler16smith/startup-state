@@ -27,6 +27,7 @@ export const env = createEnv({
 		NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 		NEXT_PUBLIC_API_URL: z.string().optional(),
 		NEXT_PUBLIC_MAPBOX_TOKEN: z.string().optional(),
+		NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
 	},
 
 	runtimeEnv: {
@@ -44,6 +45,8 @@ export const env = createEnv({
 			process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 		NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
 		NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+		NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
+			process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
 		// Axiom
 		AXIOM_TOKEN: process.env.AXIOM_TOKEN,
 		AXIOM_DATASET: process.env.AXIOM_DATASET,

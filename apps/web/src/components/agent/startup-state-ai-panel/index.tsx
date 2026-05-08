@@ -1,17 +1,14 @@
 "use client";
 
-import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect } from "react";
 import { ChatComposer } from "./chat-composer";
 import { ChatHeader } from "./chat-header";
-import { useFinAiChatActions } from "./chat-store";
-import { FinAiComingSoonOverlay } from "./coming-soon-overlay";
+import { useStartupStateAIChatActions } from "./chat-store";
 import { MessageList } from "./message-list";
 
-export function FinAiPanel({ onClose }: { onClose: () => void }) {
-	const hasFinAiFlag = useFeatureFlagEnabled("fin-ai-agent");
+export function StartupStateAIPanel({ onClose }: { onClose: () => void }) {
 	const { abortActiveRun, loadStoredTimeline, refreshConversationList } =
-		useFinAiChatActions();
+		useStartupStateAIChatActions();
 
 	useEffect(() => {
 		void loadStoredTimeline();
@@ -21,15 +18,8 @@ export function FinAiPanel({ onClose }: { onClose: () => void }) {
 
 	return (
 		<section className="relative flex h-full min-h-0 w-full flex-col bg-background">
-			{!hasFinAiFlag && <FinAiComingSoonOverlay />}
 			<ChatHeader onClose={onClose} />
-			<div
-				className={
-					hasFinAiFlag
-						? "flex min-h-0 flex-1 flex-col"
-						: "pointer-events-none flex min-h-0 flex-1 flex-col blur-sm"
-				}
-			>
+			<div className="flex min-h-0 flex-1 flex-col">
 				<MessageList />
 				<ChatComposer />
 			</div>

@@ -136,77 +136,77 @@
 }
 
 /* Agent markdown rendering */
-.fin-ai-markdown > * + * {
+.startup-state-ai-markdown > * + * {
 	margin-top: 0.5rem;
 }
-.fin-ai-markdown p {
+.startup-state-ai-markdown p {
 	white-space: pre-wrap;
 }
-.fin-ai-markdown h1,
-.fin-ai-markdown h2,
-.fin-ai-markdown h3,
-.fin-ai-markdown h4 {
+.startup-state-ai-markdown h1,
+.startup-state-ai-markdown h2,
+.startup-state-ai-markdown h3,
+.startup-state-ai-markdown h4 {
 	font-weight: 600;
 	line-height: 1.3;
 	margin-top: 0.75rem;
 }
-.fin-ai-markdown h1 {
+.startup-state-ai-markdown h1 {
 	font-size: 1rem;
 }
-.fin-ai-markdown h2,
-.fin-ai-markdown h3,
-.fin-ai-markdown h4 {
+.startup-state-ai-markdown h2,
+.startup-state-ai-markdown h3,
+.startup-state-ai-markdown h4 {
 	font-size: 0.875rem;
 }
-.fin-ai-markdown ul,
-.fin-ai-markdown ol {
+.startup-state-ai-markdown ul,
+.startup-state-ai-markdown ol {
 	padding-left: 1.25rem;
 }
-.fin-ai-markdown ul {
+.startup-state-ai-markdown ul {
 	list-style: disc;
 }
-.fin-ai-markdown ol {
+.startup-state-ai-markdown ol {
 	list-style: decimal;
 }
-.fin-ai-markdown li + li {
+.startup-state-ai-markdown li + li {
 	margin-top: 0.125rem;
 }
-.fin-ai-markdown blockquote {
+.startup-state-ai-markdown blockquote {
 	border-left: 2px solid hsl(var(--muted-foreground) / 0.4);
 	padding-left: 0.75rem;
 	color: hsl(var(--muted-foreground));
 }
-.fin-ai-markdown code {
+.startup-state-ai-markdown code {
 	background-color: hsl(var(--muted));
 	border-radius: 0.25rem;
 	padding: 0.05rem 0.3rem;
 	font-size: 0.85em;
 }
-.fin-ai-markdown pre {
+.startup-state-ai-markdown pre {
 	background-color: hsl(var(--muted));
 	border-radius: 0.375rem;
 	padding: 0.75rem;
 	overflow-x: auto;
 	font-size: 0.75rem;
 }
-.fin-ai-markdown pre code {
+.startup-state-ai-markdown pre code {
 	background-color: transparent;
 	padding: 0;
 }
-.fin-ai-markdown a {
+.startup-state-ai-markdown a {
 	color: hsl(var(--primary));
 	text-decoration: underline;
 }
-.fin-ai-markdown strong {
+.startup-state-ai-markdown strong {
 	font-weight: 600;
 }
-.fin-ai-markdown table {
+.startup-state-ai-markdown table {
 	border-collapse: collapse;
 	width: 100%;
 	font-size: 0.8125rem;
 }
-.fin-ai-markdown th,
-.fin-ai-markdown td {
+.startup-state-ai-markdown th,
+.startup-state-ai-markdown td {
 	border: 1px solid hsl(var(--border));
 	padding: 0.25rem 0.5rem;
 	text-align: left;

@@ -12,6 +12,7 @@ import {
 import type { McpAuthContext } from "~/auth/types";
 import { checkRateLimit } from "~/rate-limit/rate-limit";
 import { getProfileTool } from "./profile";
+import { getSupportDocumentationTool } from "./support-documentation";
 import {
 	type McpToolImplementation,
 	type McpToolResult,
@@ -25,6 +26,7 @@ export class McpToolError extends Error {
 
 const implementations: Record<McpToolName, McpToolImplementation> = {
 	"mcp.get_profile": getProfileTool,
+	"mcp.get_support_documentation": getSupportDocumentationTool,
 };
 
 export function getRegisteredTools(): McpToolImplementation[] {

@@ -3,6 +3,8 @@
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
+import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 import { StartupSidebar } from "~/components/startup/startup-sidebar";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "~/components/ui/sheet";
@@ -46,9 +48,9 @@ export function StartupLayoutShell({
 				<span className="font-semibold text-sm">Startup State Navigator</span>
 			</div>
 			<StartupSidebar className="hidden md:flex" />
-			<div className="flex min-h-0 flex-1 flex-col overflow-auto">
-				{children}
-			</div>
+			<StartupStateAIPanelProvider>
+				<StartupStateAIWorkspace>{children}</StartupStateAIWorkspace>
+			</StartupStateAIPanelProvider>
 		</div>
 	);
 }
