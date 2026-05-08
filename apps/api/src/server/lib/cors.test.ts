@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe("API CORS policy", () => {
-	it("does not allow production browser origins without configuration", () => {
+	it("allows first-party production browser origins without configuration", () => {
 		setEnv({
 			CORS_ORIGINS: undefined,
 			NEXT_PUBLIC_WEB_URL: undefined,
@@ -56,7 +56,10 @@ describe("API CORS policy", () => {
 			WEB_ORIGIN: undefined,
 		});
 
-		assert.deepEqual(getAllowedOrigins(), []);
+		assert.deepEqual(getAllowedOrigins(), [
+			"https://startupstateutah.com",
+			"https://www.startupstateutah.com",
+		]);
 	});
 
 	it("sets credentialed CORS headers for a configured production app origin", () => {
@@ -112,6 +115,29 @@ describe("API CORS policy", () => {
 				),
 			/Origin not allowed/,
 		);
+	});
+
+	it("sets credentialed CORS headers for the first-party production origin", () => {
+		setEnv({
+			CORS_ORIGINS: undefined,
+			NEXT_PUBLIC_WEB_URL: undefined,
+			NODE_ENV: "production",
+			WEB_ORIGIN: undefined,
+		});
+		const origin = "https://startupstateutah.com";
+		const request = { headers: { origin } };
+		const { headers, response } = createMockResponse();
+
+		const result = applyCorsHeaders(
+			request as Parameters<typeof applyCorsHeaders>[0],
+			response as Parameters<typeof applyCorsHeaders>[1],
+			"POST,OPTIONS",
+		);
+
+		assert.equal(result.isAllowedOrigin, true);
+		assert.equal(headers.get("access-control-allow-origin"), origin);
+		assert.equal(headers.get("access-control-allow-credentials"), "true");
+		assert.equal(headers.get("access-control-allow-methods"), "POST,OPTIONS");
 	});
 
 	it("adds localhost variants outside production", () => {

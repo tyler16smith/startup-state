@@ -62,12 +62,14 @@ export function ResourceCard({
 	}
 
 	return (
-		<article className="flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+		<article className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
 			<div className="flex items-start justify-between gap-3">
-				<div>
+				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">
 						{primaryTopic && (
-							<Badge className="rounded-md">{primaryTopic}</Badge>
+							<Badge className="max-w-full whitespace-normal rounded-md text-left break-words">
+								{primaryTopic}
+							</Badge>
 						)}
 						{typeof score === "number" && (
 							<Badge className="rounded-md bg-emerald-600 text-white">
@@ -76,7 +78,7 @@ export function ResourceCard({
 						)}
 					</div>
 					<Link href={`/resources/${resource.id}`}>
-						<h3 className="mt-3 truncate font-semibold text-xl leading-tight hover:text-emerald-700">
+						<h3 className="mt-3 line-clamp-2 font-semibold text-xl leading-tight break-words hover:text-emerald-700">
 							{resource.name}
 						</h3>
 					</Link>
@@ -126,12 +128,12 @@ export function ResourceCard({
 				<TaxonomyRow items={goals} label="Topics" />
 			</div>
 			{resource.contactEmail && (
-				<p className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
+				<p className="mt-4 flex min-w-0 items-center gap-2 text-muted-foreground text-sm break-all">
 					<Mail className="size-4" />
 					{resource.contactEmail}
 				</p>
 			)}
-			<div className="mt-auto flex items-center justify-between gap-3 pt-5">
+			<div className="mt-auto flex flex-col items-start justify-between gap-3 pt-5 sm:flex-row sm:items-center">
 				<span className="text-muted-foreground text-xs">
 					Updated {updatedLabel}
 				</span>

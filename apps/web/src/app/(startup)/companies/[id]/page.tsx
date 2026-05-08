@@ -28,6 +28,7 @@ export default async function CompanyProfilePage({
 	const photos = company.photos.length
 		? company.photos
 		: [{ url: "", altText: company.name }];
+	const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 			<section
@@ -137,11 +138,7 @@ export default async function CompanyProfilePage({
 					id="company-map"
 				>
 					<h2 className="font-semibold text-2xl">Map preview</h2>
-					<div className="mt-4 flex aspect-square items-center justify-center rounded-lg bg-slate-100 text-center text-muted-foreground text-sm">
-						{company.latitude && company.longitude
-							? `${company.latitude}, ${company.longitude}`
-							: "Coordinates not available yet"}
-					</div>
+					<CompanyMapPreview company={company} mapToken={mapToken} />
 				</div>
 			</section>
 			{company.related?.length ? (
@@ -155,6 +152,54 @@ export default async function CompanyProfilePage({
 				</section>
 			) : null}
 		</main>
+	);
+}
+
+function CompanyMapPreview({
+	company,
+	mapToken,
+}: {
+	company: Company;
+	mapToken?: string;
+}) {
+	const latitude = company.latitude;
+	const longitude = company.longitude;
+	const hasCoordinates =
+		typeof latitude === "number" && typeof longitude === "number";
+
+	if (!hasCoordinates) {
+		return (
+			<div className="mt-4 flex aspect-square items-center justify-center rounded-lg bg-slate-100 px-4 text-center text-muted-foreground text-sm">
+				Map location not available yet
+			</div>
+		);
+	}
+
+	if (!mapToken) {
+		return (
+			<div className="mt-4 flex aspect-square items-center justify-center rounded-lg bg-slate-100 px-4 text-center text-muted-foreground text-sm">
+				Map unavailable
+			</div>
+		);
+	}
+
+	const marker = `pin-s+059669(${longitude},${latitude})`;
+	const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${marker}/${longitude},${latitude},12,0/640x640@2x?access_token=${encodeURIComponent(
+		mapToken,
+	)}`;
+	const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+	return (
+		<a
+			aria-label={`Open ${company.name} in maps`}
+			className="mt-4 block aspect-square overflow-hidden rounded-lg border bg-slate-100 bg-cover bg-center transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-700 focus-visible:outline-offset-2"
+			href={directionsUrl}
+			rel="noreferrer"
+			style={{ backgroundImage: `url("${imageUrl}")` }}
+			target="_blank"
+		>
+			<span className="sr-only">Map preview for {company.name}</span>
+		</a>
 	);
 }
 

@@ -32,7 +32,7 @@ export function ResourceDirectoryResults({
 			<section
 				aria-busy={isUpdating}
 				aria-label="Resource results"
-				className="relative"
+				className="relative min-w-0"
 			>
 				<p className="sr-only" role="status">
 					{isUpdating
@@ -40,7 +40,7 @@ export function ResourceDirectoryResults({
 						: `${resultCount} ${resultCount === 1 ? "resource" : "resources"} found.`}
 				</p>
 				{resources.items.length ? (
-					<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+					<div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 						{resources.items.map((resource) => (
 							<ResourceCard key={resource.id} resource={resource} />
 						))}

@@ -11,14 +11,18 @@ export function TagList({
 	const remaining = items.filter(Boolean).length - visible.length;
 	if (!visible.length) return null;
 	return (
-		<div className="flex flex-wrap gap-1.5">
+		<div className="flex min-w-0 flex-wrap gap-1.5">
 			{visible.map((item) => (
-				<Badge className="rounded-md" key={item} variant="secondary">
+				<Badge
+					className="max-w-full whitespace-normal rounded-md text-left break-words"
+					key={item}
+					variant="secondary"
+				>
 					{item.replace(/_/g, " ")}
 				</Badge>
 			))}
 			{remaining > 0 && (
-				<Badge className="rounded-md" variant="outline">
+				<Badge className="max-w-full rounded-md" variant="outline">
 					+{remaining} more
 				</Badge>
 			)}

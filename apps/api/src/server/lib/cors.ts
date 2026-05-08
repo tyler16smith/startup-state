@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const PRODUCTION_WEB_ORIGINS: string[] = [];
+const PRODUCTION_WEB_ORIGINS = [
+	"https://startupstateutah.com",
+	"https://www.startupstateutah.com",
+];
 
 const LOCAL_WEB_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 

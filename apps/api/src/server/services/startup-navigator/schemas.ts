@@ -103,6 +103,7 @@ export const founderProfileInputSchema = z.object({
 	goals: arrayInput,
 	businessTypes: arrayInput,
 	fundingNeeds: arrayInput,
+	founderIdentities: arrayInput,
 	hiringStatus: z.string().optional(),
 	keywords: z.string().optional(),
 });

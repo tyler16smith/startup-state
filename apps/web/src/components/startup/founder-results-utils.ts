@@ -53,6 +53,7 @@ export function normalizeFounderProfile(
 		goals: stringArray(value.goals),
 		businessTypes: stringArray(value.businessTypes),
 		fundingNeeds: stringArray(value.fundingNeeds),
+		founderIdentities: stringArray(value.founderIdentities),
 		hiringStatus:
 			typeof value.hiringStatus === "string" ? value.hiringStatus : undefined,
 		keywords: typeof value.keywords === "string" ? value.keywords : undefined,
@@ -122,7 +123,11 @@ function isSameFounderProfile(
 		sameStringArray(left.sectors, right.sectors) &&
 		sameStringArray(left.goals, right.goals) &&
 		sameStringArray(left.businessTypes, right.businessTypes) &&
-		sameStringArray(left.fundingNeeds, right.fundingNeeds)
+		sameStringArray(left.fundingNeeds, right.fundingNeeds) &&
+		sameStringArray(
+			left.founderIdentities ?? [],
+			right.founderIdentities ?? [],
+		)
 	);
 }
 

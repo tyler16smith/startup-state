@@ -146,7 +146,7 @@ export function ResourceFilterPanel({
 	}
 
 	return (
-		<div className="mb-6 space-y-3 rounded-lg border bg-white p-4 shadow-sm">
+		<div className="mb-6 min-w-0 space-y-3 rounded-lg border bg-white p-4 shadow-sm">
 			<div className="grid gap-3 lg:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))]">
 				<form className="relative" onSubmit={submitSearch}>
 					<Label className="sr-only" htmlFor="resource-search">
@@ -222,7 +222,7 @@ function FilterDropdown({
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				<Button className="justify-between" type="button" variant="outline">
+				<Button className="min-w-0 justify-between" type="button" variant="outline">
 					<span className="truncate">
 						{label}
 						{selected.length ? ` (${selected.length})` : ""}
@@ -267,11 +267,11 @@ function FilterChip({
 }) {
 	return (
 		<Badge
-			className="rounded-md border-border bg-slate-50 text-foreground"
+			className="max-w-full rounded-md border-border bg-slate-50 text-foreground"
 			variant="outline"
 		>
 			<span className="text-muted-foreground">{label}</span>
-			{value}
+			<span className="min-w-0 break-words">{value}</span>
 			<button aria-label={`Remove ${value}`} onClick={onRemove} type="button">
 				<X className="size-3" />
 			</button>

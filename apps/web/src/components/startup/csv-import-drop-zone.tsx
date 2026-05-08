@@ -4,6 +4,7 @@ import { Loader2, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "~/lib/startup-api";
+import { cn } from "~/lib/utils";
 
 type CsvImportResult = {
 	imported: number;
@@ -38,10 +39,14 @@ export function PageDropOverlay() {
 }
 
 export function CsvImportDropZone({
+	buttonClassName,
+	className,
 	endpoint,
 	inputId,
 	title,
 }: {
+	buttonClassName?: string;
+	className?: string;
 	endpoint: string;
 	inputId: string;
 	title: string;
@@ -136,7 +141,7 @@ export function CsvImportDropZone({
 	}, []);
 
 	return (
-		<div className="mb-6 space-y-2">
+		<div className={cn("mb-6 space-y-2", className)}>
 			{isPageDragOver && state === "idle" && <PageDropOverlay />}
 			<input
 				accept=".csv,text/csv"
@@ -151,7 +156,10 @@ export function CsvImportDropZone({
 				type="file"
 			/>
 			<button
-				className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 border-dashed bg-emerald-50 px-4 font-medium text-emerald-800 text-sm transition-colors hover:border-emerald-500 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-70"
+				className={cn(
+					"flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 border-dashed bg-emerald-50 px-4 font-medium text-emerald-800 text-sm transition-colors hover:border-emerald-500 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-70",
+					buttonClassName,
+				)}
 				disabled={state === "uploading"}
 				onClick={() => fileInputRef.current?.click()}
 				type="button"

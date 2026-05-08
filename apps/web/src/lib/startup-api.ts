@@ -100,6 +100,7 @@ export type ResourceRecommendation = {
 		sectors?: string[];
 		regions?: string[];
 		businessTypes?: string[];
+		founderIdentities?: string[];
 	};
 };
 

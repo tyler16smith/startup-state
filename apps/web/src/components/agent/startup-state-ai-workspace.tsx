@@ -34,7 +34,7 @@ export function StartupStateAIWorkspace({ children }: { children: ReactNode }) {
 		<div className="relative flex min-w-0 flex-1 overflow-hidden">
 			<div className="relative flex min-w-0 flex-1 flex-col overflow-auto">
 				{isOpen ? null : (
-					<div className="pointer-events-none absolute top-3 right-3 z-30">
+					<div className="pointer-events-none absolute top-3 right-3 z-30 hidden md:block">
 						<Button
 							className="pointer-events-auto shadow-md shadow-white"
 							onClick={toggle}

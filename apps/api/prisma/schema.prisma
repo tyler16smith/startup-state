@@ -140,6 +140,7 @@ model FounderProfile {
   goals         String[] @default([])
   businessTypes String[] @default([])
   fundingNeeds  String[] @default([])
+  founderIdentities String[] @default([])
   hiringStatus  String?
 
   createdAt DateTime @default(now())

@@ -1,3 +1,4 @@
+import { AdminCreatePageHeader } from "~/components/startup/admin-create-page-header";
 import { CsvImportDropZone } from "~/components/startup/csv-import-drop-zone";
 import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import { ResourceForm } from "~/components/startup/resource-form";
@@ -15,14 +16,12 @@ export default async function NewResourcePage() {
 					{ label: "Create resource" },
 				]}
 			/>
-			<CsvImportDropZone
+			<AdminCreatePageHeader
 				endpoint="/api/v1/resources/import"
 				inputId="resource-csv-import-drop-zone"
-				title="Upload resources CSV"
+				title="Create resource"
+				uploadTitle="Upload resources CSV"
 			/>
-			<h1 className="mb-8 font-semibold text-4xl tracking-normal">
-				Create resource
-			</h1>
 			<ResourceForm showPreview taxonomy={taxonomy} />
 		</main>
 	);

@@ -1,9 +1,12 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
+import {
+	StartupStateAIPanelProvider,
+	useStartupStateAIPanel,
+} from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 import { StartupSidebar } from "~/components/startup/startup-sidebar";
 import { Button } from "~/components/ui/button";
@@ -40,20 +43,23 @@ export function StartupLayoutShell({
 	}
 
 	return (
-		<div className="flex h-screen flex-col bg-gray-50 text-slate-950 md:flex-row">
-			<a
-				className="sr-only z-[100] rounded-md bg-white px-3 py-2 font-medium text-slate-950 shadow focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-				href="#startup-main-content"
-			>
-				Skip to content
-			</a>
-			<div className="flex h-12 shrink-0 items-center gap-3 border-slate-200 border-b bg-gray-50 px-4 md:hidden">
-				<MobileNavigationSheet onOpenChange={setOpen} open={open} />
-				<span className="font-semibold text-sm">Startup State Navigator</span>
-			</div>
-			<StartupSidebar className="hidden md:flex" />
-			<Suspense>
-				<StartupStateAIPanelProvider>
+		<Suspense>
+			<StartupStateAIPanelProvider>
+				<div className="flex h-screen flex-col bg-gray-50 text-slate-950 md:flex-row">
+					<a
+						className="sr-only z-[100] rounded-md bg-white px-3 py-2 font-medium text-slate-950 shadow focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+						href="#startup-main-content"
+					>
+						Skip to content
+					</a>
+					<div className="flex h-12 shrink-0 items-center gap-3 border-slate-200 border-b bg-gray-50 px-4 md:hidden">
+						<MobileNavigationSheet onOpenChange={setOpen} open={open} />
+						<span className="min-w-0 truncate font-semibold text-sm">
+							Startup State Navigator
+						</span>
+						<MobileAgentButton />
+					</div>
+					<StartupSidebar className="hidden md:flex" />
 					<StartupStateAIWorkspace>
 						<div
 							className="h-full min-h-full"
@@ -63,9 +69,28 @@ export function StartupLayoutShell({
 							{children}
 						</div>
 					</StartupStateAIWorkspace>
-				</StartupStateAIPanelProvider>
-			</Suspense>
-		</div>
+				</div>
+			</StartupStateAIPanelProvider>
+		</Suspense>
+	);
+}
+
+function MobileAgentButton() {
+	const { isOpen, toggle } = useStartupStateAIPanel();
+
+	return (
+		<Button
+			aria-label={isOpen ? "Close Agent" : "Open Agent"}
+			aria-pressed={isOpen}
+			className="ml-auto shrink-0"
+			onClick={toggle}
+			size="sm"
+			type="button"
+			variant={isOpen ? "default" : "outline"}
+		>
+			<Sparkles className="size-4" />
+			Agent
+		</Button>
 	);
 }
 

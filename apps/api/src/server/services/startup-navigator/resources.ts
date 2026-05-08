@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
+import OpenAI from "openai";
 import Papa from "papaparse";
-import type { z } from "zod";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { logger } from "~/lib/logger";
 import { createApiError } from "~/server/api-context";
 import type { Prisma, PrismaClient } from "../../../../generated/prisma";
@@ -24,9 +26,38 @@ type Db = PrismaClient;
 type ResourceWithSaved = Prisma.ResourceGetPayload<{
 	include: { savedBy: true };
 }>;
+type FounderProfileInput = z.infer<typeof founderProfileInputSchema>;
 
 const CSV_IMPORT_SOURCE = "csv_upload";
 const IMPORT_SESSION_TTL_MS = 30 * 60 * 1000;
+
+const founderRankedResourceSchema = z.object({
+	recommendations: z
+		.array(
+			z.object({
+				resourceId: z.string().min(1),
+				why: z.string().min(10).max(500),
+				score: z.number().min(0).max(100).optional(),
+			}),
+		)
+		.min(1)
+		.max(12),
+});
+
+const founderRankedResourceJsonSchema = zodToJsonSchema(
+	founderRankedResourceSchema,
+	"FounderResourceRecommendations",
+);
+
+let openaiClient: OpenAI | undefined;
+
+function getOpenAIClient() {
+	if (openaiClient) return openaiClient;
+	const apiKey = process.env.OPENAI_API_KEY;
+	if (!apiKey) return undefined;
+	openaiClient = new OpenAI({ apiKey });
+	return openaiClient;
+}
 
 function savedCount(item: unknown) {
 	const savedBy = (item as { savedBy?: unknown[] }).savedBy;
@@ -55,6 +86,14 @@ function uniqueValues(values: string[]) {
 
 function filterValues(...values: (string[] | undefined)[]) {
 	return uniqueValues(values.flatMap((items) => items ?? []));
+}
+
+function listText(values: string[]) {
+	return values.length ? values.join(", ") : "any";
+}
+
+function clampScore(score: number) {
+	return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 function firstFilterValue(values: string[] | undefined) {
@@ -432,7 +471,7 @@ function intersect(source: string[], target: string[]) {
 }
 
 function founderSemanticQuery(
-	profile: z.infer<typeof founderProfileInputSchema>,
+	profile: FounderProfileInput,
 ) {
 	return [
 		profile.keywords,
@@ -447,6 +486,9 @@ function founderSemanticQuery(
 			: null,
 		profile.businessTypes.length
 			? `Business types: ${profile.businessTypes.join(", ")}`
+			: null,
+		profile.founderIdentities.length
+			? `Founder identities and eligibility: ${profile.founderIdentities.join(", ")}`
 			: null,
 	]
 		.filter(Boolean)
@@ -468,6 +510,10 @@ function scoreResource(resource: ResourceWithSaved, profile: unknown) {
 		resource.businessTypes,
 		input.businessTypes,
 	);
+	const matchedFounderIdentities = intersect(
+		resource.eligibilityTags,
+		input.founderIdentities,
+	);
 	const stageMatch = Boolean(
 		input.stage && normalizeSet(resource.stages).has(input.stage.toLowerCase()),
 	);
@@ -485,6 +531,7 @@ function scoreResource(resource: ResourceWithSaved, profile: unknown) {
 		(matchedSectors.length > 0 ? 15 : 0) +
 		(matchedRegions.length > 0 ? 15 : 0) +
 		(matchedBusinessTypes.length > 0 ? 10 : 0) +
+		(matchedFounderIdentities.length > 0 ? 12 : 0) +
 		(keywordMatch ? 5 : 0);
 
 	const reasons = [
@@ -502,6 +549,9 @@ function scoreResource(resource: ResourceWithSaved, profile: unknown) {
 			: null,
 		matchedBusinessTypes.length
 			? `Matches ${matchedBusinessTypes.slice(0, 2).join(", ")} businesses.`
+			: null,
+		matchedFounderIdentities.length
+			? `Matches eligibility for ${matchedFounderIdentities.slice(0, 2).join(", ")}.`
 			: null,
 		keywordMatch ? "Matches your search language." : null,
 	].filter(Boolean) as string[];
@@ -522,8 +572,111 @@ function scoreResource(resource: ResourceWithSaved, profile: unknown) {
 			sectors: matchedSectors,
 			regions: matchedRegions,
 			businessTypes: matchedBusinessTypes,
+			founderIdentities: matchedFounderIdentities,
 		},
 	};
+}
+
+type ScoredResourceRecommendation = ReturnType<typeof scoreResource>;
+
+function resourcePromptPayload(recommendations: ScoredResourceRecommendation[]) {
+	return recommendations.map((recommendation) => ({
+		id: recommendation.resource.id,
+		name: recommendation.resource.name,
+		description:
+			recommendation.resource.shortDescription ?? recommendation.resource.description,
+		category: recommendation.resource.category,
+		subcategory: recommendation.resource.subcategory,
+		stages: recommendation.resource.stages,
+		communities: recommendation.resource.communities,
+		sectors: recommendation.resource.sectors,
+		goals: recommendation.resource.goals,
+		regions: recommendation.resource.regions,
+		businessTypes: recommendation.resource.businessTypes,
+		eligibilityTags: recommendation.resource.eligibilityTags,
+		city: recommendation.resource.city,
+		county: recommendation.resource.county,
+		state: recommendation.resource.state,
+		algorithmicScore: clampScore(recommendation.score),
+		algorithmicReasons: recommendation.reasons,
+	}));
+}
+
+async function rankFounderResourcesWithLlm(input: {
+	profile: FounderProfileInput;
+	candidates: ScoredResourceRecommendation[];
+}) {
+	const client = getOpenAIClient();
+	if (!client) {
+		throw createApiError(
+			"OPENAI_API_KEY is required for founder recommendation personalization",
+			501,
+		);
+	}
+
+	const model = process.env.OPENAI_CHAT_MODEL ?? "gpt-4o-mini";
+	const systemPrompt = [
+		"You rank Utah startup resources for a founder action-plan workflow.",
+		"Return only JSON that matches the supplied schema.",
+		"Choose up to twelve resources from the candidate list by id.",
+		"Each why must be one concise sentence written directly to the founder as a personalized answer.",
+		"Ground every why only in the supplied founder profile and resource data.",
+		"Treat 'None of these' and 'Prefer not to say' founder identities as neutral signals and do not infer sensitive traits.",
+	].join(" ");
+	const userPrompt = JSON.stringify({
+		founderProfile: {
+			stage: input.profile.stage,
+			city: input.profile.city,
+			county: input.profile.county,
+			region: input.profile.region,
+			sectors: listText(input.profile.sectors),
+			goals: listText(input.profile.goals),
+			businessTypes: listText(input.profile.businessTypes),
+			fundingNeeds: listText(input.profile.fundingNeeds),
+			founderIdentities: listText(input.profile.founderIdentities),
+			hiringStatus: input.profile.hiringStatus,
+			keywords: input.profile.keywords,
+		},
+		jsonSchema: founderRankedResourceJsonSchema,
+		candidateResources: resourcePromptPayload(input.candidates),
+	});
+
+	let lastError: string | undefined;
+	for (let attempt = 1; attempt <= 3; attempt += 1) {
+		try {
+			const response = await client.chat.completions.create({
+				model,
+				messages: [
+					{ role: "system", content: systemPrompt },
+					{
+						role: "user",
+						content:
+							attempt === 1
+								? userPrompt
+								: `${userPrompt}\n\nPrevious JSON failed validation: ${lastError}. Return repaired JSON only.`,
+					},
+				],
+				response_format: { type: "json_object" },
+				temperature: 0.2,
+			});
+			const content = response.choices.at(0)?.message.content;
+			if (!content) throw new Error("LLM returned no content");
+			const parsedJson = JSON.parse(content) as unknown;
+			const parsed = founderRankedResourceSchema.safeParse(parsedJson);
+			if (parsed.success) return parsed.data;
+			lastError = parsed.error.message;
+		} catch (error) {
+			lastError = error instanceof Error ? error.message : String(error);
+			logger.warn("Founder recommendation ranking attempt failed", {
+				feature: "startup-navigator",
+				operation: "founderRecommend",
+				attempt,
+				error: lastError,
+			});
+		}
+	}
+
+	throw createApiError("Founder recommendations could not be personalized", 502);
 }
 
 export async function recommendResourcesForFounderProfile(
@@ -577,9 +730,44 @@ export async function recommendResourcesForFounderProfile(
 				right.score - left.score ||
 				left.resource.name.localeCompare(right.resource.name),
 		);
+		const candidatePool = recommendations.slice(0, 20);
+
+		if (candidatePool.length === 0) {
+			return { recommendations: [], profile };
+		}
+
+		const ranked = await rankFounderResourcesWithLlm({
+			profile,
+			candidates: candidatePool,
+		});
+		const recommendationsById = new Map(
+			candidatePool.map((recommendation) => [
+				recommendation.resource.id,
+				recommendation,
+			]),
+		);
+		const personalizedRecommendations = ranked.recommendations.flatMap(
+			(recommendation) => {
+				const baseRecommendation = recommendationsById.get(
+					recommendation.resourceId,
+				);
+				if (!baseRecommendation) return [];
+				return [
+					{
+						...baseRecommendation,
+						score: clampScore(recommendation.score ?? baseRecommendation.score),
+						reasons: [recommendation.why],
+					},
+				];
+			},
+		);
+
+		if (personalizedRecommendations.length === 0) {
+			throw createApiError("Founder recommendations could not be personalized", 502);
+		}
 
 	return {
-		recommendations: recommendations.slice(0, 12),
+			recommendations: personalizedRecommendations,
 		profile,
 	};
 }
