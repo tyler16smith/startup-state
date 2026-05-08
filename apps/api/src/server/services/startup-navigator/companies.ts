@@ -9,7 +9,7 @@ import {
 	companyQuerySchema,
 	csvImportSchema,
 } from "./schemas";
-import { createUniqueSlug } from "./slug";
+import { createUniqueSlug, slugify } from "./slug";
 
 type Db = PrismaClient;
 
@@ -397,56 +397,100 @@ export async function getAdminSummary(db: Db) {
 	};
 }
 
+function normalizeCsvRow(
+	row: Record<string, unknown>,
+): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]),
+	);
+}
+
 function pickCsvValue(row: Record<string, unknown>, names: string[]) {
+	const normalized = normalizeCsvRow(row);
 	for (const name of names) {
-		const value = row[name] ?? row[name.toLowerCase()];
+		const value = normalized[name.trim().toLowerCase()];
 		if (typeof value === "string" && value.trim()) return value.trim();
 	}
 	return undefined;
+}
+
+function hasCsvRowValue(row: Record<string, unknown>) {
+	return Object.values(row).some((value) => {
+		if (typeof value === "string") return Boolean(value.trim());
+		return value !== null && value !== undefined;
+	});
+}
+
+function normalizeUrl(value: string | undefined): string | undefined {
+	if (!value) return undefined;
+	if (/^https?:\/\//i.test(value)) return value;
+	return `https://${value}`;
+}
+
+function parseRowToCompanyData(row: Record<string, unknown>) {
+	const photos = asArray(pickCsvValue(row, ["photos", "photo urls"])).map(
+		(url, sortOrder) => ({ url, sortOrder }),
+	);
+	return companyInputSchema.parse({
+		name: pickCsvValue(row, ["name", "Name", "Startup Name"]),
+		websiteUrl: normalizeUrl(
+			pickCsvValue(row, ["website", "websiteUrl", "url", "Website"]),
+		),
+		employees: pickCsvValue(row, ["employees"]),
+		employeeRange: pickCsvValue(row, [
+			"employee range",
+			"employeeRange",
+			"# of Employees",
+			"Number of Employees",
+		]),
+		sector: pickCsvValue(row, ["sector", "Section"]),
+		stage: pickCsvValue(row, ["stage", "Stage"]),
+		yearFounded: pickCsvValue(row, ["year founded", "yearFounded"]),
+		linkedinUrl: normalizeUrl(
+			pickCsvValue(row, [
+				"linkedin",
+				"linkedinUrl",
+				"LinkedIn Link",
+				"LinkedIn URL",
+			]),
+		),
+		description: pickCsvValue(row, [
+			"description",
+			"Description of startup",
+			"Description",
+		]),
+		address: pickCsvValue(row, ["address", "Full Address"]),
+		city: pickCsvValue(row, ["city"]),
+		county: pickCsvValue(row, ["county"]),
+		state: pickCsvValue(row, ["state"]),
+		postalCode: pickCsvValue(row, ["postal code", "postalCode"]),
+		latitude: pickCsvValue(row, ["latitude"]),
+		longitude: pickCsvValue(row, ["longitude"]),
+		hiringStatus:
+			pickCsvValue(row, ["hiring status", "hiringStatus"]) ?? "UNKNOWN",
+		jobPostingsUrl: normalizeUrl(
+			pickCsvValue(row, ["job postings", "jobPostingsUrl"]),
+		),
+		photos,
+	});
 }
 
 export async function importCompaniesFromCsv(db: Db, input: unknown) {
 	const { csv } = csvImportSchema.parse(input);
 	const parsed = Papa.parse<Record<string, unknown>>(csv, {
 		header: true,
-		skipEmptyLines: true,
+		skipEmptyLines: "greedy",
 	});
 
-	let imported = 0;
 	const errors: string[] = [];
+	type ParsedRow = ReturnType<typeof parseRowToCompanyData>;
+	const validRows: ParsedRow[] = [];
 
 	for (const [index, row] of parsed.data.entries()) {
+		if (!hasCsvRowValue(row)) continue;
+
 		try {
-			const photos = asArray(pickCsvValue(row, ["photos", "photo urls"])).map(
-				(url, sortOrder) => ({ url, sortOrder }),
-			);
-			await createCompany(
-				db,
-				{
-					name: pickCsvValue(row, ["name", "Name"]),
-					websiteUrl: pickCsvValue(row, ["website", "websiteUrl", "url"]),
-					employees: pickCsvValue(row, ["employees"]),
-					employeeRange: pickCsvValue(row, ["employee range", "employeeRange"]),
-					sector: pickCsvValue(row, ["sector"]),
-					stage: pickCsvValue(row, ["stage"]),
-					yearFounded: pickCsvValue(row, ["year founded", "yearFounded"]),
-					linkedinUrl: pickCsvValue(row, ["linkedin", "linkedinUrl"]),
-					description: pickCsvValue(row, ["description"]),
-					address: pickCsvValue(row, ["address"]),
-					city: pickCsvValue(row, ["city"]),
-					county: pickCsvValue(row, ["county"]),
-					state: pickCsvValue(row, ["state"]),
-					postalCode: pickCsvValue(row, ["postal code", "postalCode"]),
-					latitude: pickCsvValue(row, ["latitude"]),
-					longitude: pickCsvValue(row, ["longitude"]),
-					hiringStatus:
-						pickCsvValue(row, ["hiring status", "hiringStatus"]) ?? "UNKNOWN",
-					jobPostingsUrl: pickCsvValue(row, ["job postings", "jobPostingsUrl"]),
-					photos,
-				},
-				{ admin: true },
-			);
-			imported += 1;
+			validRows.push(parseRowToCompanyData(row));
 		} catch (error) {
 			errors.push(
 				`Row ${index + 2}: ${error instanceof Error ? error.message : "Invalid row"}`,
@@ -454,5 +498,84 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 		}
 	}
 
-	return { imported, errors };
+	if (validRows.length === 0) return { imported: 0, errors };
+
+	// Split creates vs updates using websiteUrl as the unique key
+	const websiteUrls = validRows
+		.map((r) => r.websiteUrl)
+		.filter((u): u is string => Boolean(u));
+
+	const existing =
+		websiteUrls.length > 0
+			? await db.company.findMany({
+					where: { websiteUrl: { in: websiteUrls } },
+					select: { id: true, websiteUrl: true },
+				})
+			: [];
+
+	const existingByUrl = new Map(
+		existing.flatMap((company) =>
+			company.websiteUrl ? [[company.websiteUrl, company.id]] : [],
+		),
+	);
+
+	const toCreate = validRows.filter(
+		(r) => !r.websiteUrl || !existingByUrl.has(r.websiteUrl),
+	);
+	const toUpdate = validRows.flatMap((data) => {
+		if (!data.websiteUrl) return [];
+		const id = existingByUrl.get(data.websiteUrl);
+		return id ? [{ data, id }] : [];
+	});
+
+	// Generate slugs for all creates in-memory to avoid N+1 DB checks
+	const baseSlugCandidates = toCreate.map((r) => slugify(r.name));
+	const dbSlugsResult = await db.company.findMany({
+		where: { slug: { in: baseSlugCandidates } },
+		select: { slug: true },
+	});
+	const usedSlugs = new Set(dbSlugsResult.map((c) => c.slug));
+
+	const createData = toCreate.map((data) => {
+		const { photos: _photos, ...companyFields } = data;
+		const base = slugify(data.name);
+		let slug = base;
+		let suffix = 2;
+		while (usedSlugs.has(slug)) {
+			slug = `${base}-${suffix++}`;
+		}
+		usedSlugs.add(slug);
+		return {
+			...companyFields,
+			slug,
+			state: cleanOptional(companyFields.state) ?? "UT",
+			websiteUrl: cleanOptional(companyFields.websiteUrl),
+			linkedinUrl: cleanOptional(companyFields.linkedinUrl),
+			jobPostingsUrl: cleanOptional(companyFields.jobPostingsUrl),
+			status: "PUBLISHED" as const,
+		};
+	});
+
+	if (createData.length > 0) {
+		await db.company.createMany({ data: createData, skipDuplicates: true });
+	}
+
+	if (toUpdate.length > 0) {
+		await Promise.all(
+			toUpdate.map(({ data, id }) => {
+				const { photos: _photos, ...companyFields } = data;
+				return db.company.update({
+					where: { id },
+					data: {
+						...companyFields,
+						websiteUrl: cleanOptional(companyFields.websiteUrl),
+						linkedinUrl: cleanOptional(companyFields.linkedinUrl),
+						jobPostingsUrl: cleanOptional(companyFields.jobPostingsUrl),
+					},
+				});
+			}),
+		);
+	}
+
+	return { imported: validRows.length, errors };
 }

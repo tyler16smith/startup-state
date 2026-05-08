@@ -565,25 +565,43 @@ export async function reindexResourceEmbeddings(
 	return { indexed, total: resources.length };
 }
 
+function normalizeCsvRow(
+	row: Record<string, unknown>,
+): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]),
+	);
+}
+
 function pickCsvValue(row: Record<string, unknown>, names: string[]) {
+	const normalized = normalizeCsvRow(row);
 	for (const name of names) {
-		const value = row[name] ?? row[name.toLowerCase()];
+		const value = normalized[name.trim().toLowerCase()];
 		if (typeof value === "string" && value.trim()) return value.trim();
 	}
 	return undefined;
+}
+
+function hasCsvRowValue(row: Record<string, unknown>) {
+	return Object.values(row).some((value) => {
+		if (typeof value === "string") return Boolean(value.trim());
+		return value !== null && value !== undefined;
+	});
 }
 
 export async function importResourcesFromCsv(db: Db, input: unknown) {
 	const { csv } = csvImportSchema.parse(input);
 	const parsed = Papa.parse<Record<string, unknown>>(csv, {
 		header: true,
-		skipEmptyLines: true,
+		skipEmptyLines: "greedy",
 	});
 
 	let imported = 0;
 	const errors: string[] = [];
 
 	for (const [index, row] of parsed.data.entries()) {
+		if (!hasCsvRowValue(row)) continue;
+
 		try {
 			await createResource(db, {
 				name: pickCsvValue(row, ["name", "Name"]),
