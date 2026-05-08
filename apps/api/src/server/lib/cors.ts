@@ -56,7 +56,7 @@ export function applyCorsHeaders(
 		res.setHeader("Access-Control-Allow-Methods", allowedMethods);
 		res.setHeader(
 			"Access-Control-Allow-Headers",
-			"Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-Active-App-Context, X-Demo-Overlay-Session-Key",
+			"Content-Type, Authorization, X-Requested-With, X-CSRF-Token",
 		);
 	}
 

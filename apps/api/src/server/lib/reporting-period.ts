@@ -6,8 +6,6 @@ import {
 	startOfMonth,
 } from "date-fns";
 
-const DEMO_SNAPSHOT_DATE = new Date(2026, 3, 30, 12, 0, 0, 0);
-
 export interface ReportingMonth {
 	effectiveNow: Date;
 	monthStartDate: Date;
@@ -16,21 +14,10 @@ export interface ReportingMonth {
 	endDate: string;
 	dayOfMonth: number;
 	daysInMonth: number;
-	isDemoSnapshot: boolean;
 }
 
-export function getEffectiveNow(
-	ctx: { isDemoMode: boolean },
-	now: Date = new Date(),
-): Date {
-	return ctx.isDemoMode ? new Date(DEMO_SNAPSHOT_DATE) : now;
-}
-
-export function getReportingMonth(
-	ctx: { isDemoMode: boolean },
-	now: Date = new Date(),
-): ReportingMonth {
-	const effectiveNow = getEffectiveNow(ctx, now);
+export function getReportingMonth(now: Date = new Date()): ReportingMonth {
+	const effectiveNow = now;
 	const monthStartDate = startOfMonth(effectiveNow);
 	const monthEndDate = endOfMonth(effectiveNow);
 
@@ -42,6 +29,5 @@ export function getReportingMonth(
 		endDate: format(monthEndDate, "yyyy-MM-dd"),
 		dayOfMonth: getDate(effectiveNow),
 		daysInMonth: getDaysInMonth(effectiveNow),
-		isDemoSnapshot: ctx.isDemoMode,
 	};
 }

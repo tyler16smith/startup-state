@@ -6,7 +6,11 @@ import Google from "next-auth/providers/google";
 import { z } from "zod";
 import { USER_ROLE, type UserRole } from "~/lib/user-role";
 
-import { authorizeCredentials, resolveGoogleUser } from "./api-auth";
+import {
+	authorizeCredentials,
+	getAuthUser,
+	resolveGoogleUser,
+} from "./api-auth";
 
 // Startup check for AUTH_SECRET
 if (!process.env.AUTH_SECRET) {
@@ -32,6 +36,7 @@ declare module "next-auth/jwt" {
 		id?: string;
 		role?: UserRole;
 		requiresTwoFactor?: boolean;
+		roleRefreshedAt?: number;
 	}
 }
 
@@ -130,6 +135,20 @@ export const authConfig = {
 				token.sub = user.id;
 				token.role = user.role;
 				token.requiresTwoFactor = user.twoFactorEnabled ?? false;
+				token.roleRefreshedAt = Date.now();
+			} else if (token.id) {
+				// Refresh role from DB every 5 minutes so DB changes propagate without re-login
+				const FIVE_MINUTES = 5 * 60 * 1000;
+				if (
+					!token.roleRefreshedAt ||
+					Date.now() - token.roleRefreshedAt > FIVE_MINUTES
+				) {
+					const freshUser = await getAuthUser({ userId: token.id });
+					if (freshUser) {
+						token.role = freshUser.role;
+					}
+					token.roleRefreshedAt = Date.now();
+				}
 			}
 			if (trigger === "update") {
 				const s = session as {

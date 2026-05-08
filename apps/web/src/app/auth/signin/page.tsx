@@ -1,8 +1,6 @@
 "use client";
 
-import { enterDemoMode as enterDemoModeApi } from "@app/client-ts";
-import { useMutation } from "@tanstack/react-query";
-import { Eye, EyeOff, FlaskConical } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -38,31 +36,7 @@ function SignInForm() {
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [demoLoading, setDemoLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
-
-	const enterDemoMode = useMutation({
-		mutationFn: async () => {
-			const response = await enterDemoModeApi();
-			if (response.status !== 200) {
-				throw new Error("Failed to enter demo mode");
-			}
-			return response.data.data;
-		},
-	});
-
-	async function handleTryDemo() {
-		setDemoLoading(true);
-		const result = await enterDemoMode.mutateAsync();
-		const expires = new Date();
-		expires.setDate(expires.getDate() + 7);
-		const exp = expires.toUTCString();
-		// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API not widely supported
-		document.cookie = `activeAppContext=demo; expires=${exp}; path=/; SameSite=Lax`;
-		// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API not widely supported
-		document.cookie = `demoOverlaySessionKey=${encodeURIComponent(result.sessionKey)}; expires=${exp}; path=/; SameSite=Lax`;
-		router.push("/dashboard");
-	}
 
 	async function handleCredentialsSignIn(e: React.FormEvent) {
 		e.preventDefault();

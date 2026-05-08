@@ -14,7 +14,6 @@ import {
 	DialogTitle,
 } from "~/components/ui/dialog";
 import { Sheet, SheetContent } from "~/components/ui/sheet";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { trackFinAi } from "~/lib/agent-analytics";
 import { cn } from "~/lib/utils";
 
@@ -90,7 +89,6 @@ export function FinAiWorkspace({ children }: { children: ReactNode }) {
 }
 
 function FinAiAcknowledgementGate() {
-	const { isDemoMode, isStatusReady, noticeDismissed } = useDemoMode();
 	const [hasAcknowledged, setHasAcknowledged] = useState<boolean | null>(null);
 
 	useEffect(() => {
@@ -100,13 +98,11 @@ function FinAiAcknowledgementGate() {
 	const acknowledge = () => {
 		localStorage.setItem(ACKNOWLEDGEMENT_KEY, "true");
 		setHasAcknowledged(true);
-		trackFinAi("agent_acknowledgement_accepted", { demoUser: isDemoMode });
+		trackFinAi("agent_acknowledgement_accepted");
 	};
 
 	if (hasAcknowledged === null) return null;
 	if (hasAcknowledged) return null;
-	if (!isStatusReady) return null;
-	if (isDemoMode && !noticeDismissed) return null;
 
 	return (
 		<Dialog open>

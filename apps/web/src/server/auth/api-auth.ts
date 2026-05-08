@@ -11,13 +11,19 @@ type WebAuthUser = {
 	twoFactorEnabled: boolean;
 };
 
+type WebAuthUserMinimal = {
+	id: string;
+	role: UserRole;
+};
+
 type ApiSuccess<T> = {
 	data: T;
 };
 
 async function postAuthRequest<T>(
-	action: "nextAuthCredentials" | "nextAuthGoogle",
+	action: "nextAuthCredentials" | "nextAuthGoogle" | "nextAuthGetUser",
 	body: Record<string, unknown>,
+	headers?: Record<string, string>,
 ): Promise<T | null> {
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -27,7 +33,7 @@ async function postAuthRequest<T>(
 			`${getServerApiBaseUrl()}/api/v1/auth/${action}`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: { "Content-Type": "application/json", ...headers },
 				body: JSON.stringify(body),
 				signal: controller.signal,
 			},
@@ -60,4 +66,14 @@ export function resolveGoogleUser(input: {
 	idToken: string;
 }): Promise<WebAuthUser | null> {
 	return postAuthRequest<WebAuthUser>("nextAuthGoogle", input);
+}
+
+export function getAuthUser(input: {
+	userId: string;
+}): Promise<WebAuthUserMinimal | null> {
+	const secret = process.env.INTERNAL_API_SECRET;
+	if (!secret) return Promise.resolve(null);
+	return postAuthRequest<WebAuthUserMinimal>("nextAuthGetUser", input, {
+		"x-internal-secret": secret,
+	});
 }

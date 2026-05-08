@@ -4,11 +4,9 @@ import { getOnboardingData } from "@app/client-ts";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useDemoMode } from "~/context/demo-mode-context";
 
 export function OnboardingRedirectGuard() {
 	const router = useRouter();
-	const { isDemoMode } = useDemoMode();
 
 	const onboardingQuery = useQuery({
 		queryKey: ["onboarding", "getOnboardingData", "dashboardGuard"],
@@ -21,20 +19,18 @@ export function OnboardingRedirectGuard() {
 
 			return response.data.data;
 		},
-		enabled: !isDemoMode,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: 5 * 60 * 1000,
 	});
 
 	useEffect(() => {
-		if (isDemoMode || !onboardingQuery.isFetched || !onboardingQuery.data)
-			return;
+		if (!onboardingQuery.isFetched || !onboardingQuery.data) return;
 
 		if (!onboardingQuery.data.hasCompletedInitialOnboarding) {
 			router.replace("/onboarding");
 		}
-	}, [isDemoMode, onboardingQuery.data, onboardingQuery.isFetched, router]);
+	}, [onboardingQuery.data, onboardingQuery.isFetched, router]);
 
 	return null;
 }

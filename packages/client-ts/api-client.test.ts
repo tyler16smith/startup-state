@@ -122,13 +122,13 @@ describe("generated API client request shape", () => {
 
 	it("preserves caller headers on body-less GET requests", async () => {
 		await customFetch("/api/v1/billing/getStatus", {
-			headers: { "X-Active-App-Context": "demo" },
+			headers: { "X-Client-Version": "test" },
 			method: "GET",
 		});
 
 		const headers = new Headers(latestRequest().init?.headers);
 
-		assert.equal(headers.get("x-active-app-context"), "demo");
+		assert.equal(headers.get("x-client-version"), "test");
 		assert.equal(headers.has("content-type"), false);
 	});
 

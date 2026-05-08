@@ -11,7 +11,7 @@ import { Axiom } from "@axiomhq/js";
  *
  * Important:
  *   - Never log PII, secrets, tokens, account numbers, or sensitive data
- *   - Use structured fields: feature, operation, userId, demoUser, errorMessage, errorCode, stack
+ *   - Use structured fields: feature, operation, userId, errorMessage, errorCode, stack
  *   - Prefer one high-quality log at the failure boundary
  */
 
@@ -21,7 +21,6 @@ interface LogContext {
 	feature?: string;
 	operation?: string;
 	userId?: string;
-	demoUser?: boolean;
 	errorMessage?: string;
 	errorCode?: string;
 	stack?: string;

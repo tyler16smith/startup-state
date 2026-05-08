@@ -134,25 +134,6 @@ export type FinWidgetActionStreamInput = {
 	clientRequestId?: string;
 };
 
-function readCookie(name: string): string | null {
-	if (typeof document === "undefined") return null;
-	const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-	return match ? decodeURIComponent(match[1] ?? "") : null;
-}
-
-function getDemoHeaders(): Record<string, string> {
-	const activeAppContext = readCookie("activeAppContext");
-	if (activeAppContext !== "demo") return {};
-
-	const demoOverlaySessionKey = readCookie("demoOverlaySessionKey");
-	return {
-		"x-active-app-context": "demo",
-		...(demoOverlaySessionKey
-			? { "x-demo-overlay-session-key": demoOverlaySessionKey }
-			: {}),
-	};
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -365,7 +346,6 @@ async function postJson<TInput, TOutput>(
 		credentials: "include",
 		headers: {
 			"Content-Type": "application/json",
-			...getDemoHeaders(),
 			...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
 		},
 		body: JSON.stringify(input),
@@ -423,7 +403,6 @@ export async function streamFinAgentMessage({
 		signal,
 		headers: {
 			"Content-Type": "application/json",
-			...getDemoHeaders(),
 			...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
 		},
 		body: JSON.stringify(input),
@@ -482,7 +461,6 @@ export async function streamFinWidgetAction({
 		signal,
 		headers: {
 			"Content-Type": "application/json",
-			...getDemoHeaders(),
 			...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
 		},
 		body: JSON.stringify(input),

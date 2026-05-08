@@ -298,7 +298,6 @@ export default async function handler(
 			hasUserId: Boolean(ctx.userId),
 			hasSession: Boolean(ctx.session),
 			hasJwtPayload: Boolean(ctx.jwtPayload),
-			isDemoMode: ctx.isDemoMode,
 		});
 		const body =
 			req.method === "GET"

@@ -3,11 +3,7 @@
  *
  * This shows how to replace tRPC calls with REST API client calls.
  *
- * Before (tRPC):
- *   const { data } = await api.demo.getDemoStatus.useQuery();
- *
- * After (REST API):
- *   const { data } = await getDemoStatus();
+ * Import generated REST functions from @app/client-ts and call them directly.
  */
 
 import {
@@ -16,13 +12,8 @@ import {
 	countTransactions,
 	createCategory,
 	deleteCategory,
-	dismissDemoNotice,
-	// Demo endpoints
-	enterDemoMode,
-	exitDemoMode,
 	// Transaction endpoints
 	getAllTransactions,
-	getDemoStatus,
 	type Hashtag,
 	hasTransactionData,
 	// Category endpoints
@@ -30,39 +21,12 @@ import {
 	// Hashtag endpoints
 	listHashtags,
 	listTransactionCategories,
-	resetDemoOverlay,
 	setHashtagsOnTransaction,
 	type Transaction,
 	updateCategory,
 } from "@app/client-ts";
 
-// Example 1: Demo mode
-async function exampleDemoMode() {
-	try {
-		// Enter demo mode
-		const enterRes = await enterDemoMode({ sessionKey: "" });
-		if (enterRes.status !== 200) {
-			throw new Error("Failed to enter demo mode");
-		}
-		const { sessionKey, expiresAt } = enterRes.data.data;
-		console.log("Entered demo mode:", { sessionKey, expiresAt });
-
-		// Get demo status
-		const statusRes = await getDemoStatus();
-		if (statusRes.status !== 200) {
-			throw new Error("Failed to get demo status");
-		}
-		console.log("Demo status:", statusRes.data.data);
-
-		// Exit demo mode
-		const exitRes = await exitDemoMode({ sessionKey });
-		console.log("Exited demo mode:", exitRes.data.data);
-	} catch (error) {
-		console.error("Demo mode error:", error);
-	}
-}
-
-// Example 2: Category management
+// Example 1: Category management
 async function exampleCategories() {
 	try {
 		// List categories
@@ -97,7 +61,7 @@ async function exampleCategories() {
 	}
 }
 
-// Example 3: Transaction queries
+// Example 2: Transaction queries
 async function exampleTransactions() {
 	try {
 		// Check if user has transaction data
@@ -131,7 +95,7 @@ async function exampleTransactions() {
 	}
 }
 
-// Example 4: Hashtag management
+// Example 3: Hashtag management
 async function exampleHashtags() {
 	try {
 		// List user hashtags
@@ -150,18 +114,9 @@ async function exampleHashtags() {
 	}
 }
 
-// Usage in a React component
-export function ApiClientExample() {
-	return (
-		<div>
-			<button onClick={() => exampleDemoMode()}>Test
-	Demo;
-	Mode < />bnottu < button;
-	onClick={() => exampleCategories()}>Test
-	Categories < />bnottu < button;
-	onClick={() => exampleTransactions()}>Test
-	Transactions < />bnottu < button;
-	onClick={() => exampleHashtags()}>Test
-	Hashtags < />bnottu < />div;
-	)
+// Usage from a local test harness or docs snippet
+export async function runApiClientExamples() {
+	await exampleCategories();
+	await exampleTransactions();
+	await exampleHashtags();
 }

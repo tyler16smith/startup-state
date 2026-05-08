@@ -22,7 +22,6 @@ import {
 
 type SendMessageInput = {
 	pathname: string;
-	isDemoMode: boolean;
 	messageText?: string;
 	scrollToBottom?: () => void;
 };
@@ -48,20 +47,17 @@ type FinAiChatActions = {
 	setHistorySearch: (search: string) => void;
 	loadStoredTimeline: () => Promise<void>;
 	refreshConversationList: () => Promise<void>;
-	startNewConversation: (input: { isDemoMode: boolean }) => void;
+	startNewConversation: () => void;
 	loadConversation: (conversationId: string) => Promise<void>;
 	sendMessage: (input: SendMessageInput) => Promise<void>;
-	stopRun: (input: { isDemoMode: boolean }) => void;
+	stopRun: () => void;
 	submitWidgetAction: (input: WidgetActionInput) => Promise<void>;
 	renameConversationTitle: (input: {
 		conversationId: string;
 		title: string;
 	}) => Promise<void>;
 	abortActiveRun: () => void;
-	selectSuggestedPrompt: (input: {
-		prompt: string;
-		isDemoMode: boolean;
-	}) => void;
+	selectSuggestedPrompt: (prompt: string) => void;
 };
 
 type FinAiChatStore = FinAiChatState & FinAiChatActions;
@@ -312,7 +308,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				}
 			},
 
-			startNewConversation: ({ isDemoMode }) => {
+			startNewConversation: () => {
 				if (get().isRunning) abortRun();
 				setStoredConversationId(undefined);
 				set({
@@ -322,7 +318,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 					isRunning: false,
 					historyOpen: false,
 				});
-				trackFinAi("agent_conversation_reset", { demoUser: isDemoMode });
+				trackFinAi("agent_conversation_reset");
 			},
 
 			loadConversation: async (conversationId) => {
@@ -344,12 +340,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				}
 			},
 
-			sendMessage: async ({
-				pathname,
-				isDemoMode,
-				messageText,
-				scrollToBottom,
-			}) => {
+			sendMessage: async ({ pathname, messageText, scrollToBottom }) => {
 				const trimmed = (messageText ?? get().input).trim();
 				if (!trimmed || get().isRunning) return;
 
@@ -368,7 +359,6 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 					isRunning: true,
 				}));
 				trackFinAi("agent_message_sent", {
-					demoUser: isDemoMode,
 					hasConversation: Boolean(conversationId),
 					messageLength: trimmed.length,
 				});
@@ -432,9 +422,7 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 									break;
 								case "message_done":
 									set({ status: "Ready" });
-									trackFinAi("agent_run_completed", {
-										demoUser: isDemoMode,
-									});
+									trackFinAi("agent_run_completed");
 									void get().refreshConversationList();
 									break;
 								case "widget_done":
@@ -483,7 +471,6 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 									replaceAssistantMessage(event.error.message, "error");
 									set({ status: "Ready" });
 									trackFinAi("agent_run_failed", {
-										demoUser: isDemoMode,
 										code: event.error.code,
 									});
 									break;
@@ -501,7 +488,6 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 						);
 						set({ status: "Ready" });
 						trackFinAi("agent_run_failed", {
-							demoUser: isDemoMode,
 							code: "stream_error",
 						});
 					}
@@ -512,10 +498,10 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 				}
 			},
 
-			stopRun: ({ isDemoMode }) => {
+			stopRun: () => {
 				abortRun();
 				set({ isRunning: false, status: "Stopped" });
-				trackFinAi("agent_run_aborted", { demoUser: isDemoMode });
+				trackFinAi("agent_run_aborted");
 			},
 
 			submitWidgetAction: async ({
@@ -634,11 +620,9 @@ export const useFinAiChatStore = create<FinAiChatStore>()(
 
 			abortActiveRun: () => abortRun(),
 
-			selectSuggestedPrompt: ({ prompt, isDemoMode }) => {
+			selectSuggestedPrompt: (prompt) => {
 				set({ input: prompt });
-				trackFinAi("agent_suggested_prompt_clicked", {
-					demoUser: isDemoMode,
-				});
+				trackFinAi("agent_suggested_prompt_clicked");
 			},
 		}),
 		{ name: "fin-ai-chat-store" },

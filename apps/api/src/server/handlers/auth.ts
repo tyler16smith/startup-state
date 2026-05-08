@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import bcryptjs from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
@@ -84,6 +85,10 @@ const nextAuthCredentialsInput = z.object({
 
 const nextAuthGoogleInput = z.object({
 	idToken: z.string().min(1),
+});
+
+const nextAuthGetUserInput = z.object({
+	userId: z.string().min(1),
 });
 
 const refreshInput = z.object({
@@ -186,6 +191,41 @@ export const auth = {
 			role: user.role,
 			twoFactorEnabled: user.twoFactorEnabled && user.twoFactorVerified,
 		};
+	},
+
+	/**
+	 * Fetch a user's current role/data for NextAuth JWT refresh.
+	 * Called server-to-server from the web app's JWT callback.
+	 * Protected by INTERNAL_API_SECRET header.
+	 * POST /api/v1/auth/nextAuthGetUser
+	 */
+	nextAuthGetUser: async (ctx: ApiContext, body: unknown) => {
+		const secret = process.env.INTERNAL_API_SECRET;
+		if (!secret) {
+			throw createApiError("Internal API secret not configured", 500);
+		}
+
+		const internalSecret = ctx.req.headers["x-internal-secret"];
+		if (
+			typeof internalSecret !== "string" ||
+			internalSecret.length !== secret.length ||
+			!crypto.timingSafeEqual(Buffer.from(internalSecret), Buffer.from(secret))
+		) {
+			throw createApiError("Unauthorized", 401);
+		}
+
+		const input = nextAuthGetUserInput.parse(body);
+
+		const user = await ctx.db.user.findUnique({
+			where: { id: input.userId },
+			select: { id: true, role: true },
+		});
+
+		if (!user) {
+			throw createApiError("User not found", 404);
+		}
+
+		return { id: user.id, role: user.role };
 	},
 
 	/**
@@ -641,14 +681,6 @@ export const auth = {
 	 * client caches it and sends it as x-csrf-token on every mutating request.
 	 */
 	csrfToken: async (ctx: ApiContext) => {
-		// Unauthenticated demo users have no session cookie, so the router
-		// never enforces CSRF for them — return null to skip token caching.
-		// Authenticated users in demo mode still carry a session cookie and
-		// the router enforces CSRF, so they need a real token.
-		if (ctx.isDemoMode && !ctx.session) {
-			return { csrfToken: null };
-		}
-
 		try {
 			const csrfToken = await computeCsrfToken(ctx.req.headers.cookie ?? "");
 			return { csrfToken };

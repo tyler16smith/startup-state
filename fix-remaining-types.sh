@@ -18,10 +18,6 @@ sed -i '' 's/metadata\?: unknown/metadata as any/g' apps/web/src/components/plai
 sed -i '' 's/utils\.plaid\.getConnectedInstitutions\.invalidate/queryClient.invalidateQueries({ queryKey: ["plaid", "institutions"] })/g' apps/web/src/components/plaid/connected-institutions-list.tsx
 sed -i '' 's/institution={institution}/institution={institution as any}/g' apps/web/src/components/plaid/connected-institutions-list.tsx
 
-# Fix demo-mode-context implicit any types
-sed -i '' 's/const dismissNoticeMutation = useMutation({/const dismissNoticeMutation: any = useMutation({/g' apps/web/src/context/demo-mode-context.tsx
-sed -i '' 's/const dismissDemoNotice = useCallback(async () => {/const dismissDemoNotice: any = useCallback(async () => {/g' apps/web/src/context/demo-mode-context.tsx
-
 # Fix onboarding results-screen
 sed -i '' 's/statusLabel={$/statusLabel={(/' apps/web/src/app/onboarding/analysis/results-screen.tsx
 sed -i '' 's/)$/)) as string/' apps/web/src/app/onboarding/analysis/results-screen.tsx

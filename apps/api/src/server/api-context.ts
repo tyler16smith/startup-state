@@ -7,8 +7,6 @@ import { logger } from "~/lib/logger";
 import { db } from "./db";
 import { validateAccessToken } from "./lib/token-manager";
 
-// Temporarily disabled: import { resolveActiveUserId } from "~/server/context/resolve-active-context";
-
 type JWTPayload = {
 	userId: string;
 	email: string;
@@ -24,15 +22,6 @@ function parseCookieHeader(cookieHeader: string): Record<string, string> {
 		if (key) cookies[key.trim()] = decodeURIComponent(rest.join("=").trim());
 	}
 	return cookies;
-}
-
-function getHeaderValue(
-	header: string | string[] | undefined,
-): string | undefined {
-	if (Array.isArray(header)) {
-		return header[0];
-	}
-	return header;
 }
 
 async function validateJWT(token: string): Promise<JWTPayload | null> {
@@ -114,8 +103,6 @@ export type ApiContext = {
 	db: typeof db;
 	session: Session | null;
 	jwtPayload: JWTPayload | null; // For mobile auth
-	isDemoMode: boolean;
-	demoOverlaySessionKey: string | null;
 	userId: string | null;
 	req: NextApiRequest;
 	res: NextApiResponse;
@@ -125,7 +112,7 @@ export async function createApiContext(
 	req: NextApiRequest,
 	res: NextApiResponse,
 ): Promise<ApiContext> {
-	// Parse cookies early - needed for both auth and demo mode
+	// Parse cookies early for session resolution.
 	const cookieHeader = req.headers.cookie ?? "";
 	const cookies = parseCookieHeader(cookieHeader);
 
@@ -143,16 +130,6 @@ export async function createApiContext(
 		jwtPayload = await validateJWT(token);
 	}
 
-	// Parse demo mode from cookies
-	const demoContextHeader = getHeaderValue(req.headers["x-active-app-context"]);
-	const demoSessionHeader = getHeaderValue(
-		req.headers["x-demo-overlay-session-key"],
-	);
-	const isDemoMode =
-		cookies.activeAppContext === "demo" || demoContextHeader === "demo";
-	const demoOverlaySessionKey =
-		cookies.demoOverlaySessionKey ?? demoSessionHeader ?? null;
-
 	// Resolve userId: prefer session, then JWT, then null
 	const userId = sessionUserId ?? jwtPayload?.userId ?? null;
 
@@ -165,8 +142,6 @@ export async function createApiContext(
 		db,
 		session,
 		jwtPayload,
-		isDemoMode,
-		demoOverlaySessionKey,
 		userId,
 		req,
 		res,
@@ -185,12 +160,6 @@ export function createApiError(message: string, status: number): ApiError {
 
 export function requireAuthenticated(ctx: ApiContext) {
 	if (!ctx.session?.user && !ctx.jwtPayload) {
-		throw createApiError("Unauthorized", 401);
-	}
-}
-
-export function requireDemoOrAuthenticated(ctx: ApiContext) {
-	if (!ctx.session?.user && !ctx.jwtPayload && !ctx.isDemoMode) {
 		throw createApiError("Unauthorized", 401);
 	}
 }

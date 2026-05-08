@@ -3,12 +3,7 @@ import { ConversationTitleService } from "../../agent/conversation-title-service
 import { ConversationStore } from "../../agent/persistence/conversation-store";
 import { MessageStore } from "../../agent/persistence/message-store";
 import { TimelineStore } from "../../agent/timeline/timeline-store";
-import {
-	type AuthenticatedContext,
-	type DemoOrAuthContext,
-	withAuth,
-	withDemoOrAuth,
-} from "../handler-wrappers";
+import { type AuthenticatedContext, withAuth } from "../handler-wrappers";
 
 const limitInput = z.preprocess(
 	(value) => (value === undefined ? undefined : Number(value)),
@@ -44,8 +39,8 @@ const listTimelineInput = z.object({
 });
 
 export const agent = {
-	listConversations: withDemoOrAuth(
-		async (ctx: DemoOrAuthContext, body: unknown) => {
+	listConversations: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
 			const { limit } = listConversationsInput.parse(body ?? {});
 			const store = new ConversationStore(ctx.db);
 			const rows = await store.listConversations({
@@ -84,8 +79,8 @@ export const agent = {
 		},
 	),
 
-	nameConversation: withDemoOrAuth(
-		async (ctx: DemoOrAuthContext, body: unknown) => {
+	nameConversation: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
 			const input = conversationTitleInput.parse(body ?? {});
 			const conversationTitleService = new ConversationTitleService();
 			const title = conversationTitleService.createTitleFromFirstMessage(
@@ -116,8 +111,8 @@ export const agent = {
 		},
 	),
 
-	renameConversation: withDemoOrAuth(
-		async (ctx: DemoOrAuthContext, body: unknown) => {
+	renameConversation: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
 			const input = renameConversationInput.parse(body ?? {});
 			const conversationTitleService = new ConversationTitleService();
 			const title = conversationTitleService.normalizeManualTitle(input.title);
@@ -182,28 +177,26 @@ export const agent = {
 		};
 	}),
 
-	listTimeline: withDemoOrAuth(
-		async (ctx: DemoOrAuthContext, body: unknown) => {
-			const input = listTimelineInput.parse(body ?? {});
-			const conversationStore = new ConversationStore(ctx.db);
-			const conv = await conversationStore.getConversationForUser({
-				userId: ctx.userId,
-				conversationId: input.conversationId,
-			});
-			if (!conv) {
-				const err = new Error("Conversation not found") as Error & {
-					status: number;
-				};
-				err.status = 404;
-				throw err;
-			}
-			const timelineStore = new TimelineStore(ctx.db);
-			return {
-				blocks: await timelineStore.listConversationTimeline({
-					conversationId: conv.id,
-					limit: input.limit ?? 200,
-				}),
+	listTimeline: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
+		const input = listTimelineInput.parse(body ?? {});
+		const conversationStore = new ConversationStore(ctx.db);
+		const conv = await conversationStore.getConversationForUser({
+			userId: ctx.userId,
+			conversationId: input.conversationId,
+		});
+		if (!conv) {
+			const err = new Error("Conversation not found") as Error & {
+				status: number;
 			};
-		},
-	),
+			err.status = 404;
+			throw err;
+		}
+		const timelineStore = new TimelineStore(ctx.db);
+		return {
+			blocks: await timelineStore.listConversationTimeline({
+				conversationId: conv.id,
+				limit: input.limit ?? 200,
+			}),
+		};
+	}),
 };

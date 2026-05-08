@@ -12,7 +12,6 @@ import { isPostHogInitialized, posthog } from "~/lib/posthog";
  * Events include:
  * - `path`: the current pathname
  * - `userId`: if the user is logged in
- * - `demoUser: true`: if the user is not logged in
  */
 export function usePageTracking() {
 	const pathname = usePathname();
@@ -42,7 +41,7 @@ export function usePageTracking() {
 
 		posthog.capture("$pageview", {
 			path: pathname,
-			...(userId ? { userId } : { demoUser: true }),
+			...(userId ? { userId } : {}),
 		});
 	}, [pathname, session, status]);
 }

@@ -39,8 +39,7 @@ export function OnboardingFlow() {
 					</h1>
 					<p className="text-muted-foreground">
 						Your app shell is ready. Authentication, settings, billing,
-						households, demo mode, and the agent are still wired up for the next
-						idea.
+						households and the agent are still wired up for the next idea.
 					</p>
 				</div>
 				<div className="flex flex-col items-center gap-3">

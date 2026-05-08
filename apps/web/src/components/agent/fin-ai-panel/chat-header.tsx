@@ -1,12 +1,10 @@
 import { History, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { useFinAiHeaderState } from "./chat-store";
 import { ConversationHistoryPopover } from "./history-popover";
 import { focusChatInput } from "./utils";
 
 export function ChatHeader({ onClose }: { onClose: () => void }) {
-	const { isDemoMode } = useDemoMode();
 	const { status, startNewConversation } = useFinAiHeaderState();
 
 	return (
@@ -24,7 +22,7 @@ export function ChatHeader({ onClose }: { onClose: () => void }) {
 				<Button
 					aria-label="Start a new conversation"
 					onClick={() => {
-						startNewConversation({ isDemoMode });
+						startNewConversation();
 						focusChatInput();
 					}}
 					size="icon-sm"

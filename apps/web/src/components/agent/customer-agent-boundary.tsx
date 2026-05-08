@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { FinAiPanelProvider } from "~/components/agent/fin-ai-context";
 import { FinAiWorkspace } from "~/components/agent/fin-ai-workspace";
-import { DemoModeProvider } from "~/context/demo-mode-context";
 
 const CUSTOMER_ROUTE_PREFIXES = [
 	"/founder",
@@ -26,12 +25,10 @@ export function CustomerAgentBoundary({ children }: { children: ReactNode }) {
 	if (!isCustomerRoute(pathname)) return children;
 
 	return (
-		<DemoModeProvider>
-			<FinAiPanelProvider>
-				<div className="flex min-h-screen bg-background">
-					<FinAiWorkspace>{children}</FinAiWorkspace>
-				</div>
-			</FinAiPanelProvider>
-		</DemoModeProvider>
+		<FinAiPanelProvider>
+			<div className="flex min-h-screen bg-background">
+				<FinAiWorkspace>{children}</FinAiWorkspace>
+			</div>
+		</FinAiPanelProvider>
 	);
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { DemoModeProvider } from "~/context/demo-mode-context";
 import { ForecastProvider } from "~/context/forecast-context";
 
 export function DashboardProviders({
@@ -8,9 +7,5 @@ export function DashboardProviders({
 }: {
 	children: React.ReactNode;
 }) {
-	return (
-		<DemoModeProvider>
-			<ForecastProvider>{children}</ForecastProvider>
-		</DemoModeProvider>
-	);
+	return <ForecastProvider>{children}</ForecastProvider>;
 }

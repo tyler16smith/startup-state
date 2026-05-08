@@ -57,7 +57,6 @@ model User {
   sessions                     Session[]
   authSessions                 AuthSession[]
   settings                     UserSettings?
-  demoOverlaySessions          DemoOverlaySession[]
   twoFactorTokens              TwoFactorToken[]
   refreshTokens                RefreshToken[]
   householdInvitesOwned        HouseholdInvite[]           @relation("HouseholdInviteOwner")
@@ -326,23 +325,6 @@ model UserSettings {
   updatedAt                     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model DemoOverlaySession {
-  id          String   @id @default(cuid())
-  sessionKey  String   @unique
-  userId      String?
-  demoUserId  String
-  isActive    Boolean  @default(true)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  uiStateJson Json?
-
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
 }
 
 model HouseholdInvite {

@@ -37,30 +37,6 @@ function getApiBaseUrl(): string {
 	return baseUrl || "";
 }
 
-function readCookie(name: string): string | null {
-	if (typeof document === "undefined") return null;
-	const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-	return match ? decodeURIComponent(match[1] ?? "") : null;
-}
-
-function getDemoHeaders(): Record<string, string> {
-	if (typeof window === "undefined") return {};
-
-	const activeAppContext = readCookie("activeAppContext");
-	const demoOverlaySessionKey = readCookie("demoOverlaySessionKey");
-
-	if (activeAppContext !== "demo") {
-		return {};
-	}
-
-	return {
-		"x-active-app-context": "demo",
-		...(demoOverlaySessionKey
-			? { "x-demo-overlay-session-key": demoOverlaySessionKey }
-			: {}),
-	};
-}
-
 // ─── Per-Session CSRF Token ───────────────────────────────────────────────────
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -97,7 +73,6 @@ async function fetchCsrfToken(): Promise<CsrfTokenFetchResult> {
 /**
  * Return the per-session CSRF token, fetching and caching it on first call.
  * Safe to call from any browser context; returns null during SSR.
- * In demo mode, the server returns null (no CSRF needed) - we cache this to avoid refetching.
  */
 export async function getCsrfToken(): Promise<string | null> {
 	if (typeof window === "undefined") return null;
@@ -138,7 +113,6 @@ export const customFetch = async <T>(
 ): Promise<T> => {
 	const baseUrl = getApiBaseUrl();
 	const fullUrl = `${baseUrl}${url}`;
-	const demoHeaders = getDemoHeaders();
 	const method = (
 		(options?.method as string | undefined) ?? "GET"
 	).toUpperCase();
@@ -154,7 +128,6 @@ export const customFetch = async <T>(
 			...(hasRequestBody(options)
 				? { "Content-Type": "application/json" }
 				: {}),
-			...demoHeaders,
 			...csrfHeaders,
 			...options?.headers,
 		};

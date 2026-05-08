@@ -3,17 +3,15 @@ import { usePathname } from "next/navigation";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { useFinAiComposerState } from "./chat-store";
 
 export function ChatComposer() {
 	const pathname = usePathname();
-	const { isDemoMode } = useDemoMode();
 	const { input, isRunning, setInput, sendMessage, stopRun } =
 		useFinAiComposerState();
 
 	const submitMessage = () =>
-		void sendMessage({ pathname, isDemoMode, messageText: input });
+		void sendMessage({ pathname, messageText: input });
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -42,7 +40,7 @@ export function ChatComposer() {
 					<Button
 						aria-label="Stop response"
 						className="size-8 shrink-0 self-end rounded-lg"
-						onClick={() => stopRun({ isDemoMode })}
+						onClick={stopRun}
 						size="icon"
 						title="Stop response"
 						type="button"

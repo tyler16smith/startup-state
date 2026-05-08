@@ -2,7 +2,6 @@
 
 import {
 	ChevronUp,
-	FlaskConical,
 	LayoutDashboard,
 	LogOut,
 	PanelLeftClose,
@@ -28,7 +27,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { USER_ROLE } from "~/lib/user-role";
 import { cn } from "~/lib/utils";
 import Logo from "../common/logo";
@@ -94,25 +92,20 @@ export function Sidebar({
 	onClose?: () => void;
 } = {}) {
 	const pathname = usePathname();
-	const { isDemoMode, enterDemoMode, exitDemoMode } = useDemoMode();
 	const { data: session } = useSession();
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [collapsed, setCollapsed] = useState(false);
 	const canCollapse = collapsible ?? !onClose;
 	const isCollapsed = canCollapse && collapsed;
 
-	const name = isDemoMode ? "Demo Mode" : (session?.user?.name ?? "Account");
-	const email = isDemoMode ? "" : (session?.user?.email ?? "");
-	const initials = isDemoMode
-		? "DM"
-		: name
-				.split(" ")
-				.map((n) => n[0])
-				.join("")
-				.toUpperCase()
-				.slice(0, 2);
-
-	console.log("session", session);
+	const name = session?.user?.name ?? "Account";
+	const email = session?.user?.email ?? "";
+	const initials = name
+		.split(" ")
+		.map((n) => n[0])
+		.join("")
+		.toUpperCase()
+		.slice(0, 2);
 
 	return (
 		<aside
@@ -189,12 +182,10 @@ export function Sidebar({
 										type="button"
 									>
 										<Avatar className="h-7 w-7 shrink-0">
-											{!isDemoMode && (
-												<AvatarImage
-													alt={name}
-													src={session?.user?.image ?? ""}
-												/>
-											)}
+											<AvatarImage
+												alt={name}
+												src={session?.user?.image ?? ""}
+											/>
 											<AvatarFallback className="text-xs">
 												{initials}
 											</AvatarFallback>
@@ -211,9 +202,7 @@ export function Sidebar({
 								type="button"
 							>
 								<Avatar className="h-7 w-7 shrink-0">
-									{!isDemoMode && (
-										<AvatarImage alt={name} src={session?.user?.image ?? ""} />
-									)}
+									<AvatarImage alt={name} src={session?.user?.image ?? ""} />
 									<AvatarFallback className="text-xs">
 										{initials}
 									</AvatarFallback>
@@ -238,46 +227,29 @@ export function Sidebar({
 						side={isCollapsed ? "right" : "top"}
 						sideOffset={8}
 					>
-						{!isDemoMode && (
-							<>
-								<Link
-									className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-muted"
-									href="/dashboard/settings"
-									onClick={() => {
-										setPopoverOpen(false);
-										onClose?.();
-									}}
-								>
-									<Settings className="h-4 w-4" />
-									Account settings
-								</Link>
-								<button
-									className="flex w-full items-center gap-2 rounded-md p-2 text-sm transition-colors hover:bg-muted"
-									onClick={() => {
-										setPopoverOpen(false);
-										onClose?.();
-										void enterDemoMode();
-									}}
-									type="button"
-								>
-									<FlaskConical className="h-4 w-4" />
-									Enter Demo Mode
-								</button>
-								<Separator className="my-1" />
-							</>
-						)}
+						<Link
+							className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-muted"
+							href="/dashboard/settings"
+							onClick={() => {
+								setPopoverOpen(false);
+								onClose?.();
+							}}
+						>
+							<Settings className="h-4 w-4" />
+							Account settings
+						</Link>
+						<Separator className="my-1" />
 						<button
 							className="flex w-full items-center gap-2 rounded-sm p-2 text-destructive text-sm transition-colors hover:bg-muted"
 							onClick={() => {
 								setPopoverOpen(false);
 								onClose?.();
-								if (isDemoMode) void exitDemoMode();
-								else void signOut({ callbackUrl: "/auth/signin" });
+								void signOut({ callbackUrl: "/auth/signin" });
 							}}
 							type="button"
 						>
 							<LogOut className="h-4 w-4" />
-							{isDemoMode ? "Exit demo mode" : "Sign out"}
+							Sign out
 						</button>
 					</PopoverContent>
 				</Popover>

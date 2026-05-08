@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
 import { FinAiTimelineBlockRenderer } from "~/components/agent/fin-ai-timeline-block";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { useFinAiMessageListState } from "./chat-store";
 import { suggestedPrompts } from "./utils";
 
 export function MessageList() {
-	const { isDemoMode } = useDemoMode();
 	const { blocks, selectSuggestedPrompt } = useFinAiMessageListState();
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -19,10 +17,7 @@ export function MessageList() {
 		<ScrollArea className="min-h-0 flex-1">
 			<div className="space-y-4 p-4">
 				{blocks.length === 0 ? (
-					<EmptyPromptList
-						isDemoMode={isDemoMode}
-						onSelectPrompt={selectSuggestedPrompt}
-					/>
+					<EmptyPromptList onSelectPrompt={selectSuggestedPrompt} />
 				) : (
 					blocks.map((block) => (
 						<FinAiTimelineBlockRenderer block={block} key={block.id} />
@@ -35,11 +30,9 @@ export function MessageList() {
 }
 
 function EmptyPromptList({
-	isDemoMode,
 	onSelectPrompt,
 }: {
-	isDemoMode: boolean;
-	onSelectPrompt: (input: { prompt: string; isDemoMode: boolean }) => void;
+	onSelectPrompt: (prompt: string) => void;
 }) {
 	return (
 		<div className="flex min-h-72 flex-col items-center justify-center gap-4 text-center">
@@ -51,7 +44,7 @@ function EmptyPromptList({
 					<button
 						className="rounded-md border bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
 						key={prompt}
-						onClick={() => onSelectPrompt({ prompt, isDemoMode })}
+						onClick={() => onSelectPrompt(prompt)}
 						type="button"
 					>
 						{prompt}

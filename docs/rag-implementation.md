@@ -276,8 +276,8 @@ import { askRag } from "./rag/ask";
 
 async function main() {
   await ingestDocument({
-    title: "Demo handbook",
-    source: "upload/demo-handbook.pdf",
+    title: "Sample handbook",
+    source: "upload/sample-handbook.pdf",
     chunks: [
       {
         text: "Refunds are available within 30 days of purchase.",

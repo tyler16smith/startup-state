@@ -25,7 +25,6 @@ import {
 	FinWidgetRenderer,
 } from "~/components/agent/fin-ai-widgets";
 import { Button } from "~/components/ui/button";
-import { useDemoMode } from "~/context/demo-mode-context";
 import { trackFinAi } from "~/lib/agent-analytics";
 import { cn } from "~/lib/utils";
 
@@ -217,12 +216,10 @@ function isCustomerHref(href: string) {
 function useNavigateReference() {
 	const router = useRouter();
 	const { close } = useFinAiPanel();
-	const { isDemoMode } = useDemoMode();
 
 	return (reference: AgentReference) => {
 		if (!isCustomerHref(reference.href)) return;
 		trackFinAi("agent_reference_clicked", {
-			demoUser: isDemoMode,
 			kind: reference.kind,
 			toolName: reference.toolName,
 			hasSection: Boolean(reference.section),

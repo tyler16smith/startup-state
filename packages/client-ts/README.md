@@ -40,15 +40,6 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ### Examples
 
-#### Check demo mode status
-
-```typescript
-const { data, status } = await getDemoStatus();
-if (status === 200) {
-  console.log('Demo mode active:', data.data.isDemoMode);
-}
-```
-
 #### List categories
 
 ```typescript
