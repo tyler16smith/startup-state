@@ -13,6 +13,15 @@ export const hiringStatusSchema = z.enum([
 	"ACTIVELY_HIRING",
 	"UNKNOWN",
 ]);
+export const locationPrecisionSchema = z.enum([
+	"rooftop",
+	"street",
+	"postal_code",
+	"city",
+	"state",
+	"unknown",
+]);
+export const geocodeProviderSchema = z.enum(["google", "census", "existing"]);
 
 export function asArray(value: unknown): string[] {
 	if (Array.isArray(value)) {
@@ -89,6 +98,58 @@ export const founderProfileInputSchema = z.object({
 	keywords: z.string().optional(),
 });
 
+export const investorProfileInputSchema = z.object({
+	stages: arrayInput,
+	sectors: arrayInput,
+	regions: arrayInput,
+	hiringStatuses: arrayInput,
+	employeeMin: optionalNumber,
+	employeeMax: optionalNumber,
+	researchGoals: arrayInput,
+	keywords: z.string().optional(),
+});
+
+const compactResourceRecommendationSchema = z
+	.object({
+		resource: z.object({ id: z.string().min(1) }).passthrough(),
+		score: z.number(),
+		reasons: z.array(z.string()).default([]),
+		matchedFields: z.record(z.unknown()).optional(),
+	})
+	.passthrough();
+
+export const founderRecommendationResultSchema = z.object({
+	recommendations: z.array(compactResourceRecommendationSchema),
+});
+
+export const investorCompanyRecommendationSchema = z.object({
+	rank: z.number().int().min(1).max(5),
+	company: z.object({ id: z.string().min(1) }).passthrough(),
+	why: z.string().min(10).max(500),
+	score: z.number().min(0).max(100).optional(),
+});
+
+export const investorRecommendationResultSchema = z.object({
+	recommendations: z.array(investorCompanyRecommendationSchema).max(5),
+});
+
+export const navigatorPlanKindSchema = z.enum(["FOUNDER", "INVESTOR"]);
+
+export const saveNavigatorPlanInputSchema = z.discriminatedUnion("kind", [
+	z.object({
+		kind: z.literal("FOUNDER"),
+		title: z.string().max(160).optional(),
+		input: founderProfileInputSchema,
+		result: founderRecommendationResultSchema,
+	}),
+	z.object({
+		kind: z.literal("INVESTOR"),
+		title: z.string().max(160).optional(),
+		input: investorProfileInputSchema,
+		result: investorRecommendationResultSchema,
+	}),
+]);
+
 export const savedResourceInputSchema = z.object({
 	resourceId: z.string().min(1),
 });
@@ -131,6 +192,8 @@ export const companyInputSchema = z.object({
 	postalCode: z.string().optional().nullable(),
 	latitude: optionalNumber,
 	longitude: optionalNumber,
+	locationPrecision: locationPrecisionSchema.optional().nullable(),
+	geocodeProvider: geocodeProviderSchema.optional().nullable(),
 	hiringStatus: hiringStatusSchema.default("UNKNOWN"),
 	jobPostingsUrl: z.string().url().optional().nullable().or(z.literal("")),
 	status: companyStatusSchema.default("PUBLISHED"),

@@ -102,58 +102,59 @@ export function StartupSidebar() {
 				))}
 			</nav>
 
-			{/* Profile footer */}
-			<div className="border-slate-200 border-t p-3">
-				<Popover onOpenChange={setPopoverOpen} open={popoverOpen}>
-					<PopoverTrigger asChild>
-						<button
-							className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-slate-100"
-							type="button"
-						>
-							<Avatar className="h-7 w-7 shrink-0">
-								<AvatarImage alt={name} src={session?.user?.image ?? ""} />
-								<AvatarFallback className="text-xs">
-									{session ? initials : <User className="h-3 w-3" />}
-								</AvatarFallback>
-							</Avatar>
-							<div className="min-w-0 flex-1 text-left">
-								<p className="truncate font-medium text-sm leading-tight">
-									{name}
-								</p>
-								{email && (
-									<p className="truncate text-slate-500 text-xs leading-tight">
-										{email}
+			{session && (
+				<div className="border-slate-200 border-t p-3">
+					<Popover onOpenChange={setPopoverOpen} open={popoverOpen}>
+						<PopoverTrigger asChild>
+							<button
+								className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-slate-100"
+								type="button"
+							>
+								<Avatar className="h-7 w-7 shrink-0">
+									<AvatarImage alt={name} src={session?.user?.image ?? ""} />
+									<AvatarFallback className="text-xs">
+										{session ? initials : <User className="h-3 w-3" />}
+									</AvatarFallback>
+								</Avatar>
+								<div className="min-w-0 flex-1 text-left">
+									<p className="truncate font-medium text-sm leading-tight">
+										{name}
 									</p>
-								)}
-							</div>
-							<ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
-						</button>
-					</PopoverTrigger>
-					<PopoverContent
-						align="start"
-						className="w-56 p-1 shadow-[0_0_10px_rgba(0,0,0,0.15)]"
-						side="top"
-						sideOffset={8}
-					>
-						<Link
-							className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
-							href="/settings"
-							onClick={() => setPopoverOpen(false)}
+									{email && (
+										<p className="truncate text-slate-500 text-xs leading-tight">
+											{email}
+										</p>
+									)}
+								</div>
+								<ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
+							</button>
+						</PopoverTrigger>
+						<PopoverContent
+							align="start"
+							className="w-56 p-1 shadow-[0_0_10px_rgba(0,0,0,0.15)]"
+							side="top"
+							sideOffset={8}
 						>
-							<Settings className="h-4 w-4" />
-							Account settings
-						</Link>
-						<button
-							className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
-							onClick={() => void signOut({ callbackUrl: "/auth/signin" })}
-							type="button"
-						>
-							<LogOut className="h-4 w-4" />
-							Sign out
-						</button>
-					</PopoverContent>
-				</Popover>
-			</div>
+							<Link
+								className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
+								href="/settings"
+								onClick={() => setPopoverOpen(false)}
+							>
+								<Settings className="h-4 w-4" />
+								Account settings
+							</Link>
+							<button
+								className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
+								onClick={() => void signOut({ callbackUrl: "/auth/signin" })}
+								type="button"
+							>
+								<LogOut className="h-4 w-4" />
+								Sign out
+							</button>
+						</PopoverContent>
+					</Popover>
+				</div>
+			)}
 		</aside>
 	);
 }

@@ -1,270 +1,339 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Check } from "lucide-react";
+import {
+	BadgeDollarSign,
+	BookOpen,
+	BriefcaseBusiness,
+	Building2,
+	Factory,
+	GraduationCap,
+	Handshake,
+	HeartPulse,
+	Landmark,
+	Lightbulb,
+	MapPin,
+	Network,
+	Rocket,
+	Scale,
+	Search,
+	ShieldCheck,
+	ShoppingBag,
+	Sparkles,
+	TrendingUp,
+	Users,
+	Wrench,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "~/components/ui/button";
+import { useEffect, useState } from "react";
+import { NavigatorShell } from "~/components/startup/navigator-flow/navigator-shell";
+import {
+	type NavigatorOption,
+	OptionGrid,
+} from "~/components/startup/navigator-flow/option-grid";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "~/components/ui/select";
 import type { FounderProfileInput } from "~/lib/startup-api";
 
-const options = {
-	stages: ["IDEA", "PRE_REVENUE", "EARLY_REVENUE", "GROWTH", "SCALING"],
-	regions: [
-		"Northern Utah",
-		"Wasatch Front",
-		"Central Utah",
-		"Southern Utah",
-		"Statewide",
-	],
-	sectors: [
-		"Software",
-		"Fintech",
-		"Health",
-		"Aerospace",
-		"Advanced manufacturing",
-		"Consumer",
-		"Energy",
-		"Education",
-	],
-	goals: [
-		"Capital",
-		"Mentorship",
-		"Grants",
-		"Education",
-		"Networking",
-		"Exporting",
-		"Legal help",
-		"Hiring",
-	],
-	businessTypes: [
-		"B2B",
-		"B2C",
-		"Marketplace",
-		"Deep tech",
-		"Main street",
-		"Nonprofit",
-	],
-	fundingNeeds: [
-		"Grants",
-		"Angel investment",
-		"Venture capital",
-		"Loans",
-		"Revenue-based financing",
-	],
+const STORAGE_KEY = "startup-founder-intake";
+
+const sectorOptions: NavigatorOption[] = [
+	{ id: "Software", label: "Software", icon: Sparkles },
+	{ id: "Fintech", label: "Fintech", icon: BadgeDollarSign },
+	{ id: "Health", label: "Health", icon: HeartPulse },
+	{ id: "Aerospace", label: "Aerospace", icon: Rocket },
+	{
+		id: "Advanced manufacturing",
+		label: "Advanced manufacturing",
+		icon: Factory,
+	},
+	{ id: "Consumer", label: "Consumer", icon: ShoppingBag },
+	{ id: "Energy", label: "Energy", icon: Wrench },
+	{ id: "Education", label: "Education", icon: GraduationCap },
+];
+
+const goalOptions: NavigatorOption[] = [
+	{ id: "Capital", label: "Capital", icon: BadgeDollarSign },
+	{ id: "Mentorship", label: "Mentorship", icon: Handshake },
+	{ id: "Grants", label: "Grants", icon: Landmark },
+	{ id: "Education", label: "Education", icon: BookOpen },
+	{ id: "Networking", label: "Networking", icon: Network },
+	{ id: "Exporting", label: "Exporting", icon: Rocket },
+	{ id: "Legal help", label: "Legal help", icon: Scale },
+	{ id: "Hiring", label: "Hiring", icon: Users },
+];
+
+const fundingOptions: NavigatorOption[] = [
+	{ id: "Grants", label: "Grants", icon: Landmark },
+	{ id: "Angel investment", label: "Angel investment", icon: Sparkles },
+	{ id: "Venture capital", label: "Venture capital", icon: TrendingUp },
+	{ id: "Loans", label: "Loans", icon: Building2 },
+	{
+		id: "Revenue-based financing",
+		label: "Revenue-based financing",
+		icon: BadgeDollarSign,
+	},
+];
+
+const businessTypeOptions: NavigatorOption[] = [
+	{ id: "B2B", label: "B2B", icon: BriefcaseBusiness },
+	{ id: "B2C", label: "B2C", icon: ShoppingBag },
+	{ id: "Marketplace", label: "Marketplace", icon: Network },
+	{ id: "Deep tech", label: "Deep tech", icon: Rocket },
+	{ id: "Main street", label: "Main street", icon: Building2 },
+	{ id: "Nonprofit", label: "Nonprofit", icon: ShieldCheck },
+];
+
+const stageOptions: NavigatorOption[] = [
+	{ id: "IDEA", label: "Idea", icon: Lightbulb },
+	{ id: "PRE_REVENUE", label: "Pre revenue", icon: Rocket },
+	{ id: "EARLY_REVENUE", label: "Early revenue", icon: TrendingUp },
+	{ id: "GROWTH", label: "Growth", icon: Sparkles },
+	{ id: "SCALING", label: "Scaling", icon: Building2 },
+];
+
+const regionOptions: NavigatorOption[] = [
+	{ id: "Northern Utah", label: "Northern Utah", icon: MapPin },
+	{ id: "Wasatch Front", label: "Wasatch Front", icon: MapPin },
+	{ id: "Central Utah", label: "Central Utah", icon: MapPin },
+	{ id: "Southern Utah", label: "Southern Utah", icon: MapPin },
+	{ id: "Statewide", label: "Statewide", icon: Search },
+];
+
+const hiringOptions: NavigatorOption[] = [
+	{ id: "UNKNOWN", label: "Not sure yet", icon: Search },
+	{ id: "NOT_HIRING", label: "Not hiring", icon: ShieldCheck },
+	{ id: "HIRING", label: "Hiring", icon: Users },
+	{ id: "ACTIVELY_HIRING", label: "Actively hiring", icon: Rocket },
+];
+
+const defaultValues: FounderProfileInput = {
+	stage: "PRE_REVENUE",
+	region: "Wasatch Front",
+	sectors: [],
+	goals: [],
+	businessTypes: [],
+	fundingNeeds: [],
+	hiringStatus: "UNKNOWN",
 };
 
-const schema = z.object({
-	stage: z.string().min(1),
-	region: z.string().min(1),
-	city: z.string().optional(),
-	county: z.string().optional(),
-	sectors: z.array(z.string()).min(1),
-	goals: z.array(z.string()).min(1),
-	businessTypes: z.array(z.string()),
-	fundingNeeds: z.array(z.string()),
-	hiringStatus: z.string().optional(),
-	keywords: z.string().optional(),
-});
+function toggleValue(values: string[], value: string) {
+	return values.includes(value)
+		? values.filter((item) => item !== value)
+		: [...values, value];
+}
 
-type IntakeFormValues = z.infer<typeof schema>;
-
-function ToggleGroup({
-	label,
-	values,
-	selected,
-	onChange,
+function StepHeader({
+	title,
+	description,
 }: {
-	label: string;
-	values: string[];
-	selected: string[];
-	onChange: (values: string[]) => void;
+	title: string;
+	description: string;
 }) {
 	return (
-		<div className="space-y-3">
-			<Label>{label}</Label>
-			<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-				{values.map((value) => {
-					const checked = selected.includes(value);
-					const id = `${label}-${value}`.replace(/[^a-z0-9]+/gi, "-");
-					return (
-						<div
-							className="flex items-center gap-2 rounded-lg border bg-white p-3 text-sm shadow-sm transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50"
-							key={value}
-						>
-							<input
-								checked={checked}
-								className="size-4 accent-emerald-700"
-								id={id}
-								onChange={(event) => {
-									onChange(
-										event.target.checked
-											? [...selected, value]
-											: selected.filter((item) => item !== value),
-									);
-								}}
-								type="checkbox"
-							/>
-							<label className="flex-1 cursor-pointer" htmlFor={id}>
-								{value.replace(/_/g, " ").toLowerCase()}
-							</label>
-							{checked && <Check className="size-4 text-emerald-700" />}
-						</div>
-					);
-				})}
-			</div>
+		<div className="mx-auto mb-6 max-w-xl space-y-2 text-center">
+			<h1 className="font-semibold text-2xl tracking-normal sm:text-3xl">
+				{title}
+			</h1>
+			<p className="text-muted-foreground">{description}</p>
 		</div>
 	);
 }
 
 export function FounderIntakeForm() {
 	const router = useRouter();
-	const form = useForm<IntakeFormValues>({
-		resolver: zodResolver(schema),
-		defaultValues: {
-			stage: "PRE_REVENUE",
-			region: "Wasatch Front",
-			sectors: [],
-			goals: [],
-			businessTypes: [],
-			fundingNeeds: [],
-		},
-	});
+	const [step, setStep] = useState(0);
+	const [direction, setDirection] = useState(1);
+	const [values, setValues] = useState<FounderProfileInput>(defaultValues);
 
-	const onSubmit = form.handleSubmit((values) => {
-		const input: FounderProfileInput = values;
-		sessionStorage.setItem("startup-founder-intake", JSON.stringify(input));
-		router.push("/founder/results");
-	});
+	useEffect(() => {
+		const raw = sessionStorage.getItem(STORAGE_KEY);
+		if (!raw) return;
+		try {
+			setValues({
+				...defaultValues,
+				...(JSON.parse(raw) as FounderProfileInput),
+			});
+		} catch {
+			setValues(defaultValues);
+		}
+	}, []);
+
+	useEffect(() => {
+		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+	}, [values]);
+
+	function update(next: Partial<FounderProfileInput>) {
+		setValues((current) => ({ ...current, ...next }));
+	}
+
+	function goNext() {
+		if (step === 3) {
+			sessionStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+			router.push("/founder/results");
+			return;
+		}
+		setDirection(1);
+		setStep((current) => current + 1);
+	}
+
+	function goBack() {
+		setDirection(-1);
+		setStep((current) => Math.max(0, current - 1));
+	}
+
+	function skipStep() {
+		if (step === 3) {
+			goNext();
+			return;
+		}
+		setDirection(1);
+		setStep((current) => current + 1);
+	}
+
+	const nextDisabled =
+		(step === 0 && values.sectors.length === 0) ||
+		(step === 1 && values.goals.length === 0) ||
+		(step === 2 &&
+			values.fundingNeeds.length === 0 &&
+			values.businessTypes.length === 0);
 
 	return (
-		<form className="space-y-8" onSubmit={onSubmit}>
-			<div className="grid gap-4 md:grid-cols-3">
-				<div className="space-y-2">
-					<Label>Company stage</Label>
-					<Select
-						onValueChange={(value) => form.setValue("stage", value)}
-						value={form.watch("stage")}
-					>
-						<SelectTrigger className="w-full bg-white">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{options.stages.map((stage) => (
-								<SelectItem key={stage} value={stage}>
-									{stage.replace(/_/g, " ").toLowerCase()}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="space-y-2">
-					<Label>Utah region</Label>
-					<Select
-						onValueChange={(value) => form.setValue("region", value)}
-						value={form.watch("region")}
-					>
-						<SelectTrigger className="w-full bg-white">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{options.regions.map((region) => (
-								<SelectItem key={region} value={region}>
-									{region}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="space-y-2">
-					<Label>Hiring status</Label>
-					<Select
-						onValueChange={(value) => form.setValue("hiringStatus", value)}
-						value={form.watch("hiringStatus") ?? "UNKNOWN"}
-					>
-						<SelectTrigger className="w-full bg-white">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{["UNKNOWN", "NOT_HIRING", "HIRING", "ACTIVELY_HIRING"].map(
-								(value) => (
-									<SelectItem key={value} value={value}>
-										{value.replace(/_/g, " ").toLowerCase()}
-									</SelectItem>
-								),
-							)}
-						</SelectContent>
-					</Select>
-				</div>
-			</div>
-			<div className="grid gap-4 md:grid-cols-2">
-				<div className="space-y-2">
-					<Label>City</Label>
-					<Input
-						className="bg-white"
-						{...form.register("city")}
-						placeholder="Salt Lake City"
+		<NavigatorShell
+			direction={direction}
+			nextDisabled={nextDisabled}
+			nextLabel={step === 3 ? "Show my action plan" : "Continue"}
+			onBack={step > 0 ? goBack : undefined}
+			onNext={goNext}
+			onSkip={skipStep}
+			step={step}
+			totalSteps={4}
+		>
+			{step === 0 && (
+				<div className="mx-auto w-full max-w-3xl">
+					<StepHeader
+						description="Choose every sector that describes your company."
+						title="What are you building?"
+					/>
+					<OptionGrid
+						columns="four"
+						onToggle={(id) =>
+							update({ sectors: toggleValue(values.sectors, id) })
+						}
+						options={sectorOptions}
+						selected={values.sectors}
 					/>
 				</div>
-				<div className="space-y-2">
-					<Label>County</Label>
-					<Input
-						className="bg-white"
-						{...form.register("county")}
-						placeholder="Salt Lake"
-					/>
-				</div>
-			</div>
-			<ToggleGroup
-				label="Sectors"
-				onChange={(values) => form.setValue("sectors", values)}
-				selected={form.watch("sectors")}
-				values={options.sectors}
-			/>
-			<ToggleGroup
-				label="Primary goals"
-				onChange={(values) => form.setValue("goals", values)}
-				selected={form.watch("goals")}
-				values={options.goals}
-			/>
-			<ToggleGroup
-				label="Business type"
-				onChange={(values) => form.setValue("businessTypes", values)}
-				selected={form.watch("businessTypes")}
-				values={options.businessTypes}
-			/>
-			<ToggleGroup
-				label="Funding needs"
-				onChange={(values) => form.setValue("fundingNeeds", values)}
-				selected={form.watch("fundingNeeds")}
-				values={options.fundingNeeds}
-			/>
-			<div className="space-y-2">
-				<Label>Anything specific?</Label>
-				<Input
-					className="bg-white"
-					{...form.register("keywords")}
-					placeholder="Clean energy grants, prototype testing, export help..."
-				/>
-			</div>
-			{Object.keys(form.formState.errors).length > 0 && (
-				<p className="text-destructive text-sm">
-					Choose at least one sector and one goal to get targeted
-					recommendations.
-				</p>
 			)}
-			<Button className="w-full sm:w-auto" size="lg" type="submit">
-				Show my action plan <ArrowRight className="size-4" />
-			</Button>
-		</form>
+
+			{step === 1 && (
+				<div className="mx-auto w-full max-w-3xl">
+					<StepHeader
+						description="Select the outcomes that would make the next few months easier."
+						title="What do you need most?"
+					/>
+					<OptionGrid
+						columns="four"
+						onToggle={(id) => update({ goals: toggleValue(values.goals, id) })}
+						options={goalOptions}
+						selected={values.goals}
+					/>
+				</div>
+			)}
+
+			{step === 2 && (
+				<div className="mx-auto w-full max-w-4xl space-y-8">
+					<StepHeader
+						description="Add the capital path and business model signals that matter."
+						title="What kind of support fits?"
+					/>
+					<div className="space-y-4">
+						<Label>Funding needs</Label>
+						<OptionGrid
+							onToggle={(id) =>
+								update({ fundingNeeds: toggleValue(values.fundingNeeds, id) })
+							}
+							options={fundingOptions}
+							selected={values.fundingNeeds}
+						/>
+					</div>
+					<div className="space-y-4">
+						<Label>Business type</Label>
+						<OptionGrid
+							columns="four"
+							onToggle={(id) =>
+								update({ businessTypes: toggleValue(values.businessTypes, id) })
+							}
+							options={businessTypeOptions}
+							selected={values.businessTypes}
+						/>
+					</div>
+				</div>
+			)}
+
+			{step === 3 && (
+				<div className="mx-auto w-full max-w-4xl space-y-8">
+					<StepHeader
+						description="A little context helps the recommendations get sharper."
+						title="Where are you right now?"
+					/>
+					<div className="grid gap-8 lg:grid-cols-2">
+						<div className="space-y-4">
+							<Label>Company stage</Label>
+							<OptionGrid
+								onToggle={(id) => update({ stage: id })}
+								options={stageOptions}
+								selected={values.stage ? [values.stage] : []}
+							/>
+						</div>
+						<div className="space-y-4">
+							<Label>Utah region</Label>
+							<OptionGrid
+								onToggle={(id) => update({ region: id })}
+								options={regionOptions}
+								selected={values.region ? [values.region] : []}
+							/>
+						</div>
+					</div>
+					<div className="grid gap-4 md:grid-cols-3">
+						<div className="space-y-2">
+							<Label htmlFor="city">City</Label>
+							<Input
+								id="city"
+								onChange={(event) => update({ city: event.target.value })}
+								placeholder="Salt Lake City"
+								value={values.city ?? ""}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="county">County</Label>
+							<Input
+								id="county"
+								onChange={(event) => update({ county: event.target.value })}
+								placeholder="Salt Lake"
+								value={values.county ?? ""}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="keywords">Specific focus</Label>
+							<Input
+								id="keywords"
+								onChange={(event) => update({ keywords: event.target.value })}
+								placeholder="Clean energy grants"
+								value={values.keywords ?? ""}
+							/>
+						</div>
+					</div>
+					<div className="space-y-4">
+						<Label>Hiring status</Label>
+						<OptionGrid
+							columns="four"
+							onToggle={(id) => update({ hiringStatus: id })}
+							options={hiringOptions}
+							selected={values.hiringStatus ? [values.hiringStatus] : []}
+						/>
+					</div>
+				</div>
+			)}
+		</NavigatorShell>
 	);
 }

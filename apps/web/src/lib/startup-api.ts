@@ -75,6 +75,17 @@ export type FounderProfileInput = {
 	keywords?: string;
 };
 
+export type InvestorProfileInput = {
+	stages: string[];
+	sectors: string[];
+	regions: string[];
+	hiringStatuses: string[];
+	employeeMin?: number;
+	employeeMax?: number;
+	researchGoals: string[];
+	keywords?: string;
+};
+
 export type ResourceRecommendation = {
 	resource: Resource;
 	score: number;
@@ -86,6 +97,26 @@ export type ResourceRecommendation = {
 		regions?: string[];
 		businessTypes?: string[];
 	};
+};
+
+export type InvestorCompanyRecommendation = {
+	rank: number;
+	company: Company;
+	why: string;
+	score?: number;
+};
+
+export type NavigatorPlanKind = "FOUNDER" | "INVESTOR";
+
+export type NavigatorPlan = {
+	id: string;
+	userId: string;
+	kind: NavigatorPlanKind;
+	title?: string | null;
+	input: unknown;
+	result: unknown;
+	createdAt: string;
+	updatedAt: string;
 };
 
 export type Paginated<T> = {

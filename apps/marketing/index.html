@@ -3,53 +3,36 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Fin - Personal Financial Intelligence</title>
+		<title>Startup State Navigator</title>
 		<meta
 			name="description"
-			content="Manage your money. Forecast your future. Track net worth, cash flow, investments, and future projections in one place."
+			content="The official operating system for building in Utah. Personalized founder guidance and investor-ready startup discovery."
 		>
-
-		<!-- Open Graph -->
-		<meta property="og:title" content="Fin - Personal Financial Intelligence">
+		<meta property="og:title" content="Startup State Navigator">
 		<meta
 			property="og:description"
-			content="Track net worth, cash flow, investments, and future projections in one place."
+			content="The official operating system for building in Utah."
 		>
 		<meta property="og:type" content="website">
-		<meta property="og:image" content="/public/og-image.png">
-
-		<!-- Favicon -->
 		<link rel="icon" type="image/x-icon" href="public/favicon.ico">
-
-		<!-- Styles -->
 		<link rel="stylesheet" href="styles.css">
 	</head>
 	<body>
-		<!-- Navigation -->
 		<nav id="nav-header" class="nav" aria-label="Main navigation">
 			<div class="container nav-container">
-				<div
-					class="logo-with-text cursor-pointer"
-					onclick="location.href='#top'"
-				>
-					<img src="public/fin-logo.png" alt="Fin" class="logo-img">
-					<span>Fin</span>
-				</div>
+				<a class="logo-with-text" href="#top" aria-label="Startup State home">
+					<span class="logo-mark">SS</span>
+					<span>Startup State</span>
+				</a>
 				<div class="nav-links">
-					<a href="#features" class="nav-link">Features</a>
-					<a href="#security" class="nav-link">Security</a>
-					<a href="#faq" class="nav-link">FAQ</a>
+					<a href="#navigator" class="nav-link">Navigator</a>
+					<a href="#ecosystem" class="nav-link">Ecosystem</a>
+					<a href="#investors" class="nav-link">Investors</a>
 				</div>
-
 				<div class="nav-actions">
-					<a
-						href="https://app.financewithfin.com/dashboard"
-						class="btn btn-primary"
-						>Get early access</a
-					>
+					<a href="/auth/signin?callbackUrl=/plan" class="btn btn-secondary">Sign in</a>
+					<a href="/" class="btn btn-primary">Start</a>
 				</div>
-
-				<!-- Mobile menu button -->
 				<button
 					type="button"
 					id="mobile-menu-btn"
@@ -61,1069 +44,101 @@
 					<span class="menu-icon"></span>
 				</button>
 			</div>
-
-			<!-- Mobile menu -->
 			<div id="mobile-menu" class="mobile-menu">
-				<a href="#features" class="mobile-link">Features</a>
-				<a href="#security" class="mobile-link">Security</a>
-				<a href="#faq" class="mobile-link">FAQ</a>
-				<a
-					href="https://app.financewithfin.com/dashboard"
-					class="mobile-cta btn btn-primary"
-					>Get early access</a
-				>
+				<a href="#navigator" class="mobile-link">Navigator</a>
+				<a href="#ecosystem" class="mobile-link">Ecosystem</a>
+				<a href="#investors" class="mobile-link">Investors</a>
+				<a href="/auth/signin?callbackUrl=/plan" class="mobile-link">Sign in</a>
+				<a href="/" class="mobile-cta btn btn-primary">Start</a>
 			</div>
 		</nav>
 
-		<!-- Hero Section -->
-		<section class="hero">
-			<div class="container">
-				<div class="hero-content reveal">
-					<div class="eyebrow">PERSONAL FINANCIAL INTELLIGENCE</div>
-					<h1 class="hero-title">
-						Manage your money.<br>Forecast your future.
-					</h1>
-					<p class="hero-subtitle">
-						Your one-stop shop for budgeting, wealth management, retirement
-						planning, and more.
-					</p>
-
-					<div class="hero-ctas">
-						<a
-							href="https://app.financewithfin.com/dashboard"
-							class="btn btn-primary btn-lg"
-							>Get early access</a
-						>
-						<a
-							href="https://app.financewithfin.com/dashboard?demoMode=true"
-							class="btn btn-secondary btn-lg"
-							>View demo</a
-						>
-					</div>
-				</div>
-
-				<!-- Product Preview -->
-				<div class="product-preview reveal reveal-delay-1">
-					<div class="browser-frame">
-						<div class="browser-header">
-							<div class="browser-dots">
-								<span class="dot dot-red"></span>
-								<span class="dot dot-yellow"></span>
-								<span class="dot dot-green"></span>
-							</div>
-							<div class="browser-address">
-								<span class="lock-icon">
-									<svg
-										width="12"
-										height="12"
-										viewBox="0 0 12 12"
-										fill="currentColor"
-										role="img"
-										aria-label="Icon"
-									>
-										<title>Icon</title>
-										<path
-											d="M9 4V3.5C9 1.84 7.66 0.5 6 0.5C4.34 0.5 3 1.84 3 3.5V4C2.45 4 2 4.45 2 5V10C2 10.55 2.45 11 3 11H9C9.55 11 10 10.55 10 10V5C10 4.45 9.55 4 9 4ZM4 3.5C4 2.4 4.9 1.5 6 1.5C7.1 1.5 8 2.4 8 3.5V4H4V3.5Z"
-										/>
-									</svg>
-								</span>
-								app.financewithfin.com
-							</div>
-						</div>
-						<div class="app-preview" aria-label="Fin product overview preview">
-							<div class="app-preview-sidebar">
-								<div class="app-preview-brand">
-									<img
-										src="public/fin-logo.png"
-										alt=""
-										class="app-preview-logo"
-									>
-									<span>Fin</span>
-								</div>
-
-								<div class="app-preview-nav" aria-label="Preview navigation">
-									<span class="app-preview-nav-item active">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M3 3v18h18" />
-											<path d="M7 14v3" />
-											<path d="M12 9v8" />
-											<path d="M17 5v12" />
-										</svg>
-										Overview
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M3 21h18" />
-											<path d="M5 21V9l7-4 7 4v12" />
-											<path d="M9 21v-6h6v6" />
-										</svg>
-										Accounts
-									</span>
-
-									<span class="app-preview-nav-label">Budget</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<circle cx="12" cy="12" r="9" />
-											<circle cx="12" cy="12" r="3" />
-										</svg>
-										Budget
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M8 6h13" />
-											<path d="M8 12h13" />
-											<path d="M8 18h13" />
-											<path d="M3 6h.01" />
-											<path d="M3 12h.01" />
-											<path d="M3 18h.01" />
-										</svg>
-										Transactions
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="m13 2-2 8h7l-7 12 2-8H6z" />
-										</svg>
-										Rules
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M3 3v5h5" />
-											<path d="M3 8a9 9 0 1 0 3-5" />
-											<path d="M12 7v5l3 2" />
-										</svg>
-										Spending
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path
-												d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0l-8.17-8.17A2 2 0 0 1 2 11V4a2 2 0 0 1 2-2h7a2 2 0 0 1 1.41.59l8.18 8.18a2 2 0 0 1 0 2.82Z"
-											/>
-											<path d="M7 7h.01" />
-										</svg>
-										Categories
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<rect width="16" height="18" x="4" y="3" rx="2" />
-											<path d="M8 7h8" />
-											<path d="M8 11h8" />
-											<path d="M8 15h2" />
-											<path d="M14 15h2" />
-										</svg>
-										What If
-									</span>
-
-									<span class="app-preview-nav-label">Wealth Management</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M3 17 9 11l4 4 8-8" />
-											<path d="M14 7h7v7" />
-										</svg>
-										Investments
-									</span>
-									<span class="app-preview-nav-item">
-										<svg
-											width="15"
-											height="15"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M3 3v18h18" />
-											<path d="m19 9-5 5-4-4-3 3" />
-										</svg>
-										Scenarios
-									</span>
-								</div>
-
-								<div class="app-preview-demo-user">
-									<span>DM</span>
-									<strong>Demo Mode</strong>
-									<svg
-										width="14"
-										height="14"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										aria-hidden="true"
-									>
-										<path d="m18 15-6-6-6 6" />
-									</svg>
-								</div>
-							</div>
-
-							<div class="app-preview-main">
-								<div class="app-preview-topbar">
-									<div>
-										<h3>Overview</h3>
-										<p>Your financial summary and projections</p>
-									</div>
-									<span class="app-preview-ai-button">
-										<svg
-											width="14"
-											height="14"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											aria-hidden="true"
-										>
-											<path d="M12 3v3" />
-											<path d="M18.5 5.5 16.4 7.6" />
-											<path d="M21 12h-3" />
-											<path d="M18.5 18.5 16.4 16.4" />
-											<path d="M12 21v-3" />
-											<path d="M5.5 18.5 7.6 16.4" />
-											<path d="M3 12h3" />
-											<path d="M5.5 5.5 7.6 7.6" />
-											<circle cx="12" cy="12" r="3" />
-										</svg>
-										Fin AI
-									</span>
-								</div>
-
-								<div class="app-preview-card portfolio-card">
-									<div class="app-preview-card-header">
-										<h4>Portfolio overview</h4>
-										<strong>$535,600</strong>
-									</div>
-									<div class="portfolio-stack" aria-hidden="true">
-										<span class="portfolio-stack-segment real-estate"></span>
-										<span class="portfolio-stack-segment retirement"></span>
-										<span class="portfolio-stack-segment stocks"></span>
-										<span class="portfolio-stack-segment cash"></span>
-										<span class="portfolio-stack-segment ira"></span>
-										<span class="portfolio-stack-segment hsa"></span>
-									</div>
-
-									<div class="portfolio-list">
-										<div class="portfolio-row real-estate">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>Real Estate</strong>
-												<span>2 holdings</span>
-											</div>
-											<span class="portfolio-percent">68.9%</span>
-											<strong class="portfolio-amount">$369,000</strong>
-											<div class="portfolio-track">
-												<span style="width: 68.9%"></span>
-											</div>
-										</div>
-										<div class="portfolio-row retirement">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>401(k)</strong>
-												<span>1 holding</span>
-											</div>
-											<span class="portfolio-percent">14.7%</span>
-											<strong class="portfolio-amount">$78,500</strong>
-											<div class="portfolio-track">
-												<span style="width: 14.7%"></span>
-											</div>
-										</div>
-										<div class="portfolio-row stocks">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>Stocks</strong>
-												<span>1 holding</span>
-											</div>
-											<span class="portfolio-percent">6.5%</span>
-											<strong class="portfolio-amount">$35,000</strong>
-											<div class="portfolio-track">
-												<span style="width: 6.5%"></span>
-											</div>
-										</div>
-										<div class="portfolio-row cash">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>Cash</strong>
-												<span>2 holdings</span>
-											</div>
-											<span class="portfolio-percent">5.0%</span>
-											<strong class="portfolio-amount">$26,900</strong>
-											<div class="portfolio-track">
-												<span style="width: 5%"></span>
-											</div>
-										</div>
-										<div class="portfolio-row ira">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>Roth IRA</strong>
-												<span>1 holding</span>
-											</div>
-											<span class="portfolio-percent">4.1%</span>
-											<strong class="portfolio-amount">$22,000</strong>
-											<div class="portfolio-track">
-												<span style="width: 4.1%"></span>
-											</div>
-										</div>
-										<div class="portfolio-row hsa">
-											<div class="portfolio-row-copy">
-												<span class="portfolio-dot"></span>
-												<strong>HSA</strong>
-												<span>1 holding</span>
-											</div>
-											<span class="portfolio-percent">0.8%</span>
-											<strong class="portfolio-amount">$4,200</strong>
-											<div class="portfolio-track">
-												<span style="width: 1.2%"></span>
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<div class="app-preview-card net-worth-card">
-									<div class="net-worth-header">
-										<div>
-											<h4>Net Worth</h4>
-											<p>
-												<strong>$533,750</strong>
-												<span>$572,335</span>
-												<small>in 1y</small>
-											</p>
-										</div>
-										<button type="button" class="app-preview-select">
-											1 year
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												aria-hidden="true"
-											>
-												<path d="m6 9 6 6 6-6" />
-											</svg>
-										</button>
-									</div>
-									<div class="net-worth-chart">
-										<div class="chart-y-label label-top">$600,000</div>
-										<div class="chart-y-label label-mid-high">$450,000</div>
-										<div class="chart-y-label label-mid-low">$300,000</div>
-										<div class="chart-y-label label-bottom">$150,000</div>
-										<svg
-											viewBox="0 0 720 245"
-											preserveAspectRatio="none"
-											role="img"
-											aria-label="Net worth chart with historical and forecast lines"
-										>
-											<title>Net worth history and one-year projection</title>
-											<g class="net-worth-grid">
-												<path d="M70 20H710" />
-												<path d="M70 82H710" />
-												<path d="M70 144H710" />
-												<path d="M70 206H710" />
-												<path d="M70 20V220" />
-												<path d="M190 20V220" />
-												<path d="M310 20V220" />
-												<path d="M430 20V220" />
-												<path d="M550 20V220" />
-												<path d="M670 20V220" />
-											</g>
-											<path
-												class="net-worth-line historical"
-												d="M70 78 C150 74 214 70 284 67 C345 64 397 58 462 55 C506 53 535 50 548 49"
-											/>
-											<path
-												class="net-worth-line forecast"
-												d="M570 47 C620 43 666 36 710 32"
-											/>
-										</svg>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Everything in One Place -->
-		<section class="section">
-			<div class="container">
-				<div class="section-header reveal">
-					<h2 class="section-title centered">Everything in one place</h2>
-					<p class="section-description centered">
-						All your financial data, organized and accessible.
-					</p>
-				</div>
-
-				<div class="dashboard-grid reveal">
-					<div class="dashboard-card">
-						<div class="card-label">Cash Flow</div>
-						<div class="card-value stat-value">$12,450</div>
-						<div class="mini-chart-container">
-							<svg
-								viewBox="0 0 120 40"
-								class="mini-bar-chart"
-								role="img"
-								aria-label="Cash flow bar chart"
-							>
-								<title>Monthly Cash Flow</title>
-								<rect
-									x="0"
-									y="20"
-									width="8"
-									height="20"
-									fill="var(--accent)"
-									opacity="0.4"
-								/>
-								<rect
-									x="12"
-									y="15"
-									width="8"
-									height="25"
-									fill="var(--accent)"
-									opacity="0.5"
-								/>
-								<rect
-									x="24"
-									y="10"
-									width="8"
-									height="30"
-									fill="var(--accent)"
-									opacity="0.6"
-								/>
-								<rect
-									x="36"
-									y="18"
-									width="8"
-									height="22"
-									fill="var(--accent)"
-									opacity="0.5"
-								/>
-								<rect
-									x="48"
-									y="12"
-									width="8"
-									height="28"
-									fill="var(--accent)"
-									opacity="0.7"
-								/>
-								<rect
-									x="60"
-									y="8"
-									width="8"
-									height="32"
-									fill="var(--accent)"
-									opacity="0.8"
-								/>
-								<rect x="72" y="5" width="8" height="35" fill="var(--accent)" />
-							</svg>
-						</div>
-					</div>
-
-					<div class="dashboard-card">
-						<div class="card-label">Investments</div>
-						<div class="card-value stat-value">$184,500</div>
-						<div class="card-meta positive">+8.2% this year</div>
-					</div>
-
-					<div class="dashboard-card">
-						<div class="card-label">Budget Status</div>
-						<div class="budget-bars">
-							<div class="budget-bar">
-								<div class="budget-label">Food & Dining</div>
-								<div class="progress-track">
-									<div class="progress-fill" style="width: 67%"></div>
-								</div>
-							</div>
-							<div class="budget-bar">
-								<div class="budget-label">Transportation</div>
-								<div class="progress-track">
-									<div class="progress-fill" style="width: 42%"></div>
-								</div>
-							</div>
-							<div class="budget-bar">
-								<div class="budget-label">Shopping</div>
-								<div class="progress-track">
-									<div class="progress-fill exceeded" style="width: 100%"></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Net Worth & Forecasting -->
-		<section class="section feature-detail alt">
-			<div class="container">
-				<div class="feature-layout">
-					<div class="feature-content reveal">
-						<div class="eyebrow">NET WORTH TRACKING</div>
-						<h2 class="section-title">
-							See the complete picture of your wealth
-						</h2>
-						<p class="section-description">
-							Track all your accounts, investments, and assets in one place.
-							Watch your net worth grow over time and forecast where you're
-							headed based on your current trajectory.
+		<main id="top">
+			<section class="hero">
+				<div class="container hero-grid">
+					<div class="hero-content reveal">
+						<p class="eyebrow">UTAH STARTUP OPERATING SYSTEM</p>
+						<h1 class="hero-title">The official operating system for building in Utah.</h1>
+						<p class="hero-subtitle">
+							Startup State Navigator gives founders a personalized action plan and
+							gives investors a living view of Utah companies, resources, and growth
+							signals.
 						</p>
-						<ul class="feature-list">
-							<li>Connect bank accounts, credit cards, and investments</li>
-							<li>Automatic balance updates via Plaid</li>
-							<li>Historical net worth tracking</li>
-							<li>Future projections with confidence intervals</li>
-						</ul>
+						<div class="hero-ctas">
+							<a href="/" class="btn btn-primary btn-lg">Start navigator</a>
+							<a href="/explore" class="btn btn-secondary btn-lg">Explore ecosystem</a>
+						</div>
 					</div>
 
-					<div class="feature-visual reveal">
-						<div class="ui-panel">
-							<div class="panel-toolbar">
-								<span class="toolbar-item active">All Accounts</span>
-								<span class="toolbar-item">Investments</span>
+					<div
+						class="product-preview reveal reveal-delay-1"
+						aria-label="Startup State product preview"
+					>
+						<div class="app-frame">
+							<div class="app-sidebar">
+								<div class="app-brand"><span class="logo-mark small">SS</span> Navigator</div>
+								<span class="app-nav active">Founder plan</span>
+								<span class="app-nav">Resources</span>
+								<span class="app-nav">Startup map</span>
+								<span class="app-nav">Investor shortlist</span>
 							</div>
-							<div class="panel-body">
-								<div class="metric-row">
-									<span class="metric-label">Current Net Worth</span>
-									<span class="metric-value">$487,234</span>
+							<div class="app-main">
+								<div class="preview-header">
+									<span class="status-dot"></span>
+									Your plan is ready
 								</div>
-								<div class="metric-row">
-									<span class="metric-label">12-Month Projection</span>
-									<span class="metric-value forecast">$542,100</span>
+								<div class="preview-card primary-card">
+									<span>Top match</span>
+									<strong>Utah Innovation Center</strong>
+									<p>Grant guidance, federal funding readiness, and warm introductions.</p>
 								</div>
-								<div class="separator"></div>
-								<div class="mini-chart">
-									<svg
-										viewBox="0 0 200 80"
-										class="mini-line-chart"
-										role="img"
-										aria-label="Mini chart"
-									>
-										<title>Net Worth Trend</title>
-										<path
-											class="chart-line"
-											d="M 0 60 L 40 55 L 80 50 L 120 40 L 160 35 L 200 30"
-											fill="none"
-											stroke="var(--text-secondary)"
-											stroke-width="2"
-										/>
-									</svg>
+								<div class="preview-grid">
+									<div class="preview-card"><strong>42</strong><span>Resources</span></div>
+									<div class="preview-card"><strong>5</strong><span>Companies</span></div>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<!-- Transactions & Rules -->
-		<section class="section feature-detail alt">
-			<div class="container">
-				<div class="feature-layout reverse">
-					<div class="feature-content reveal">
-						<div class="eyebrow">INTELLIGENT ORGANIZATION</div>
-						<h2 class="section-title">Automate your financial workflow</h2>
-						<p class="section-description">
-							Create rules that automatically categorize transactions, add
-							hashtags, and organize your spending. Never manually categorize
-							the same merchant twice.
-						</p>
-						<ul class="feature-list">
-							<li>Powerful rules engine for automation</li>
-							<li>Custom hashtags for flexible organization</li>
-							<li>Pattern matching and conditions</li>
-							<li>Bulk actions and retroactive updates</li>
-						</ul>
+			<section id="navigator" class="section">
+				<div class="container section-grid">
+					<div>
+						<p class="eyebrow">FOUNDER NAVIGATOR</p>
+						<h2>Move from intake to next steps in minutes.</h2>
 					</div>
-					<div class="feature-visual reveal">
-						<div class="ui-panel">
-							<div class="panel-toolbar">
-								<span class="toolbar-item">Transactions</span>
-								<span class="toolbar-item active">Rules</span>
-							</div>
-							<div class="panel-body">
-								<div class="rule-item">
-									<div class="rule-header">
-										<span class="rule-name">Auto-categorize subscriptions</span>
-										<span class="rule-badge">Active</span>
-									</div>
-									<div class="rule-condition">
-										If merchant contains "Netflix" → Bills
-									</div>
-								</div>
-								<div class="separator"></div>
-								<div class="rule-item">
-									<div class="rule-header">
-										<span class="rule-name">Tag recurring income</span>
-										<span class="rule-badge">Active</span>
-									</div>
-									<div class="rule-condition">If amount > $1000 → #salary</div>
-								</div>
-							</div>
-						</div>
+					<div class="feature-list">
+						<article class="feature-card reveal">
+							<h3>Personalized guidance</h3>
+							<p>Founders select stage, sector, region, goals, and capital needs to get ranked resources with clear reasons.</p>
+						</article>
+						<article class="feature-card reveal">
+							<h3>Saved plans</h3>
+							<p>Visitors can use the navigator publicly, then sign in only when they want to save the result to their account.</p>
+						</article>
 					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<!-- Built for real life -->
-		<section class="section">
-			<div class="container">
-				<div class="section-header reveal">
-					<h2 class="section-title centered">Built for real financial life</h2>
-					<p class="section-description centered">
-						Fin isn't just another budgeting app. It's a complete financial
-						intelligence platform designed for people who want to understand the
-						full picture of their money.
-					</p>
+			<section id="ecosystem" class="section alt">
+				<div class="container cards-three">
+					<article class="feature-card reveal">
+						<h3>Live ecosystem map</h3>
+						<p>Browse Utah companies by sector, size, hiring status, and location.</p>
+					</article>
+					<article class="feature-card reveal reveal-delay-1">
+						<h3>Admin-updatable content</h3>
+						<p>Resources and company listings can evolve without redeploying the app.</p>
+					</article>
+					<article id="investors" class="feature-card reveal reveal-delay-2">
+						<h3>Investor-ready shortlists</h3>
+						<p>Investors select thesis filters and receive a ranked company list with concise reasoning.</p>
+					</article>
 				</div>
+			</section>
+		</main>
 
-				<div class="audience-list reveal">
-					<div class="audience-item">
-						<span class="audience-icon">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 20 20"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								role="img"
-								aria-label="Icon"
-							>
-								<title>Icon</title>
-								<circle cx="10" cy="6" r="4" />
-								<path d="M3 18c0-3.87 3.13-7 7-7s7 3.13 7 7" />
-							</svg>
-						</span>
-						<div>
-							<strong>Freelancers</strong>
-							<p>
-								Track variable income, manage taxes, and forecast irregular cash
-								flow with confidence.
-							</p>
-						</div>
-					</div>
-					<div class="audience-item">
-						<span class="audience-icon">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 20 20"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								role="img"
-								aria-label="Icon"
-							>
-								<title>Icon</title>
-								<circle cx="7" cy="6" r="3" />
-								<circle cx="13" cy="6" r="3" />
-								<path d="M2 18c0-2.76 2.24-5 5-5s5 2.24 5 5" />
-								<path d="M8 18c0-2.76 2.24-5 5-5s5 2.24 5 5" />
-							</svg>
-						</span>
-						<div>
-							<strong>Families</strong>
-							<p>
-								Combine accounts, track household spending, and plan for
-								education, vacations, and big purchases.
-							</p>
-						</div>
-					</div>
-					<div class="audience-item">
-						<span class="audience-icon">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 20 20"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								role="img"
-								aria-label="Icon"
-							>
-								<title>Icon</title>
-								<path d="M4 15l4-8 4 4 4-6" />
-								<path d="M18 9v6" />
-								<path d="M18 15l-2-2" />
-								<path d="M18 15l2-2" />
-							</svg>
-						</span>
-						<div>
-							<strong>Investors</strong>
-							<p>
-								Monitor portfolios alongside other assets. See total net worth
-								growth and allocation in one view.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Security Section -->
-		<section id="security" class="section security">
-			<div class="container">
-				<div class="section-header reveal">
-					<h2 class="section-title centered">Your data is protected</h2>
-					<p class="section-description centered">
-						Bank-level security and encryption. You own your data.
-					</p>
-				</div>
-
-				<div class="grid-3">
-					<div class="security-card reveal">
-						<div class="security-icon">
-							<svg
-								width="32"
-								height="32"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Bank-level encryption"
-							>
-								<title>Encryption Icon</title>
-								<rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-								<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-							</svg>
-						</div>
-						<h3 class="security-title">Bank-level encryption</h3>
-						<p class="security-description">
-							All data is encrypted in transit and at rest using
-							industry-standard protocols.
-						</p>
-					</div>
-
-					<div class="security-card reveal">
-						<div class="security-icon">
-							<svg
-								width="32"
-								height="32"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Two-factor authentication"
-							>
-								<title>Two-Factor Authentication Icon</title>
-								<path d="M12 2v20M2 12h20" />
-								<circle cx="12" cy="12" r="4" />
-							</svg>
-						</div>
-						<h3 class="security-title">Two-factor authentication</h3>
-						<p class="security-description">
-							Protect your account with 2FA using authentication apps or SMS.
-						</p>
-					</div>
-
-					<div class="security-card reveal">
-						<div class="security-icon">
-							<svg
-								width="32"
-								height="32"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Data ownership"
-							>
-								<title>Data Ownership Icon</title>
-								<path
-									d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
-								/>
-								<polyline points="14 2 14 8 20 8" />
-							</svg>
-						</div>
-						<h3 class="security-title">Data ownership</h3>
-						<p class="security-description">
-							Export your data anytime. Delete your account and all data with
-							one click.
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- FAQ Section -->
-		<section id="faq" class="section faq">
-			<div class="container narrow">
-				<div class="section-header reveal">
-					<h2 class="section-title centered">Frequently asked questions</h2>
-				</div>
-
-				<div class="faq-list">
-					<div class="faq-item reveal">
-						<button type="button" class="faq-question" aria-expanded="false">
-							<span class="faq-question-text">What is Fin?</span>
-							<svg
-								class="faq-icon"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Toggle answer"
-							>
-								<title>Expand/Collapse</title>
-								<polyline points="6 9 12 15 18 9" />
-							</svg>
-						</button>
-						<div class="faq-answer">
-							<p>
-								Fin stands for “Financial Intelligence.” It's a personal finance
-								platform that helps you track your net worth, cash flow, and
-								investments, while forecasting your financial future. By
-								securely connecting your accounts through Plaid, Fin delivers
-								intelligent insights and automation to help you make better
-								financial decisions.
-							</p>
-						</div>
-					</div>
-
-					<div class="faq-item reveal">
-						<button type="button" class="faq-question" aria-expanded="false">
-							<span class="faq-question-text"
-								>How does account connection work?</span
-							>
-							<svg
-								class="faq-icon"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Toggle answer"
-							>
-								<title>Expand/Collapse</title>
-								<polyline points="6 9 12 15 18 9" />
-							</svg>
-						</button>
-						<div class="faq-answer">
-							<p>
-								Fin uses Plaid to securely connect to your financial
-								institutions. Plaid is used by thousands of financial apps and
-								never stores your credentials. Your login information is
-								encrypted and connections are read-only—Fin cannot move money.
-							</p>
-						</div>
-					</div>
-
-					<div class="faq-item reveal">
-						<button type="button" class="faq-question" aria-expanded="false">
-							<span class="faq-question-text">Is my data secure?</span>
-							<svg
-								class="faq-icon"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Toggle answer"
-							>
-								<title>Expand/Collapse</title>
-								<polyline points="6 9 12 15 18 9" />
-							</svg>
-						</button>
-						<div class="faq-answer">
-							<p>
-								Yes. All data is encrypted in transit and at rest. We use
-								bank-level security protocols, support two-factor
-								authentication, and regularly undergo security audits. We never
-								sell your data or share it with third parties.
-							</p>
-						</div>
-					</div>
-
-					<div class="faq-item reveal">
-						<button type="button" class="faq-question" aria-expanded="false">
-							<span class="faq-question-text">Can I delete my data?</span>
-							<svg
-								class="faq-icon"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Toggle answer"
-							>
-								<title>Expand/Collapse</title>
-								<polyline points="6 9 12 15 18 9" />
-							</svg>
-						</button>
-						<div class="faq-answer">
-							<p>
-								Absolutely. You own your data. You can export it at any time in
-								standard formats, and delete your account and all associated
-								data with one click. Deletion is immediate and permanent.
-							</p>
-						</div>
-					</div>
-
-					<div class="faq-item reveal">
-						<button type="button" class="faq-question" aria-expanded="false">
-							<span class="faq-question-text">How does forecasting work?</span>
-							<svg
-								class="faq-icon"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								role="img"
-								aria-label="Toggle answer"
-							>
-								<title>Expand/Collapse</title>
-								<polyline points="6 9 12 15 18 9" />
-							</svg>
-						</button>
-						<div class="faq-answer">
-							<p>
-								Fin analyzes your historical income, spending, and investment
-								patterns to project future net worth and cash flow. You can
-								model conservative, expected, and aggressive scenarios with
-								adjustable assumptions about growth rates and market conditions.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Footer -->
-		<footer class="footer">
-			<div class="container">
-				<div class="footer-content">
-					<div class="footer-brand">
-						<div class="logo-with-text">
-							<img src="public/fin-logo.png" alt="Fin" class="logo-img">
-							<span>Fin</span>
-						</div>
-						<p class="footer-tagline">Personal financial intelligence</p>
-					</div>
-
-					<nav class="footer-links" aria-label="Footer navigation">
-						<a href="#privacy" class="footer-link">Privacy</a>
-						<a href="#terms" class="footer-link">Terms</a>
-						<a href="#security" class="footer-link">Security</a>
-						<a href="#contact" class="footer-link">Contact</a>
-					</nav>
-				</div>
-
-				<div class="footer-bottom">
-					<p class="footer-copyright">&copy; 2026 Fin. All rights reserved.</p>
-				</div>
-			</div>
-		</footer>
-
-		<!-- Scripts -->
 		<script src="script.js"></script>
 	</body>
 </html>

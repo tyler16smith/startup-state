@@ -6,17 +6,14 @@ import { FinAiPanelProvider } from "~/components/agent/fin-ai-context";
 import { FinAiWorkspace } from "~/components/agent/fin-ai-workspace";
 
 const CUSTOMER_ROUTE_PREFIXES = [
-	"/founder",
+	"/explore",
 	"/resources",
 	"/map",
 	"/companies",
 ];
 
 function isCustomerRoute(pathname: string) {
-	return (
-		pathname === "/" ||
-		CUSTOMER_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-	);
+	return CUSTOMER_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 export function CustomerAgentBoundary({ children }: { children: ReactNode }) {

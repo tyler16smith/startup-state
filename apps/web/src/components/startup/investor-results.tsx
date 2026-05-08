@@ -1,51 +1,43 @@
 "use client";
 
-import confetti from "canvas-confetti";
-import {
-	ArrowRight,
-	Compass,
-	Loader2,
-	Map as MapIcon,
-	Save,
-} from "lucide-react";
+import { ArrowRight, Building2, Loader2, Save } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "~/components/startup/empty-state";
 import { SavePlanDialog } from "~/components/startup/navigator-flow/save-plan-dialog";
-import { ResourceCard } from "~/components/startup/resource-card";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
 	apiClient,
-	type FounderProfileInput,
-	type ResourceRecommendation,
+	type InvestorCompanyRecommendation,
+	type InvestorProfileInput,
 } from "~/lib/startup-api";
 
-export function FounderResults() {
+export function InvestorResults() {
 	const { data: session, status } = useSession();
+	const [profile, setProfile] = useState<InvestorProfileInput | null>(null);
 	const [recommendations, setRecommendations] = useState<
-		ResourceRecommendation[]
+		InvestorCompanyRecommendation[]
 	>([]);
-	const [profile, setProfile] = useState<FounderProfileInput | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const celebrated = useRef(false);
 	const autoSaveAttempted = useRef(false);
 
 	useEffect(() => {
-		const raw = sessionStorage.getItem("startup-founder-intake");
+		const raw = sessionStorage.getItem("startup-investor-intake");
 		if (!raw) {
 			setLoading(false);
 			return;
 		}
-		const input = JSON.parse(raw) as FounderProfileInput;
+		const input = JSON.parse(raw) as InvestorProfileInput;
 		setProfile(input);
-		apiClient<{ recommendations: ResourceRecommendation[] }>(
-			"/api/v1/resources/recommend",
+		apiClient<{ recommendations: InvestorCompanyRecommendation[] }>(
+			"/api/v1/companies/recommend",
 			{
 				method: "POST",
 				body: JSON.stringify(input),
@@ -54,7 +46,7 @@ export function FounderResults() {
 			.then((data) => {
 				setRecommendations(data.recommendations);
 				sessionStorage.setItem(
-					"startup-founder-result",
+					"startup-investor-result",
 					JSON.stringify({ recommendations: data.recommendations }),
 				);
 			})
@@ -65,25 +57,6 @@ export function FounderResults() {
 			)
 			.finally(() => setLoading(false));
 	}, []);
-
-	useEffect(() => {
-		if (
-			loading ||
-			error ||
-			recommendations.length === 0 ||
-			celebrated.current
-		) {
-			return;
-		}
-		celebrated.current = true;
-		const reducedMotion = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-		if (reducedMotion) return;
-		const shared = { particleCount: 70, spread: 70, ticks: 220 };
-		void confetti({ ...shared, origin: { x: 0, y: 0.72 }, angle: 60 });
-		void confetti({ ...shared, origin: { x: 1, y: 0.72 }, angle: 120 });
-	}, [error, loading, recommendations.length]);
 
 	const savePlan = useCallback(async () => {
 		if (!profile || recommendations.length === 0) return;
@@ -97,17 +70,17 @@ export function FounderResults() {
 			await apiClient("/api/v1/navigatorPlans/save", {
 				method: "POST",
 				body: JSON.stringify({
-					kind: "FOUNDER",
-					title: "Founder action plan",
+					kind: "INVESTOR",
+					title: "Investor shortlist",
 					input: profile,
 					result: { recommendations },
 				}),
 			});
 			setSaved(true);
-			window.history.replaceState(null, "", "/founder/results");
+			window.history.replaceState(null, "", "/investor/results");
 		} catch (err) {
 			setSaveError(
-				err instanceof Error ? err.message : "Could not save this plan",
+				err instanceof Error ? err.message : "Could not save this result",
 			);
 		} finally {
 			setSaving(false);
@@ -133,10 +106,10 @@ export function FounderResults() {
 
 	if (loading) {
 		return (
-			<div className="flex min-h-80 items-center justify-center rounded-lg border bg-white">
+			<div className="flex min-h-screen items-center justify-center bg-white px-4 py-20">
 				<div className="flex items-center gap-3 text-muted-foreground">
-					<Loader2 className="size-5 animate-spin" /> Building your Utah startup
-					action plan
+					<Loader2 className="size-5 animate-spin" /> Loading up your investor
+					recommendations
 				</div>
 			</div>
 		);
@@ -144,40 +117,42 @@ export function FounderResults() {
 
 	if (!profile) {
 		return (
-			<EmptyState
-				description="Complete the founder intake first so recommendations can be ranked against your stage, goals, sector, and region."
-				icon={Compass}
-				title="No intake found"
-			/>
+			<main className="mx-auto max-w-3xl px-4 py-20">
+				<EmptyState
+					description="Complete the investor navigator first so companies can be ranked against your thesis."
+					icon={Building2}
+					title="No investor filters found"
+				/>
+			</main>
 		);
 	}
 
 	if (error) {
 		return (
-			<EmptyState
-				description={error}
-				icon={Compass}
-				title="Recommendations could not load"
-			/>
+			<main className="mx-auto max-w-3xl px-4 py-20">
+				<EmptyState
+					description={error}
+					icon={Building2}
+					title="Could not rank companies"
+				/>
+			</main>
 		);
 	}
 
 	return (
-		<div className="space-y-8">
+		<main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
 			<div className="rounded-lg border bg-white p-5 shadow-sm">
 				<div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
 					<div>
 						<p className="font-medium text-emerald-700 text-sm">
-							Your plan is ready!
+							Investor shortlist
 						</p>
-						<h2 className="mt-1 font-semibold text-2xl">
-							Top resources for a{" "}
-							{profile.stage?.replace(/_/g, " ").toLowerCase()} founder in{" "}
-							{profile.region}
-						</h2>
+						<h1 className="mt-1 font-semibold text-2xl tracking-normal">
+							Five Utah companies to research next
+						</h1>
 						<p className="mt-2 text-muted-foreground text-sm">
-							Ranked by stage fit, goals, sector, location, business type, and
-							keyword relevance.
+							Filtered by your stage, sector, and advanced preferences, then
+							ranked with concise fit reasoning.
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -187,45 +162,71 @@ export function FounderResults() {
 							) : (
 								<Save className="size-4" />
 							)}
-							{saved ? "Saved" : "Save my plan"}
+							{saved ? "Saved" : "Save result"}
 						</Button>
 						<Button asChild variant="outline">
-							<Link href="/resources">
-								Browse all <ArrowRight className="size-4" />
-							</Link>
-						</Button>
-						<Button asChild>
 							<Link href="/map">
-								View map <MapIcon className="size-4" />
+								View map <ArrowRight className="size-4" />
 							</Link>
 						</Button>
 					</div>
 				</div>
 			</div>
 			<SavePlanDialog
-				callbackUrl="/founder/results?save=1"
+				callbackUrl="/investor/results?save=1"
 				onOpenChange={setSaveDialogOpen}
 				open={saveDialogOpen}
 			/>
 			{saveError && <p className="text-destructive text-sm">{saveError}</p>}
 			{recommendations.length ? (
-				<div className="grid gap-5 lg:grid-cols-3">
+				<div className="grid gap-5 lg:grid-cols-5">
 					{recommendations.map((recommendation) => (
-						<ResourceCard
-							key={recommendation.resource.id}
-							reasons={recommendation.reasons}
-							resource={recommendation.resource}
-							score={recommendation.score}
-						/>
+						<article
+							className="flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+							key={recommendation.company.id}
+						>
+							<div className="flex items-start justify-between gap-3">
+								<Badge className="rounded-md bg-emerald-600 text-white">
+									#{recommendation.rank}
+								</Badge>
+								{typeof recommendation.score === "number" && (
+									<Badge className="rounded-md" variant="secondary">
+										{recommendation.score} fit
+									</Badge>
+								)}
+							</div>
+							<h2 className="mt-4 font-semibold text-lg leading-tight">
+								{recommendation.company.name}
+							</h2>
+							<p className="mt-2 text-muted-foreground text-sm">
+								{recommendation.company.sector ?? "Utah startup"}
+								{recommendation.company.stage
+									? ` · ${recommendation.company.stage.replace(/_/g, " ").toLowerCase()}`
+									: ""}
+							</p>
+							<p className="mt-4 text-sm leading-relaxed">
+								{recommendation.why}
+							</p>
+							<Button
+								asChild
+								className="mt-auto w-full"
+								size="sm"
+								variant="outline"
+							>
+								<Link href={`/companies/${recommendation.company.id}`}>
+									Open profile <ArrowRight className="size-4" />
+								</Link>
+							</Button>
+						</article>
 					))}
 				</div>
 			) : (
 				<EmptyState
-					description="No published resources match this intake yet. Try broadening your goals or import resources from the admin panel."
-					icon={Compass}
-					title="No recommendations yet"
+					description="No companies matched these filters yet. Try broadening stage or sector."
+					icon={Building2}
+					title="No shortlist yet"
 				/>
 			)}
-		</div>
+		</main>
 	);
 }

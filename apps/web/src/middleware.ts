@@ -11,7 +11,9 @@ export default auth((req) => {
 	const is2FARoute = nextUrl.pathname === "/auth/verify-2fa";
 	const isStartupPublicRoute =
 		nextUrl.pathname === "/" ||
+		nextUrl.pathname.startsWith("/explore") ||
 		nextUrl.pathname.startsWith("/founder") ||
+		nextUrl.pathname.startsWith("/investor") ||
 		nextUrl.pathname.startsWith("/resources") ||
 		nextUrl.pathname.startsWith("/map") ||
 		nextUrl.pathname.startsWith("/companies");
@@ -25,7 +27,7 @@ export default auth((req) => {
 
 	// Redirect authenticated users away from auth pages, but not the 2FA page
 	if (isLoggedIn && isAuthPage && !is2FARoute) {
-		return Response.redirect(new URL("/founder", nextUrl));
+		return Response.redirect(new URL("/plan", nextUrl));
 	}
 
 	// Redirect to 2FA verification if pending

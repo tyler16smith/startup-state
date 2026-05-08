@@ -9,7 +9,7 @@
 		"build": "next build",
 		"preview": "next start",
 		"check": "biome check .",
-		"test:api-contracts": "node --import tsx --test src/server/lib/cors.test.ts ../../packages/client-ts/api-client.test.ts",
+		"test:api-contracts": "node --import tsx --test src/server/lib/cors.test.ts src/server/services/startup-navigator/geocoding.test.ts ../../packages/client-ts/api-client.test.ts",
 		"typecheck": "tsc --noEmit",
 		"postinstall": "prisma generate",
 		"vercel-build": "prisma generate && next build",

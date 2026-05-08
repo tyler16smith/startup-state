@@ -22,6 +22,7 @@ import {
 	searchCompanies,
 	updateCompany,
 } from "../services/startup-navigator/companies";
+import { recommendCompaniesForInvestorProfile } from "../services/startup-navigator/investor-recommendations";
 import { idInputSchema } from "../services/startup-navigator/schemas";
 
 function companyIdentifier(body: unknown) {
@@ -64,6 +65,10 @@ export const companies = {
 		const input = typeof body === "object" && body !== null ? body : {};
 		return createCompanyClaim(ctx.db, ctx.userId, { ...input, companyId });
 	}),
+
+	recommend: withPublic(async (ctx, body) => {
+		return recommendCompaniesForInvestorProfile(ctx.db, body);
+	}) satisfies PublicHandler,
 
 	adminList: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
 		await requireAdmin(ctx);

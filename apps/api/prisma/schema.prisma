@@ -68,6 +68,7 @@ model User {
   mcpOAuthAccessTokens         McpOAuthAccessToken[]
   mcpToolCalls                 McpToolCall[]
   founderProfiles              FounderProfile[]
+  navigatorPlans               NavigatorPlan[]
   savedResources               SavedResource[]
   companyClaims                CompanyClaim[]
   companyOwnerships            CompanyOwner[]
@@ -161,6 +162,24 @@ model SavedResource {
   @@index([resourceId])
 }
 
+model NavigatorPlan {
+  id     String            @id @default(cuid())
+  userId String
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   NavigatorPlanKind
+
+  title  String?
+  input  Json
+  result Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+  @@index([kind])
+}
+
 model Company {
   id          String  @id @default(cuid())
   name        String
@@ -182,6 +201,9 @@ model Company {
   postalCode String?
   latitude   Float?
   longitude  Float?
+
+  locationPrecision LocationPrecision?
+  geocodeProvider   GeocodeProvider?
 
   hiringStatus   HiringStatus @default(UNKNOWN)
   jobPostingsUrl String?
@@ -692,6 +714,26 @@ enum CompanyStatus {
   PENDING_REVIEW
   PUBLISHED
   ARCHIVED
+}
+
+enum NavigatorPlanKind {
+  FOUNDER
+  INVESTOR
+}
+
+enum LocationPrecision {
+  rooftop
+  street
+  postal_code
+  city
+  state
+  unknown
+}
+
+enum GeocodeProvider {
+  google
+  census
+  existing
 }
 
 enum ClaimStatus {

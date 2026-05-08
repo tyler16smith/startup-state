@@ -2,6 +2,7 @@ import Papa from "papaparse";
 import { z } from "zod";
 import { createApiError } from "~/server/api-context";
 import type { Prisma, PrismaClient } from "../../../../generated/prisma";
+import { enrichCompanyLocations } from "./geocoding";
 import {
 	asArray,
 	claimCompanyInputSchema,
@@ -484,7 +485,7 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 
 	const errors: string[] = [];
 	type ParsedRow = ReturnType<typeof parseRowToCompanyData>;
-	const validRows: ParsedRow[] = [];
+	let validRows: ParsedRow[] = [];
 
 	for (const [index, row] of parsed.data.entries()) {
 		if (!hasCsvRowValue(row)) continue;
@@ -499,6 +500,7 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 	}
 
 	if (validRows.length === 0) return { imported: 0, errors };
+	validRows = await enrichCompanyLocations(validRows);
 
 	// Split creates vs updates using websiteUrl as the unique key
 	const websiteUrls = validRows

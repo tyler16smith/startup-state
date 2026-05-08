@@ -183,8 +183,8 @@ export const authConfig = {
 			if (url.startsWith("/")) {
 				return `${baseUrl}${url}`;
 			}
-			// Default to dashboard
-			return `${baseUrl}/dashboard`;
+			// Default to the latest saved navigator plan.
+			return `${baseUrl}/plan`;
 		},
 	},
 	pages: {

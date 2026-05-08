@@ -5,6 +5,7 @@ export { companies } from "./companies";
 export { household } from "./household";
 export { mcp } from "./mcp";
 export { mobileAuth } from "./mobile-auth";
+export { navigatorPlans } from "./navigator-plans";
 export { onboarding } from "./onboarding";
 export { ping } from "./ping";
 export { resources } from "./resources";

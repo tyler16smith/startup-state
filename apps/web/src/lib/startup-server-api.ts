@@ -3,6 +3,7 @@ import "server-only";
 import { getServerFetchOptions } from "~/lib/server-api";
 import {
 	type Company,
+	type NavigatorPlan,
 	type Paginated,
 	parseApiResponse,
 	type Resource,
@@ -51,4 +52,8 @@ export function getCompany(idOrSlug: string) {
 		id: idOrSlug,
 		slug: idOrSlug,
 	});
+}
+
+export function getLatestNavigatorPlan() {
+	return apiServer<NavigatorPlan | null>("/api/v1/navigatorPlans/latest");
 }
