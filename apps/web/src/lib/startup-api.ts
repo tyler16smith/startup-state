@@ -15,6 +15,7 @@ export type Resource = {
 	subcategory?: string | null;
 	status: string;
 	stages: string[];
+	communities: string[];
 	sectors: string[];
 	goals: string[];
 	regions: string[];
@@ -23,6 +24,8 @@ export type Resource = {
 	city?: string | null;
 	county?: string | null;
 	state?: string | null;
+	sourceId?: string | null;
+	lastSyncedAt?: string | null;
 	updatedAt: string;
 	isSaved?: boolean;
 	related?: Resource[];
@@ -124,6 +127,42 @@ export type Paginated<T> = {
 	total: number;
 	limit: number;
 	offset: number;
+};
+
+export type ResourceTaxonomy = {
+	communities: string[];
+	industries: string[];
+	locations: string[];
+	topics: string[];
+};
+
+export type ResourceImportPreviewRow = {
+	rowNumber: number;
+	action: "create" | "update" | "duplicate" | "invalid";
+	name?: string;
+	existingResourceName?: string;
+	errors: string[];
+};
+
+export type ResourceImportPreview = {
+	importSessionId: string;
+	totalRows: number;
+	validRows: number;
+	invalidRows: number;
+	newResources: number;
+	updatedResources: number;
+	duplicateRows: number;
+	newTaxonomyValues: ResourceTaxonomy;
+	errors: string[];
+	rows: ResourceImportPreviewRow[];
+};
+
+export type ResourceImportCommitResult = {
+	imported: number;
+	created: number;
+	updated: number;
+	errors: string[];
+	publishedImmediately: boolean;
 };
 
 type ApiResponse<T> = {

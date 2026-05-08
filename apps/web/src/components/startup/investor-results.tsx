@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "~/components/startup/empty-state";
+import { InvestorResultsMap } from "~/components/startup/investor-results-map";
 import { SavePlanDialog } from "~/components/startup/navigator-flow/save-plan-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -14,7 +15,11 @@ import {
 	type InvestorProfileInput,
 } from "~/lib/startup-api";
 
-export function InvestorResults() {
+type InvestorResultsProps = {
+	mapToken?: string;
+};
+
+export function InvestorResults({ mapToken }: InvestorResultsProps) {
 	const { data: session, status } = useSession();
 	const [profile, setProfile] = useState<InvestorProfileInput | null>(null);
 	const [recommendations, setRecommendations] = useState<
@@ -27,6 +32,9 @@ export function InvestorResults() {
 	const [error, setError] = useState<string | null>(null);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const autoSaveAttempted = useRef(false);
+	const [selectedCompanyId, setSelectedCompanyId] = useState<
+		string | undefined
+	>(undefined);
 
 	useEffect(() => {
 		const raw = sessionStorage.getItem("startup-investor-intake");
@@ -36,6 +44,18 @@ export function InvestorResults() {
 		}
 		const input = JSON.parse(raw) as InvestorProfileInput;
 		setProfile(input);
+
+		// Use cached results if available so back navigation doesn't re-fetch
+		const cached = sessionStorage.getItem("startup-investor-result");
+		if (cached) {
+			const parsed = JSON.parse(cached) as {
+				recommendations: InvestorCompanyRecommendation[];
+			};
+			setRecommendations(parsed.recommendations);
+			setLoading(false);
+			return;
+		}
+
 		apiClient<{ recommendations: InvestorCompanyRecommendation[] }>(
 			"/api/v1/companies/recommend",
 			{
@@ -140,7 +160,7 @@ export function InvestorResults() {
 	}
 
 	return (
-		<main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+		<main className="mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
 			<div className="rounded-lg border bg-white p-5 shadow-sm">
 				<div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
 					<div>
@@ -164,11 +184,6 @@ export function InvestorResults() {
 							)}
 							{saved ? "Saved" : "Save result"}
 						</Button>
-						<Button asChild variant="outline">
-							<Link href="/map">
-								View map <ArrowRight className="size-4" />
-							</Link>
-						</Button>
 					</div>
 				</div>
 			</div>
@@ -179,46 +194,62 @@ export function InvestorResults() {
 			/>
 			{saveError && <p className="text-destructive text-sm">{saveError}</p>}
 			{recommendations.length ? (
-				<div className="grid gap-5 lg:grid-cols-5">
-					{recommendations.map((recommendation) => (
-						<article
-							className="flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-							key={recommendation.company.id}
-						>
-							<div className="flex items-start justify-between gap-3">
-								<Badge className="rounded-md bg-emerald-600 text-white">
-									#{recommendation.rank}
-								</Badge>
-								{typeof recommendation.score === "number" && (
-									<Badge className="rounded-md" variant="secondary">
-										{recommendation.score} fit
-									</Badge>
-								)}
-							</div>
-							<h2 className="mt-4 font-semibold text-lg leading-tight">
-								{recommendation.company.name}
-							</h2>
-							<p className="mt-2 text-muted-foreground text-sm">
-								{recommendation.company.sector ?? "Utah startup"}
-								{recommendation.company.stage
-									? ` · ${recommendation.company.stage.replace(/_/g, " ").toLowerCase()}`
-									: ""}
-							</p>
-							<p className="mt-4 text-sm leading-relaxed">
-								{recommendation.why}
-							</p>
-							<Button
-								asChild
-								className="mt-auto w-full"
-								size="sm"
-								variant="outline"
+				<div className="relative h-[680px] overflow-hidden rounded-xl border shadow-sm">
+					{/* Map fills the full container */}
+					<div className="absolute inset-0">
+						<InvestorResultsMap
+							mapToken={mapToken}
+							recommendations={recommendations}
+							selectedCompanyId={selectedCompanyId}
+						/>
+					</div>
+
+					{/* Company list panel overlaying the left side */}
+					<div className="absolute top-0 bottom-0 left-0 flex w-80 flex-col gap-3 overflow-y-auto bg-white/95 p-3 shadow-lg backdrop-blur-sm">
+						{recommendations.map((recommendation) => (
+							<article
+								className="flex flex-col rounded-lg border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+								key={recommendation.company.id}
+								onMouseEnter={() =>
+									setSelectedCompanyId(recommendation.company.id)
+								}
+								onMouseLeave={() => setSelectedCompanyId(undefined)}
 							>
-								<Link href={`/companies/${recommendation.company.id}`}>
-									Open profile <ArrowRight className="size-4" />
-								</Link>
-							</Button>
-						</article>
-					))}
+								<div className="flex items-start justify-between gap-3">
+									<Badge className="rounded-md bg-emerald-600 text-white">
+										#{recommendation.rank}
+									</Badge>
+									{typeof recommendation.score === "number" && (
+										<Badge className="rounded-md" variant="secondary">
+											{recommendation.score}% fit
+										</Badge>
+									)}
+								</div>
+								<h2 className="mt-3 font-semibold text-base leading-tight">
+									{recommendation.company.name}
+								</h2>
+								<p className="mt-1 text-muted-foreground text-xs">
+									{recommendation.company.sector ?? "Utah startup"}
+									{recommendation.company.stage
+										? ` · ${recommendation.company.stage.replace(/_/g, " ").toLowerCase()}`
+										: ""}
+								</p>
+								<p className="mt-3 text-sm leading-relaxed">
+									{recommendation.why}
+								</p>
+								<Button
+									asChild
+									className="mt-3 w-full"
+									size="sm"
+									variant="outline"
+								>
+									<Link href={`/companies/${recommendation.company.id}`}>
+										Open profile <ArrowRight className="size-4" />
+									</Link>
+								</Button>
+							</article>
+						))}
+					</div>
 				</div>
 			) : (
 				<EmptyState

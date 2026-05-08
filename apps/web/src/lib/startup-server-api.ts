@@ -7,6 +7,7 @@ import {
 	type Paginated,
 	parseApiResponse,
 	type Resource,
+	type ResourceTaxonomy,
 } from "~/lib/startup-api";
 import { getServerApiBaseUrl } from "~/server/api-url";
 
@@ -14,6 +15,14 @@ function queryString(params?: Record<string, unknown>) {
 	const search = new URLSearchParams();
 	for (const [key, value] of Object.entries(params ?? {})) {
 		if (value === undefined || value === null || value === "") continue;
+		if (Array.isArray(value)) {
+			for (const item of value) {
+				if (item !== undefined && item !== null && item !== "") {
+					search.append(key, String(item));
+				}
+			}
+			continue;
+		}
 		search.set(key, String(value));
 	}
 	const value = search.toString();
@@ -34,6 +43,10 @@ export async function apiServer<T>(
 
 export function listResources(params?: Record<string, unknown>) {
 	return apiServer<Paginated<Resource>>("/api/v1/resources/list", params);
+}
+
+export function getResourceTaxonomy() {
+	return apiServer<ResourceTaxonomy>("/api/v1/resources/taxonomy");
 }
 
 export function getResource(idOrSlug: string) {

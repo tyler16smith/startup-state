@@ -9,9 +9,12 @@ import {
 import { requireAdmin } from "../services/startup-navigator/authz";
 import {
 	archiveResource,
+	commitResourceCsvImport,
 	createResource,
 	getResourceById,
 	importResourcesFromCsv,
+	listResourceTaxonomy,
+	previewResourceCsvImport,
 	recommendResourcesForFounderProfile,
 	reindexResourceEmbeddings,
 	saveResource,
@@ -65,6 +68,10 @@ export const resources = {
 		});
 	}) satisfies PublicHandler,
 
+	taxonomy: withPublic(async (ctx) => {
+		return listResourceTaxonomy(ctx.db);
+	}) satisfies PublicHandler,
+
 	save: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
 		const input = savedResourceInputSchema.parse(body);
 		return saveResource(ctx.db, ctx.userId, input.resourceId);
@@ -99,6 +106,20 @@ export const resources = {
 		await requireAdmin(ctx);
 		return importResourcesFromCsv(ctx.db, body);
 	}),
+
+	importCsvPreview: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
+			await requireAdmin(ctx);
+			return previewResourceCsvImport(ctx.db, body);
+		},
+	),
+
+	importCsvCommit: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
+			await requireAdmin(ctx);
+			return commitResourceCsvImport(ctx.db, body);
+		},
+	),
 
 	reindex: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
 		await requireAdmin(ctx);

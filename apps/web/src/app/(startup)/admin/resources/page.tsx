@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CsvImportForm } from "~/components/startup/csv-import-form";
+import { ResourceCsvImportForm } from "~/components/startup/resource-csv-import-form";
 import { Button } from "~/components/ui/button";
 import {
 	Table,
@@ -32,6 +32,7 @@ export default async function AdminResourcesPage() {
 								<TableHead>Name</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead>Category</TableHead>
+								<TableHead>Source ID</TableHead>
 								<TableHead className="text-right">Actions</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -41,6 +42,7 @@ export default async function AdminResourcesPage() {
 									<TableCell className="font-medium">{resource.name}</TableCell>
 									<TableCell>{resource.status}</TableCell>
 									<TableCell>{resource.category ?? "-"}</TableCell>
+									<TableCell>{resource.sourceId ?? "-"}</TableCell>
 									<TableCell className="text-right">
 										<Button asChild size="sm" variant="outline">
 											<Link href={`/admin/resources/${resource.id}/edit`}>
@@ -53,7 +55,7 @@ export default async function AdminResourcesPage() {
 						</TableBody>
 					</Table>
 				</div>
-				<CsvImportForm endpoint="/api/v1/resources/import" />
+				<ResourceCsvImportForm />
 			</div>
 		</main>
 	);

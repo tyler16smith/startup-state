@@ -39,9 +39,11 @@ export default async function ResourceDetailPage({
 						{resource.description}
 					</p>
 					<div className="mt-8 grid gap-6 md:grid-cols-2" id="resource-fit">
+						<Info title="Communities" values={resource.communities} />
+						<Info title="Industries" values={resource.sectors} />
+						<Info title="Locations" values={resource.regions} />
+						<Info title="Topics" values={resource.goals} />
 						<Info title="Stage fit" values={resource.stages} />
-						<Info title="Sector fit" values={resource.sectors} />
-						<Info title="Region fit" values={resource.regions} />
 						<Info title="Eligibility" values={resource.eligibilityTags} />
 					</div>
 				</section>

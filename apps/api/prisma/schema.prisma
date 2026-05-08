@@ -89,6 +89,7 @@ model Resource {
   status           ResourceStatus @default(PUBLISHED)
 
   stages          String[] @default([])
+  communities     String[] @default([])
   sectors         String[] @default([])
   goals           String[] @default([])
   regions         String[] @default([])

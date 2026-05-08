@@ -11,6 +11,7 @@ import { apiClient, type Resource } from "~/lib/startup-api";
 
 const arrayFields = [
 	"stages",
+	"communities",
 	"sectors",
 	"goals",
 	"regions",

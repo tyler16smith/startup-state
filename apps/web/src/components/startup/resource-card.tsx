@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowUpRight, Bookmark, CheckCircle2, Loader2 } from "lucide-react";
+import {
+	ArrowUpRight,
+	Bookmark,
+	CheckCircle2,
+	Loader2,
+	Mail,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
@@ -20,6 +26,7 @@ export function ResourceCard({
 	const [isSaved, setIsSaved] = useState(Boolean(resource.isSaved));
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const primaryTopic = resource.goals[0] ?? resource.category;
 
 	async function toggleSaved() {
 		setSaving(true);
@@ -52,8 +59,8 @@ export function ResourceCard({
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="flex flex-wrap items-center gap-2">
-						{resource.category && (
-							<Badge className="rounded-md">{resource.category}</Badge>
+						{primaryTopic && (
+							<Badge className="rounded-md">{primaryTopic}</Badge>
 						)}
 						{typeof score === "number" && (
 							<Badge className="rounded-md bg-emerald-600 text-white">
@@ -106,21 +113,47 @@ export function ResourceCard({
 				</div>
 			) : null}
 			<div className="mt-4 space-y-3">
-				<TagList
-					items={[...resource.stages, ...resource.goals, ...resource.regions]}
-				/>
+				<TaxonomyRow items={resource.communities} label="Communities" />
+				<TaxonomyRow items={resource.sectors} label="Industries" />
+				<TaxonomyRow items={resource.regions} label="Locations" />
+				<TaxonomyRow items={resource.goals} label="Topics" />
 			</div>
+			{resource.contactEmail && (
+				<p className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
+					<Mail className="size-4" />
+					{resource.contactEmail}
+				</p>
+			)}
 			<div className="mt-auto flex items-center justify-between gap-3 pt-5">
 				<span className="text-muted-foreground text-xs">
 					Updated {compactDate(resource.updatedAt)}
 				</span>
-				<Button asChild size="sm" variant="outline">
-					<Link href={`/resources/${resource.id}`}>
-						Open
-						<ArrowUpRight className="size-4" />
-					</Link>
-				</Button>
+				{resource.websiteUrl ? (
+					<Button asChild size="sm" variant="outline">
+						<a href={resource.websiteUrl} rel="noreferrer" target="_blank">
+							Open
+							<ArrowUpRight className="size-4" />
+						</a>
+					</Button>
+				) : (
+					<Button asChild size="sm" variant="outline">
+						<Link href={`/resources/${resource.id}`}>
+							Open
+							<ArrowUpRight className="size-4" />
+						</Link>
+					</Button>
+				)}
 			</div>
 		</article>
+	);
+}
+
+function TaxonomyRow({ label, items }: { label: string; items: string[] }) {
+	if (!items.length) return null;
+	return (
+		<div className="space-y-1">
+			<p className="font-medium text-muted-foreground text-xs">{label}</p>
+			<TagList items={items} limit={3} />
+		</div>
 	);
 }

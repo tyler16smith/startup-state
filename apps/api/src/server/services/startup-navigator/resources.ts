@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import Papa from "papaparse";
 import type { z } from "zod";
 import { logger } from "~/lib/logger";
@@ -10,7 +11,7 @@ import {
 	upsertResourceEmbedding,
 } from "./resource-rag";
 import {
-	asArray,
+	csvImportCommitSchema,
 	csvImportSchema,
 	founderProfileInputSchema,
 	resourceInputSchema,
@@ -22,6 +23,9 @@ type Db = PrismaClient;
 type ResourceWithSaved = Prisma.ResourceGetPayload<{
 	include: { savedBy: true };
 }>;
+
+const CSV_IMPORT_SOURCE = "csv_upload";
+const IMPORT_SESSION_TTL_MS = 30 * 60 * 1000;
 
 function savedCount(item: unknown) {
 	const savedBy = (item as { savedBy?: unknown[] }).savedBy;
@@ -36,6 +40,24 @@ function cleanOptional(value: string | null | undefined): string | undefined {
 
 function containsInsensitive(value: string): Prisma.StringFilter {
 	return { contains: value, mode: "insensitive" };
+}
+
+function uniqueValues(values: string[]) {
+	const seen = new Set<string>();
+	return values.filter((value) => {
+		const key = value.toLowerCase().trim();
+		if (!key || seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+function filterValues(...values: (string[] | undefined)[]) {
+	return uniqueValues(values.flatMap((items) => items ?? []));
+}
+
+function firstFilterValue(values: string[] | undefined) {
+	return values?.at(0);
 }
 
 function buildResourceWhere(
@@ -56,16 +78,30 @@ function buildResourceWhere(
 			{ name: containsInsensitive(query.q) },
 			{ description: containsInsensitive(query.q) },
 			{ shortDescription: containsInsensitive(query.q) },
+			{ websiteUrl: containsInsensitive(query.q) },
+			{ contactEmail: containsInsensitive(query.q) },
 			{ category: containsInsensitive(query.q) },
 			{ subcategory: containsInsensitive(query.q) },
+			{ communities: { has: query.q } },
+			{ sectors: { has: query.q } },
+			{ goals: { has: query.q } },
+			{ regions: { has: query.q } },
 		];
 	}
 
-	if (query.stage) where.stages = { has: query.stage };
-	if (query.sector) where.sectors = { has: query.sector };
-	if (query.goal) where.goals = { has: query.goal };
-	if (query.region) where.regions = { has: query.region };
-	if (query.businessType) where.businessTypes = { has: query.businessType };
+	const stages = filterValues(query.stage);
+	const communities = filterValues(query.community);
+	const sectors = filterValues(query.sector, query.industry);
+	const goals = filterValues(query.goal, query.topic);
+	const regions = filterValues(query.region, query.location);
+	const businessTypes = filterValues(query.businessType);
+
+	if (stages.length) where.stages = { hasSome: stages };
+	if (communities.length) where.communities = { hasSome: communities };
+	if (sectors.length) where.sectors = { hasSome: sectors };
+	if (goals.length) where.goals = { hasSome: goals };
+	if (regions.length) where.regions = { hasSome: regions };
+	if (businessTypes.length) where.businessTypes = { hasSome: businessTypes };
 
 	return where;
 }
@@ -162,6 +198,7 @@ function embeddingContent(input: {
 	category?: string | null;
 	subcategory?: string | null;
 	stages?: string[];
+	communities?: string[];
 	sectors?: string[];
 	goals?: string[];
 	regions?: string[];
@@ -182,6 +219,9 @@ function embeddingContent(input: {
 			? `Location: ${[input.city, input.county].filter(Boolean).join(", ")}`
 			: null,
 		input.stages?.length ? `Founder stages: ${input.stages.join(", ")}` : null,
+		input.communities?.length
+			? `Communities served: ${input.communities.join(", ")}`
+			: null,
 		input.sectors?.length ? `Sectors: ${input.sectors.join(", ")}` : null,
 		input.goals?.length ? `Goals: ${input.goals.join(", ")}` : null,
 		input.regions?.length
@@ -324,7 +364,15 @@ export async function searchRelevantResources(
 	const query = resourceQuerySchema.parse({ sort: "relevance", ...rawInput });
 	const matches = await findRelevantResourceMatches({
 		db,
-		query,
+		query: {
+			q: query.q,
+			stage: firstFilterValue(query.stage),
+			sector: firstFilterValue(filterValues(query.sector, query.industry)),
+			goal: firstFilterValue(filterValues(query.goal, query.topic)),
+			region: firstFilterValue(filterValues(query.region, query.location)),
+			businessType: firstFilterValue(query.businessType),
+			status: query.status,
+		},
 		resultLimit: query.limit,
 	});
 
@@ -582,6 +630,17 @@ function pickCsvValue(row: Record<string, unknown>, names: string[]) {
 	return undefined;
 }
 
+function pickCsvList(row: Record<string, unknown>, names: string[]) {
+	const value = pickCsvValue(row, names);
+	if (!value) return [];
+	return uniqueValues(
+		value
+			.split(/[|,]/)
+			.map((item) => item.trim())
+			.filter(Boolean),
+	);
+}
+
 function hasCsvRowValue(row: Record<string, unknown>) {
 	return Object.values(row).some((value) => {
 		if (typeof value === "string") return Boolean(value.trim());
@@ -589,61 +648,514 @@ function hasCsvRowValue(row: Record<string, unknown>) {
 	});
 }
 
-export async function importResourcesFromCsv(db: Db, input: unknown) {
-	const { csv } = csvImportSchema.parse(input);
+function normalizeImportKey(value: string | null | undefined) {
+	return value?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+}
+
+function normalizeImportUrl(value: string | null | undefined) {
+	if (!value) return "";
+	try {
+		const url = new URL(value.trim());
+		url.hash = "";
+		return url.toString().replace(/\/$/, "").toLowerCase();
+	} catch {
+		return value.trim().replace(/\/$/, "").toLowerCase();
+	}
+}
+
+function isValidUrl(value: string) {
+	try {
+		const url = new URL(value);
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
+function isValidEmail(value: string) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+type PreparedCsvResource = {
+	rowNumber: number;
+	sourceId?: string;
+	name: string;
+	description: string;
+	websiteUrl?: string;
+	contactEmail?: string;
+	stages: string[];
+	communities: string[];
+	sectors: string[];
+	goals: string[];
+	regions: string[];
+	businessTypes: string[];
+	eligibilityTags: string[];
+};
+
+type ImportPreviewRow = {
+	rowNumber: number;
+	action: "create" | "update" | "duplicate" | "invalid";
+	name?: string;
+	existingResourceName?: string;
+	errors: string[];
+};
+
+type MatchedCsvResource = PreparedCsvResource & {
+	action: "create" | "update";
+	existingResourceId?: string;
+	existingResourceName?: string;
+};
+
+type ResourceImportPreview = {
+	importSessionId: string;
+	totalRows: number;
+	validRows: number;
+	invalidRows: number;
+	newResources: number;
+	updatedResources: number;
+	duplicateRows: number;
+	newTaxonomyValues: {
+		communities: string[];
+		industries: string[];
+		locations: string[];
+		topics: string[];
+	};
+	errors: string[];
+	rows: ImportPreviewRow[];
+};
+
+type ResourceImportSession = {
+	createdAt: number;
+	preparedRows: PreparedCsvResource[];
+	preview: ResourceImportPreview;
+};
+
+const resourceImportSessions = new Map<string, ResourceImportSession>();
+
+function pruneImportSessions() {
+	const now = Date.now();
+	for (const [id, session] of resourceImportSessions) {
+		if (now - session.createdAt > IMPORT_SESSION_TTL_MS) {
+			resourceImportSessions.delete(id);
+		}
+	}
+}
+
+function duplicateKey(row: PreparedCsvResource) {
+	if (row.sourceId) return `source:${normalizeImportKey(row.sourceId)}`;
+	if (row.websiteUrl) return `link:${normalizeImportUrl(row.websiteUrl)}`;
+	return `title:${normalizeImportKey(row.name)}`;
+}
+
+function prepareCsvRows(csv: string) {
 	const parsed = Papa.parse<Record<string, unknown>>(csv, {
 		header: true,
 		skipEmptyLines: "greedy",
 	});
-
-	let imported = 0;
+	const preparedRows: PreparedCsvResource[] = [];
+	const previewRows: ImportPreviewRow[] = [];
 	const errors: string[] = [];
+	const seenKeys = new Set<string>();
+	let totalRows = 0;
+	let duplicateRows = 0;
 
 	for (const [index, row] of parsed.data.entries()) {
 		if (!hasCsvRowValue(row)) continue;
+		totalRows += 1;
+		const rowNumber = index + 2;
+		const rowErrors: string[] = [];
+		const name = pickCsvValue(row, ["title", "name"]);
+		const description = pickCsvValue(row, ["description"]);
+		const websiteUrl = pickCsvValue(row, [
+			"link",
+			"website",
+			"websiteUrl",
+			"url",
+		]);
+		const contactEmail = pickCsvValue(row, [
+			"email",
+			"contact email",
+			"contactEmail",
+		]);
+		const sectors = pickCsvList(row, [
+			"industries",
+			"industry",
+			"sectors",
+			"sector",
+		]);
+		const goals = pickCsvList(row, ["topics", "topic", "goals", "goal"]);
+		const regions = pickCsvList(row, [
+			"locations",
+			"location",
+			"regions",
+			"region",
+		]);
 
-		try {
-			await createResource(db, {
-				name: pickCsvValue(row, ["name", "Name"]),
-				description: pickCsvValue(row, ["description", "Description"]),
-				shortDescription: pickCsvValue(row, [
-					"short description",
-					"shortDescription",
-				]),
-				websiteUrl: pickCsvValue(row, ["website", "websiteUrl", "url"]),
-				category: pickCsvValue(row, ["category"]),
-				subcategory: pickCsvValue(row, ["subcategory"]),
-				stages: asArray(pickCsvValue(row, ["stage", "stages"])),
-				sectors: asArray(pickCsvValue(row, ["sector", "sectors"])),
-				goals: asArray(pickCsvValue(row, ["goal", "goals"])),
-				regions: asArray(pickCsvValue(row, ["region", "regions"])),
-				businessTypes: asArray(
-					pickCsvValue(row, ["business type", "businessTypes"]),
-				),
-				eligibilityTags: asArray(
-					pickCsvValue(row, ["eligibility", "eligibilityTags"]),
-				),
-				contactEmail: pickCsvValue(row, ["contact email", "contactEmail"]),
-				contactPhone: pickCsvValue(row, ["contact phone", "contactPhone"]),
-				city: pickCsvValue(row, ["city"]),
-				county: pickCsvValue(row, ["county"]),
+		if (!name) rowErrors.push("Title is required");
+		if (!description) rowErrors.push("description is required");
+		if (description && description.length < 10)
+			rowErrors.push("description must be at least 10 characters");
+		if (!sectors.length) rowErrors.push("Industries is required");
+		if (!regions.length) rowErrors.push("Locations is required");
+		if (!goals.length) rowErrors.push("Topics is required");
+		if (websiteUrl && !isValidUrl(websiteUrl))
+			rowErrors.push("link must be a valid http(s) URL");
+		if (contactEmail && !isValidEmail(contactEmail))
+			rowErrors.push("email must be valid");
+
+		if (rowErrors.length || !name || !description) {
+			const rowMessages = rowErrors.map(
+				(error) => `Row ${rowNumber}: ${error}`,
+			);
+			errors.push(...rowMessages);
+			previewRows.push({
+				rowNumber,
+				action: "invalid",
+				name,
+				errors: rowErrors,
 			});
+			continue;
+		}
+
+		const prepared: PreparedCsvResource = {
+			rowNumber,
+			sourceId: pickCsvValue(row, ["id", "sourceId", "source id"]),
+			name,
+			description,
+			websiteUrl,
+			contactEmail,
+			stages: pickCsvList(row, ["stages", "stage"]),
+			communities: pickCsvList(row, ["communities", "community"]),
+			sectors,
+			goals,
+			regions,
+			businessTypes: pickCsvList(row, [
+				"business types",
+				"business type",
+				"businessTypes",
+			]),
+			eligibilityTags: pickCsvList(row, [
+				"eligibility",
+				"eligibilityTags",
+				"eligibility tags",
+			]),
+		};
+		const key = duplicateKey(prepared);
+		if (seenKeys.has(key)) {
+			duplicateRows += 1;
+			previewRows.push({
+				rowNumber,
+				action: "duplicate",
+				name,
+				errors: ["Duplicate row in this CSV"],
+			});
+			continue;
+		}
+		seenKeys.add(key);
+		preparedRows.push(prepared);
+	}
+
+	for (const parseError of parsed.errors) {
+		errors.push(`CSV parse error: ${parseError.message}`);
+	}
+
+	return { preparedRows, previewRows, errors, totalRows, duplicateRows };
+}
+
+async function matchCsvResources(db: Db, rows: PreparedCsvResource[]) {
+	const sourceIds = uniqueValues(
+		rows.flatMap((row) => (row.sourceId ? [row.sourceId] : [])),
+	);
+	const websiteUrls = uniqueValues(
+		rows.flatMap((row) => (row.websiteUrl ? [row.websiteUrl] : [])),
+	);
+	const names = uniqueValues(rows.map((row) => row.name));
+	const or: Prisma.ResourceWhereInput[] = [];
+	if (sourceIds.length) or.push({ sourceId: { in: sourceIds } });
+	if (websiteUrls.length) or.push({ websiteUrl: { in: websiteUrls } });
+	if (names.length) or.push({ name: { in: names, mode: "insensitive" } });
+
+	const existing = or.length
+		? await db.resource.findMany({
+				where: { OR: or },
+				select: { id: true, name: true, sourceId: true, websiteUrl: true },
+			})
+		: [];
+
+	const bySourceId = new Map(
+		existing.flatMap((resource) =>
+			resource.sourceId
+				? [[normalizeImportKey(resource.sourceId), resource] as const]
+				: [],
+		),
+	);
+	const byWebsiteUrl = new Map(
+		existing.flatMap((resource) =>
+			resource.websiteUrl
+				? [[normalizeImportUrl(resource.websiteUrl), resource] as const]
+				: [],
+		),
+	);
+	const byName = new Map(
+		existing.map(
+			(resource) => [normalizeImportKey(resource.name), resource] as const,
+		),
+	);
+
+	return rows.map<MatchedCsvResource>((row) => {
+		const existingResource =
+			(row.sourceId
+				? bySourceId.get(normalizeImportKey(row.sourceId))
+				: undefined) ??
+			(row.websiteUrl
+				? byWebsiteUrl.get(normalizeImportUrl(row.websiteUrl))
+				: undefined) ??
+			byName.get(normalizeImportKey(row.name));
+
+		return {
+			...row,
+			action: existingResource ? "update" : "create",
+			existingResourceId: existingResource?.id,
+			existingResourceName: existingResource?.name,
+		};
+	});
+}
+
+async function taxonomySets(db: Db) {
+	const resources = await db.resource.findMany({
+		select: { communities: true, sectors: true, goals: true, regions: true },
+	});
+	return {
+		communities: normalizeSet(
+			resources.flatMap((resource) => resource.communities),
+		),
+		industries: normalizeSet(resources.flatMap((resource) => resource.sectors)),
+		locations: normalizeSet(resources.flatMap((resource) => resource.regions)),
+		topics: normalizeSet(resources.flatMap((resource) => resource.goals)),
+	};
+}
+
+function newValues(values: string[], existing: Set<string>) {
+	return uniqueValues(values).filter(
+		(value) => !existing.has(value.toLowerCase().trim()),
+	);
+}
+
+export async function listResourceTaxonomy(db: Db) {
+	const resources = await db.resource.findMany({
+		where: { status: "PUBLISHED" },
+		select: { communities: true, sectors: true, goals: true, regions: true },
+	});
+	const sortValues = (values: string[]) =>
+		uniqueValues(values).sort((left, right) => left.localeCompare(right));
+	return {
+		communities: sortValues(
+			resources.flatMap((resource) => resource.communities),
+		),
+		industries: sortValues(resources.flatMap((resource) => resource.sectors)),
+		locations: sortValues(resources.flatMap((resource) => resource.regions)),
+		topics: sortValues(resources.flatMap((resource) => resource.goals)),
+	};
+}
+
+export async function previewResourceCsvImport(db: Db, input: unknown) {
+	pruneImportSessions();
+	const { csv } = csvImportSchema.parse(input);
+	const prepared = prepareCsvRows(csv);
+	const matchedRows = await matchCsvResources(db, prepared.preparedRows);
+	const existingTaxonomy = await taxonomySets(db);
+	const importSessionId = crypto.randomUUID();
+	const rows: ImportPreviewRow[] = [
+		...prepared.previewRows,
+		...matchedRows.map((row) => ({
+			rowNumber: row.rowNumber,
+			action: row.action,
+			name: row.name,
+			existingResourceName: row.existingResourceName,
+			errors: [],
+		})),
+	].sort((left, right) => left.rowNumber - right.rowNumber);
+	const preview: ResourceImportPreview = {
+		importSessionId,
+		totalRows: prepared.totalRows,
+		validRows: matchedRows.length,
+		invalidRows: rows.filter((row) => row.action === "invalid").length,
+		newResources: matchedRows.filter((row) => row.action === "create").length,
+		updatedResources: matchedRows.filter((row) => row.action === "update")
+			.length,
+		duplicateRows: prepared.duplicateRows,
+		newTaxonomyValues: {
+			communities: newValues(
+				matchedRows.flatMap((row) => row.communities),
+				existingTaxonomy.communities,
+			),
+			industries: newValues(
+				matchedRows.flatMap((row) => row.sectors),
+				existingTaxonomy.industries,
+			),
+			locations: newValues(
+				matchedRows.flatMap((row) => row.regions),
+				existingTaxonomy.locations,
+			),
+			topics: newValues(
+				matchedRows.flatMap((row) => row.goals),
+				existingTaxonomy.topics,
+			),
+		},
+		errors: prepared.errors,
+		rows,
+	};
+
+	resourceImportSessions.set(importSessionId, {
+		createdAt: Date.now(),
+		preparedRows: prepared.preparedRows,
+		preview,
+	});
+	return preview;
+}
+
+async function createImportedResource(
+	db: Db,
+	row: PreparedCsvResource,
+	status: "DRAFT" | "PUBLISHED",
+) {
+	const slug = await createUniqueSlug(row.name, async (candidate) =>
+		Boolean(await db.resource.findUnique({ where: { slug: candidate } })),
+	);
+	const resource = await db.resource.create({
+		data: {
+			name: row.name,
+			slug,
+			description: row.description,
+			websiteUrl: cleanOptional(row.websiteUrl),
+			contactEmail: cleanOptional(row.contactEmail),
+			status,
+			stages: row.stages,
+			communities: row.communities,
+			sectors: row.sectors,
+			goals: row.goals,
+			regions: row.regions,
+			businessTypes: row.businessTypes,
+			eligibilityTags: row.eligibilityTags,
+			state: "UT",
+			source: CSV_IMPORT_SOURCE,
+			sourceId: cleanOptional(row.sourceId),
+			lastSyncedAt: new Date(),
+		},
+	});
+	await indexResourceEmbedding(db, resource);
+	return resource;
+}
+
+async function updateImportedResource(
+	db: Db,
+	resourceId: string,
+	row: PreparedCsvResource,
+	publishImmediately: boolean,
+) {
+	const current = await db.resource.findUnique({ where: { id: resourceId } });
+	if (!current) throw createApiError("Resource not found", 404);
+	const slug = await createUniqueSlug(
+		row.name,
+		async (candidate) => {
+			const found = await db.resource.findUnique({
+				where: { slug: candidate },
+			});
+			return Boolean(found && found.id !== resourceId);
+		},
+		current.slug,
+	);
+	const resource = await db.resource.update({
+		where: { id: resourceId },
+		data: {
+			name: row.name,
+			slug,
+			description: row.description,
+			websiteUrl: cleanOptional(row.websiteUrl),
+			contactEmail: cleanOptional(row.contactEmail),
+			...(publishImmediately ? { status: "PUBLISHED" as const } : {}),
+			stages: row.stages.length ? row.stages : current.stages,
+			communities: row.communities,
+			sectors: row.sectors,
+			goals: row.goals,
+			regions: row.regions,
+			businessTypes: row.businessTypes.length
+				? row.businessTypes
+				: current.businessTypes,
+			eligibilityTags: row.eligibilityTags.length
+				? row.eligibilityTags
+				: current.eligibilityTags,
+			source: current.source ?? CSV_IMPORT_SOURCE,
+			sourceId: cleanOptional(row.sourceId) ?? current.sourceId,
+			lastSyncedAt: new Date(),
+		},
+	});
+	await indexResourceEmbedding(db, resource);
+	return resource;
+}
+
+export async function commitResourceCsvImport(db: Db, input: unknown) {
+	pruneImportSessions();
+	const { importSessionId, publishImmediately } =
+		csvImportCommitSchema.parse(input);
+	const session = resourceImportSessions.get(importSessionId);
+	if (!session) throw createApiError("Import session expired", 404);
+	const matchedRows = await matchCsvResources(db, session.preparedRows);
+	let imported = 0;
+	let created = 0;
+	let updated = 0;
+	const errors: string[] = [];
+
+	for (const row of matchedRows) {
+		try {
+			if (row.existingResourceId) {
+				await updateImportedResource(
+					db,
+					row.existingResourceId,
+					row,
+					publishImmediately,
+				);
+				updated += 1;
+			} else {
+				await createImportedResource(
+					db,
+					row,
+					publishImmediately ? "PUBLISHED" : "DRAFT",
+				);
+				created += 1;
+			}
 			imported += 1;
 		} catch (error) {
 			errors.push(
-				`Row ${index + 2}: ${error instanceof Error ? error.message : "Invalid row"}`,
+				`Row ${row.rowNumber}: ${
+					error instanceof Error ? error.message : "Import failed"
+				}`,
 			);
 		}
 	}
 
+	resourceImportSessions.delete(importSessionId);
 	if (errors.length) {
-		logger.warn("Resource CSV import completed with errors", {
+		logger.warn("Resource CSV import commit completed with errors", {
 			feature: "startup-navigator",
-			operation: "importResources",
+			operation: "commitResourceCsvImport",
 			imported,
 			errors: errors.length,
 		});
 	}
+	return {
+		imported,
+		created,
+		updated,
+		errors,
+		publishedImmediately: publishImmediately,
+	};
+}
 
-	return { imported, errors };
+export async function importResourcesFromCsv(db: Db, input: unknown) {
+	const preview = await previewResourceCsvImport(db, input);
+	return commitResourceCsvImport(db, {
+		importSessionId: preview.importSessionId,
+		publishImmediately: true,
+	});
 }

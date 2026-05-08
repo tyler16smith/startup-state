@@ -38,6 +38,10 @@ export function asArray(value: unknown): string[] {
 }
 
 const arrayInput = z.preprocess(asArray, z.array(z.string()).default([]));
+const filterArrayInput = z.preprocess((value) => {
+	const values = asArray(value);
+	return values.length ? values : undefined;
+}, z.array(z.string()).optional());
 const optionalNumber = z.preprocess((value) => {
 	if (value === "" || value === null || value === undefined) return undefined;
 	const numberValue = Number(value);
@@ -51,11 +55,15 @@ export const paginationSchema = z.object({
 
 export const resourceQuerySchema = paginationSchema.extend({
 	q: z.string().optional(),
-	stage: z.string().optional(),
-	sector: z.string().optional(),
-	goal: z.string().optional(),
-	region: z.string().optional(),
-	businessType: z.string().optional(),
+	stage: filterArrayInput,
+	community: filterArrayInput,
+	sector: filterArrayInput,
+	industry: filterArrayInput,
+	goal: filterArrayInput,
+	topic: filterArrayInput,
+	region: filterArrayInput,
+	location: filterArrayInput,
+	businessType: filterArrayInput,
 	status: resourceStatusSchema.optional(),
 	sort: z.enum(["relevance", "name", "recent"]).default("recent"),
 });
@@ -73,6 +81,7 @@ export const resourceInputSchema = z.object({
 	subcategory: z.string().optional().nullable(),
 	status: resourceStatusSchema.default("PUBLISHED"),
 	stages: arrayInput,
+	communities: arrayInput,
 	sectors: arrayInput,
 	goals: arrayInput,
 	regions: arrayInput,
@@ -218,4 +227,9 @@ export const idInputSchema = z.object({
 
 export const csvImportSchema = z.object({
 	csv: z.string().min(1),
+});
+
+export const csvImportCommitSchema = z.object({
+	importSessionId: z.string().min(1),
+	publishImmediately: z.boolean().optional().default(false),
 });

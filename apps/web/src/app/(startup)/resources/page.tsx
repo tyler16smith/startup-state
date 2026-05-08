@@ -1,9 +1,8 @@
-import { Search, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { EmptyState } from "~/components/startup/empty-state";
 import { ResourceCard } from "~/components/startup/resource-card";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { listResources } from "~/lib/startup-server-api";
+import { ResourceFilterPanel } from "~/components/startup/resource-filter-panel";
+import { getResourceTaxonomy, listResources } from "~/lib/startup-server-api";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -15,21 +14,40 @@ function value(
 	return Array.isArray(item) ? item[0] : item;
 }
 
+function values(
+	params: Record<string, string | string[] | undefined>,
+	key: string,
+) {
+	const item = params[key];
+	if (!item) return [];
+	return Array.isArray(item) ? item : [item];
+}
+
 export default async function ResourcesPage({
 	searchParams,
 }: {
 	searchParams: SearchParams;
 }) {
 	const params = await searchParams;
-	const resources = await listResources({
+	const selected = {
 		q: value(params, "q"),
-		stage: value(params, "stage"),
-		sector: value(params, "sector"),
-		goal: value(params, "goal"),
-		region: value(params, "region"),
-		businessType: value(params, "businessType"),
-		sort: value(params, "sort") ?? "recent",
-	});
+		community: values(params, "community"),
+		industry: values(params, "industry"),
+		location: values(params, "location"),
+		topic: values(params, "topic"),
+	};
+	const [resources, taxonomy] = await Promise.all([
+		listResources({
+			q: value(params, "q"),
+			community: selected.community,
+			industry: selected.industry,
+			location: selected.location,
+			topic: selected.topic,
+			businessType: value(params, "businessType"),
+			sort: value(params, "sort") ?? "recent",
+		}),
+		getResourceTaxonomy(),
+	]);
 
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -47,38 +65,7 @@ export default async function ResourcesPage({
 					</p>
 				</div>
 			</div>
-			<form className="mb-6 grid gap-3 rounded-lg border bg-white p-4 shadow-sm md:grid-cols-[1.5fr_repeat(4,1fr)_auto]">
-				<div className="relative">
-					<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						className="pl-9"
-						defaultValue={value(params, "q") ?? ""}
-						name="q"
-						placeholder="Search resources"
-					/>
-				</div>
-				<Input
-					defaultValue={value(params, "stage") ?? ""}
-					name="stage"
-					placeholder="Stage"
-				/>
-				<Input
-					defaultValue={value(params, "sector") ?? ""}
-					name="sector"
-					placeholder="Sector"
-				/>
-				<Input
-					defaultValue={value(params, "goal") ?? ""}
-					name="goal"
-					placeholder="Goal"
-				/>
-				<Input
-					defaultValue={value(params, "region") ?? ""}
-					name="region"
-					placeholder="Region"
-				/>
-				<Button type="submit">Filter</Button>
-			</form>
+			<ResourceFilterPanel selected={selected} taxonomy={taxonomy} />
 			{resources.items.length ? (
 				<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 					{resources.items.map((resource) => (

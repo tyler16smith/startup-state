@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Search, Sprout } from "lucide-react";
+import { Building2, Hammer, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -12,7 +12,7 @@ const audiences = [
 		label: "I'm a founder",
 		description: "Build a personalized Utah startup action plan.",
 		href: "/founder",
-		icon: Sprout,
+		icon: Hammer,
 	},
 	{
 		id: "investor",
@@ -58,7 +58,7 @@ export function AudienceSelector() {
 									"flex min-h-36 flex-col items-center justify-center gap-3 rounded-lg border-2 bg-white p-6 text-center transition-all hover:bg-emerald-50",
 									selected === id
 										? "border-emerald-900 bg-emerald-50"
-										: "border-slate-300",
+										: "border-gray-200",
 								)}
 								href={href}
 								key={id}

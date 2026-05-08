@@ -1,0 +1,1 @@
+ALTER TABLE "Resource" ADD COLUMN "communities" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

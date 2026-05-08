@@ -102,7 +102,17 @@ export function StartupSidebar() {
 				))}
 			</nav>
 
-			{session && (
+			{!session ? (
+				<div className="border-slate-200 border-t p-3">
+					<Link
+						className="flex w-full items-center justify-center gap-2 rounded-md bg-gray-200 px-3 py-2 text-sm transition-colors hover:bg-gray-300"
+						href="/auth/signin"
+					>
+						<User className="h-4 w-4" />
+						Sign in
+					</Link>
+				</div>
+			) : (
 				<div className="border-slate-200 border-t p-3">
 					<Popover onOpenChange={setPopoverOpen} open={popoverOpen}>
 						<PopoverTrigger asChild>
