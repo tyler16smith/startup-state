@@ -26,7 +26,14 @@ export function ResourceCard({
 	const [isSaved, setIsSaved] = useState(Boolean(resource.isSaved));
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const primaryTopic = resource.goals[0] ?? resource.category;
+	const communities = taxonomyItems(resource.communities);
+	const sectors = taxonomyItems(resource.sectors);
+	const regions = taxonomyItems(resource.regions);
+	const goals = taxonomyItems(resource.goals);
+	const primaryTopic = goals[0] ?? resource.category;
+	const updatedLabel = resource.updatedAt
+		? compactDateOrFallback(resource.updatedAt)
+		: "recently";
 
 	async function toggleSaved() {
 		setSaving(true);
@@ -113,10 +120,10 @@ export function ResourceCard({
 				</div>
 			) : null}
 			<div className="mt-4 space-y-3">
-				<TaxonomyRow items={resource.communities} label="Communities" />
-				<TaxonomyRow items={resource.sectors} label="Industries" />
-				<TaxonomyRow items={resource.regions} label="Locations" />
-				<TaxonomyRow items={resource.goals} label="Topics" />
+				<TaxonomyRow items={communities} label="Communities" />
+				<TaxonomyRow items={sectors} label="Industries" />
+				<TaxonomyRow items={regions} label="Locations" />
+				<TaxonomyRow items={goals} label="Topics" />
 			</div>
 			{resource.contactEmail && (
 				<p className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
@@ -126,7 +133,7 @@ export function ResourceCard({
 			)}
 			<div className="mt-auto flex items-center justify-between gap-3 pt-5">
 				<span className="text-muted-foreground text-xs">
-					Updated {compactDate(resource.updatedAt)}
+					Updated {updatedLabel}
 				</span>
 				{resource.websiteUrl ? (
 					<Button asChild size="sm" variant="outline">
@@ -146,6 +153,20 @@ export function ResourceCard({
 			</div>
 		</article>
 	);
+}
+
+function taxonomyItems(items: unknown) {
+	if (!Array.isArray(items)) return [];
+	return items.flatMap((item) => {
+		if (typeof item !== "string") return [];
+		const trimmed = item.trim();
+		return trimmed ? [trimmed] : [];
+	});
+}
+
+function compactDateOrFallback(value: string) {
+	const date = new Date(value);
+	return Number.isNaN(date.getTime()) ? "recently" : compactDate(value);
 }
 
 function TaxonomyRow({ label, items }: { label: string; items: string[] }) {

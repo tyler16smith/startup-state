@@ -12,6 +12,15 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "~/components/startup/empty-state";
+import { FounderResultsLoading } from "~/components/startup/founder-results-loading";
+import {
+	cachedRecommendationsForProfile,
+	FOUNDER_INTAKE_KEY,
+	FOUNDER_RESULT_KEY,
+	normalizeFounderProfile,
+	normalizeRecommendations,
+	readStorageJson,
+} from "~/components/startup/founder-results-utils";
 import { SavePlanDialog } from "~/components/startup/navigator-flow/save-plan-dialog";
 import { ResourceCard } from "~/components/startup/resource-card";
 import { Button } from "~/components/ui/button";
@@ -37,13 +46,20 @@ export function FounderResults() {
 	const autoSaveAttempted = useRef(false);
 
 	useEffect(() => {
-		const raw = sessionStorage.getItem("startup-founder-intake");
-		if (!raw) {
+		const input = normalizeFounderProfile(readStorageJson(FOUNDER_INTAKE_KEY));
+		if (!input) {
 			setLoading(false);
 			return;
 		}
-		const input = JSON.parse(raw) as FounderProfileInput;
 		setProfile(input);
+
+		const cachedRecommendations = cachedRecommendationsForProfile(input);
+		if (cachedRecommendations) {
+			setRecommendations(cachedRecommendations);
+			setLoading(false);
+			return;
+		}
+
 		apiClient<{ recommendations: ResourceRecommendation[] }>(
 			"/api/v1/resources/recommend",
 			{
@@ -52,10 +68,16 @@ export function FounderResults() {
 			},
 		)
 			.then((data) => {
-				setRecommendations(data.recommendations);
+				const nextRecommendations = normalizeRecommendations(
+					data.recommendations,
+				);
+				setRecommendations(nextRecommendations);
 				sessionStorage.setItem(
-					"startup-founder-result",
-					JSON.stringify({ recommendations: data.recommendations }),
+					FOUNDER_RESULT_KEY,
+					JSON.stringify({
+						profile: input,
+						recommendations: nextRecommendations,
+					}),
 				);
 			})
 			.catch((err: unknown) =>
@@ -132,14 +154,7 @@ export function FounderResults() {
 	}, [error, loading, recommendations.length, session?.user, status, savePlan]);
 
 	if (loading) {
-		return (
-			<div className="flex min-h-80 items-center justify-center rounded-lg border bg-white">
-				<div className="flex items-center gap-3 text-muted-foreground">
-					<Loader2 className="size-5 animate-spin" /> Building your Utah startup
-					action plan
-				</div>
-			</div>
-		);
+		return <FounderResultsLoading />;
 	}
 
 	if (!profile) {
