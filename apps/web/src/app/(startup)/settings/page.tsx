@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { HouseholdSection } from "~/app/(startup)/settings/household-section";
 import { auth } from "~/server/auth";
 import { AccountDeletionSettings } from "./account-deletion-settings";
-import { BillingSection } from "./billing-section";
 import { McpSettingsSection } from "./mcp-settings-section";
 import { ProfileSection } from "./profile-section";
 import { SecuritySettings } from "./security-settings";
