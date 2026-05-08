@@ -1,6 +1,7 @@
 import { ArrowUpRight, Mail, Phone, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import { ResourceCard } from "~/components/startup/resource-card";
 import { TagList } from "~/components/startup/tag-list";
 import { Button } from "~/components/ui/button";
@@ -22,6 +23,12 @@ export default async function ResourceDetailPage({
 
 	return (
 		<main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+			<PageBreadcrumb
+				items={[
+					{ label: "Resources", href: "/resources" },
+					{ label: resource.name },
+				]}
+			/>
 			<div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
 				<section
 					className="rounded-lg border bg-white p-6 shadow-sm sm:p-8"

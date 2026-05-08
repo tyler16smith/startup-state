@@ -43,7 +43,7 @@ export function ResourceDirectoryResults({
 					/>
 				)}
 				{isUpdating && (
-					<div className="absolute inset-0 z-10 flex items-start justify-center rounded-lg bg-slate-200/85 px-4 py-12 shadow-inner">
+					<div className="absolute inset-0 z-10 flex items-start justify-center rounded-lg bg-gray-50/80 px-4 py-12 shadow-inner">
 						<div className="flex items-center gap-2 rounded-md border bg-white px-3 py-2 font-medium text-slate-700 text-sm shadow-sm">
 							<Loader2 className="size-4 animate-spin" />
 							Updating results

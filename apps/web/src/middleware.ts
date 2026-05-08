@@ -9,6 +9,7 @@ export default auth((req) => {
 	const isAuthPage = nextUrl.pathname.startsWith("/auth");
 	const isApiRoute = nextUrl.pathname.startsWith("/api");
 	const is2FARoute = nextUrl.pathname === "/auth/verify-2fa";
+	const isAdminRoute = nextUrl.pathname.startsWith("/admin");
 	const isStartupPublicRoute =
 		nextUrl.pathname === "/" ||
 		nextUrl.pathname.startsWith("/explore") ||
@@ -18,6 +19,10 @@ export default auth((req) => {
 		nextUrl.pathname.startsWith("/map") ||
 		nextUrl.pathname.startsWith("/companies");
 	const isPublic = isAuthPage || isApiRoute || isStartupPublicRoute;
+
+	if (isLoggedIn && isAdminRoute && req.auth?.user?.role !== "ADMIN") {
+		return Response.redirect(new URL("/", nextUrl));
+	}
 
 	if (!isLoggedIn && !isPublic) {
 		const url = new URL("/auth/signin", nextUrl);

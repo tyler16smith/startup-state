@@ -3,6 +3,7 @@
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStartupStateAIPanel } from "~/components/agent/startup-state-ai-context";
 import { CompanyMapControls } from "~/components/startup/company-map/company-map-controls";
 import {
 	filterCompanies,
@@ -31,6 +32,13 @@ export function CompanyMap({ token }: { token?: string }) {
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [resultsOpen, setResultsOpen] = useState(false);
 	const selectedCompanyId = selected?.id;
+	const { close: closeAgentPanel } = useStartupStateAIPanel();
+
+	useEffect(() => {
+		if (isFullscreen) {
+			closeAgentPanel();
+		}
+	}, [isFullscreen, closeAgentPanel]);
 
 	const filtered = useMemo(
 		() => filterCompanies(companies, filters),

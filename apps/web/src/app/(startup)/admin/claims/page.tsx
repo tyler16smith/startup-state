@@ -1,4 +1,5 @@
 import { ClaimActions } from "~/components/startup/claim-actions";
+import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import {
 	Table,
 	TableBody,
@@ -23,6 +24,12 @@ export default async function AdminClaimsPage() {
 	const claims = await apiServer<Claim[]>("/api/v1/companies/claims");
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+			<PageBreadcrumb
+				items={[
+					{ label: "Admin", href: "/admin" },
+					{ label: "Company claims" },
+				]}
+			/>
 			<div className="mb-8">
 				<p className="font-medium text-emerald-700 text-sm">Admin</p>
 				<h1 className="mt-2 font-semibold text-4xl tracking-normal">

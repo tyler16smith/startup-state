@@ -143,7 +143,9 @@ export function CompanyForm({
 					/>
 				) : (
 					<FullFields
+						addressFields={addressFields}
 						admin={admin}
+						onAddressChange={handleAddressChange}
 						onValueChange={updatePreviewValue}
 						values={previewValues}
 					/>
@@ -182,17 +184,17 @@ function SubmissionFields({
 		<div className="grid gap-5">
 			<div className="grid gap-4 md:grid-cols-2">
 				<Field
+					defaultValue={values.name}
+					label="Company name"
+					name="name"
+					required
+				/>
+				<Field
 					defaultValue={values.linkedinUrl}
 					label="Company LinkedIn"
 					name="linkedinUrl"
 					placeholder="https://linkedin.com/company/..."
 					type="url"
-				/>
-				<Field
-					defaultValue={values.name}
-					label="Company name"
-					name="name"
-					required
 				/>
 			</div>
 			<div className="space-y-2">
@@ -250,10 +252,14 @@ function SubmissionFields({
 
 function FullFields({
 	admin,
+	addressFields,
+	onAddressChange,
 	onValueChange,
 	values,
 }: {
 	admin: boolean;
+	addressFields: CompanyAddressSelection;
+	onAddressChange: (selection: CompanyAddressSelection) => void;
 	onValueChange: (name: string, value: string) => void;
 	values: CompanyFormValues;
 }) {
@@ -267,7 +273,15 @@ function FullFields({
 					name="websiteUrl"
 					placeholder="https://example.com"
 				/>
-				<Field defaultValue={values.sector} label="Sector" name="sector" />
+				<AutocompleteField
+					defaultValue={values.sector}
+					label="Sector"
+					name="sector"
+					onValueChange={onValueChange}
+					options={COMPANY_SECTOR_OPTIONS}
+					placeholder="Select sector"
+					single
+				/>
 				<AutocompleteField
 					defaultValue={values.stage}
 					label="Stage"
@@ -277,17 +291,12 @@ function FullFields({
 					placeholder="Select stage"
 					single
 				/>
-				<Field
-					defaultValue={values.employees}
-					label="Employees"
-					name="employees"
-					type="number"
-				/>
-				<Field
+				<SelectField
 					defaultValue={values.employeeRange}
-					label="Employee range"
+					label="How many employees do you have?"
 					name="employeeRange"
-					placeholder="11-50"
+					options={COMPANY_EMPLOYEE_RANGE_OPTIONS}
+					placeholder="Select size"
 				/>
 				<Field
 					defaultValue={values.yearFounded}
@@ -299,26 +308,6 @@ function FullFields({
 					defaultValue={values.linkedinUrl}
 					label="LinkedIn"
 					name="linkedinUrl"
-				/>
-				<Field defaultValue={values.address} label="Address" name="address" />
-				<Field defaultValue={values.city} label="City" name="city" />
-				<Field defaultValue={values.county} label="County" name="county" />
-				<Field
-					defaultValue={values.postalCode}
-					label="Postal code"
-					name="postalCode"
-				/>
-				<Field
-					defaultValue={values.latitude}
-					label="Latitude"
-					name="latitude"
-					type="number"
-				/>
-				<Field
-					defaultValue={values.longitude}
-					label="Longitude"
-					name="longitude"
-					type="number"
 				/>
 				<Field
 					defaultValue={values.jobPostingsUrl}
@@ -340,6 +329,14 @@ function FullFields({
 					/>
 				)}
 			</div>
+			<div className="space-y-2">
+				<Label>Address</Label>
+				<CompanyAddressAutocomplete
+					defaultValue={values.address}
+					onAddressChange={onAddressChange}
+				/>
+			</div>
+			<HiddenAddressFields fields={addressFields} />
 			<div className="space-y-2">
 				<Label>Description</Label>
 				<Textarea

@@ -31,9 +31,11 @@ export function CompanyCard({ company }: { company: Company }) {
 					{company.sector && (
 						<Badge className="rounded-md">{company.sector}</Badge>
 					)}
-					<Badge className="rounded-md" variant="secondary">
-						{company.hiringStatus.replace(/_/g, " ").toLowerCase()}
-					</Badge>
+					{company.hiringStatus !== "UNKNOWN" && (
+						<Badge className="rounded-md" variant="secondary">
+							{company.hiringStatus.replace(/_/g, " ").toLowerCase()}
+						</Badge>
+					)}
 				</div>
 				<Link href={`/companies/${company.id}`}>
 					<h3 className="mt-3 truncate font-semibold text-xl leading-tight hover:text-emerald-700">
