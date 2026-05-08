@@ -2,7 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 import { StartupSidebar } from "~/components/startup/startup-sidebar";
@@ -67,17 +67,19 @@ export function StartupLayoutShell({
 				<span className="font-semibold text-sm">Startup State Navigator</span>
 			</div>
 			<StartupSidebar className="hidden md:flex" />
-			<StartupStateAIPanelProvider>
-				<StartupStateAIWorkspace>
-					<div
-						className="h-full min-h-full"
-						id="startup-main-content"
-						tabIndex={-1}
-					>
-						{children}
-					</div>
-				</StartupStateAIWorkspace>
-			</StartupStateAIPanelProvider>
+			<Suspense>
+				<StartupStateAIPanelProvider>
+					<StartupStateAIWorkspace>
+						<div
+							className="h-full min-h-full"
+							id="startup-main-content"
+							tabIndex={-1}
+						>
+							{children}
+						</div>
+					</StartupStateAIWorkspace>
+				</StartupStateAIPanelProvider>
+			</Suspense>
 		</div>
 	);
 }

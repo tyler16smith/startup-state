@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { StartupStateAIPanelProvider } from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIWorkspace } from "~/components/agent/startup-state-ai-workspace";
 
@@ -22,10 +22,12 @@ export function CustomerAgentBoundary({ children }: { children: ReactNode }) {
 	if (!isCustomerRoute(pathname)) return children;
 
 	return (
-		<StartupStateAIPanelProvider>
-			<div className="flex h-screen bg-background">
-				<StartupStateAIWorkspace>{children}</StartupStateAIWorkspace>
-			</div>
-		</StartupStateAIPanelProvider>
+		<Suspense>
+			<StartupStateAIPanelProvider>
+				<div className="flex h-screen bg-background">
+					<StartupStateAIWorkspace>{children}</StartupStateAIWorkspace>
+				</div>
+			</StartupStateAIPanelProvider>
+		</Suspense>
 	);
 }
