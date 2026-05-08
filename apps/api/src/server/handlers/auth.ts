@@ -113,6 +113,7 @@ export const auth = {
 				name: true,
 				image: true,
 				password: true,
+				role: true,
 				twoFactorEnabled: true,
 				twoFactorVerified: true,
 			},
@@ -133,6 +134,7 @@ export const auth = {
 			email: user.email,
 			name: user.name,
 			image: user.image,
+			role: user.role,
 			twoFactorEnabled: user.twoFactorEnabled && user.twoFactorVerified,
 		};
 	},
@@ -170,6 +172,7 @@ export const auth = {
 				email: true,
 				name: true,
 				image: true,
+				role: true,
 				twoFactorEnabled: true,
 				twoFactorVerified: true,
 			},
@@ -180,6 +183,7 @@ export const auth = {
 			email: user.email,
 			name: user.name,
 			image: user.image,
+			role: user.role,
 			twoFactorEnabled: user.twoFactorEnabled && user.twoFactorVerified,
 		};
 	},
@@ -202,19 +206,11 @@ export const auth = {
 
 		const hashed = await bcryptjs.hash(input.password, 12);
 
-		const referrer = normalizedReferralCode
-			? await ctx.db.user.findUnique({
-					where: { referralCode: normalizedReferralCode },
-					select: { id: true },
-				})
-			: null;
-
 		const user = await ctx.db.user.create({
 			data: {
 				name: input.name,
 				email: input.email,
 				password: hashed,
-				referredByUserId: referrer?.id,
 			},
 			select: { id: true, email: true, name: true },
 		});

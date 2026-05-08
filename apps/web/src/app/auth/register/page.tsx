@@ -89,11 +89,7 @@ function RegisterForm() {
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
 					<CardTitle className="text-2xl">Create an account</CardTitle>
-					<CardDescription>
-						{referralCode
-							? "You were invited to the app. Create an account to unlock one extra week of trial."
-							: "Your app"}
-					</CardDescription>
+					<CardDescription>Startup State Utah</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<Button

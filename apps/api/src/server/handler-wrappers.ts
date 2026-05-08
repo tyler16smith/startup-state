@@ -1,4 +1,3 @@
-import { requireDemoUserId } from "~/server/services/demo/demo-mode.service";
 import {
 	type ApiContext,
 	requireAuthenticated,
@@ -89,7 +88,7 @@ export function withDemoOrAuth<TInput, TOutput>(
 	return async (ctx: ApiContext, body: TInput) => {
 		requireDemoOrAuthenticated(ctx);
 
-		const userId = ctx.isDemoMode ? await requireDemoUserId() : ctx.userId;
+		const userId = ctx.userId
 
 		if (!userId) throw new Error("Unauthorized");
 

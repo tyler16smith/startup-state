@@ -1,5 +1,5 @@
-import crypto from "node:crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
+import crypto from "node:crypto";
 import { AgentError, toAgentError } from "../../../../../src/agent/errors";
 import type { FinStreamEvent } from "../../../../../src/agent/events";
 import { RunStepStore } from "../../../../../src/agent/persistence/run-step-store";
@@ -15,7 +15,6 @@ import {
 	enforceOrigin,
 } from "../../../../../src/server/lib/cors";
 import { computeCsrfToken } from "../../../../../src/server/lib/csrf";
-import { requireDemoUserId } from "../../../../../src/server/services/demo/demo-mode.service";
 
 function hasSessionCookie(req: NextApiRequest): boolean {
 	const cookie = req.headers.cookie;
@@ -124,7 +123,7 @@ export default async function handler(
 	}
 
 	const ctx = await createApiContext(req, res);
-	const userId = ctx.isDemoMode ? await requireDemoUserId() : ctx.userId;
+	const userId = ctx.userId;
 	if (!userId) {
 		res.status(401).json({ error: { message: "Unauthorized" } });
 		return;

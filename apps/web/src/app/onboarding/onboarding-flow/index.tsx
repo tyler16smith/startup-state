@@ -43,14 +43,24 @@ export function OnboardingFlow() {
 						idea.
 					</p>
 				</div>
-				<Button
-					disabled={complete.isPending}
-					onClick={() => complete.mutate()}
-					size="lg"
-				>
-					Enter dashboard
-					<ArrowRight className="h-4 w-4" />
-				</Button>
+				<div className="flex flex-col items-center gap-3">
+					<Button
+						disabled={complete.isPending}
+						onClick={() => complete.mutate()}
+						size="lg"
+					>
+						Enter dashboard
+						<ArrowRight className="h-4 w-4" />
+					</Button>
+					<button
+						className="text-muted-foreground text-sm underline-offset-4 hover:underline disabled:opacity-50"
+						disabled={complete.isPending}
+						onClick={() => complete.mutate()}
+						type="button"
+					>
+						Skip for now
+					</button>
+				</div>
 			</section>
 		</main>
 	);

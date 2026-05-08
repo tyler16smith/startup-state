@@ -94,34 +94,15 @@ function SignInForm() {
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background p-4">
 			<Card className="w-full max-w-md">
-				<CardHeader className="text-center">
-					<CardTitle className="flex items-center justify-center">
+				<CardHeader className="py-5 text-center">
+					<CardTitle className="flex items-center justify-center pb-5">
 						<Logo size="lg" />
 					</CardTitle>
 					<CardDescription>
-						{referralCode
-							? "You were invited to the app. Sign in to unlock one extra week of trial."
-							: "Your app"}
+						Sign in to access all of Utah's startup resources in one place.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<Button
-						className="w-full"
-						disabled={demoLoading}
-						onClick={() => void handleTryDemo()}
-						type="button"
-						variant="outline"
-					>
-						<FlaskConical className="mr-2 h-4 w-4 text-blue-500" />
-						{demoLoading ? "Loading demo…" : "Try Demo"}
-					</Button>
-
-					<div className="flex items-center gap-3">
-						<Separator className="flex-1" />
-						<span className="text-muted-foreground text-xs">or</span>
-						<Separator className="flex-1" />
-					</div>
-
 					<Button
 						className="w-full"
 						onClick={handleGoogleSignIn}
@@ -153,6 +134,12 @@ function SignInForm() {
 						</svg>
 						Continue with Google
 					</Button>
+
+					<div className="flex items-center gap-3">
+						<Separator className="flex-1" />
+						<span className="text-muted-foreground text-xs">or</span>
+						<Separator className="flex-1" />
+					</div>
 
 					<form className="space-y-4" onSubmit={handleCredentialsSignIn}>
 						<div className="space-y-2">

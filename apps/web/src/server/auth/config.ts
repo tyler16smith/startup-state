@@ -4,6 +4,7 @@ import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
+import { USER_ROLE, type UserRole } from "~/lib/user-role";
 
 import { authorizeCredentials, resolveGoogleUser } from "./api-auth";
 
@@ -15,10 +16,12 @@ if (!process.env.AUTH_SECRET) {
 declare module "next-auth" {
 	interface User {
 		twoFactorEnabled?: boolean;
+		role?: UserRole;
 	}
 	interface Session extends DefaultSession {
 		user: {
 			id: string;
+			role: UserRole;
 		} & DefaultSession["user"];
 		requiresTwoFactor?: boolean;
 	}
@@ -27,6 +30,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
 	interface JWT {
 		id?: string;
+		role?: UserRole;
 		requiresTwoFactor?: boolean;
 	}
 }
@@ -64,6 +68,7 @@ export const authConfig = {
 					email: user.email,
 					name: user.name,
 					image: user.image,
+					role: user.role,
 					twoFactorEnabled: user.twoFactorEnabled,
 				};
 			},
@@ -100,6 +105,7 @@ export const authConfig = {
 			user.email = resolvedUser.email;
 			user.name = resolvedUser.name;
 			user.image = resolvedUser.image;
+			user.role = resolvedUser.role;
 			user.twoFactorEnabled = resolvedUser.twoFactorEnabled;
 
 			return true;
@@ -113,6 +119,7 @@ export const authConfig = {
 					token.email = resolvedUser.email;
 					token.name = resolvedUser.name;
 					token.picture = resolvedUser.image;
+					token.role = resolvedUser.role;
 					token.requiresTwoFactor = resolvedUser.twoFactorEnabled;
 					return token;
 				}
@@ -121,6 +128,7 @@ export const authConfig = {
 			if (user) {
 				token.id = user.id;
 				token.sub = user.id;
+				token.role = user.role;
 				token.requiresTwoFactor = user.twoFactorEnabled ?? false;
 			}
 			if (trigger === "update") {
@@ -139,8 +147,9 @@ export const authConfig = {
 		},
 		session({ session, token }) {
 			if (token.id) {
-				session.user.id = token.id as string;
+				session.user.id = token.id;
 			}
+			session.user.role = token.role ?? USER_ROLE.USER;
 			if (token.requiresTwoFactor !== undefined) {
 				session.requiresTwoFactor = token.requiresTwoFactor as boolean;
 			}

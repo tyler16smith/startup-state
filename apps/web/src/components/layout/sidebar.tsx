@@ -8,13 +8,13 @@ import {
 	PanelLeftClose,
 	PanelLeftOpen,
 	Settings,
+	Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import type React from "react";
 import { useState } from "react";
-import { TrialSyncWidget } from "~/components/billing/trial-sync-widget";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -29,6 +29,7 @@ import {
 	TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { useDemoMode } from "~/context/demo-mode-context";
+import { USER_ROLE } from "~/lib/user-role";
 import { cn } from "~/lib/utils";
 import Logo from "../common/logo";
 
@@ -111,6 +112,8 @@ export function Sidebar({
 				.toUpperCase()
 				.slice(0, 2);
 
+	console.log("session", session);
+
 	return (
 		<aside
 			className={cn(
@@ -124,7 +127,7 @@ export function Sidebar({
 					isCollapsed ? "justify-center px-3" : "justify-between px-6",
 				)}
 			>
-				<Logo showText={!isCollapsed} size="md" />
+				<Logo size="md" />
 				{canCollapse && (
 					<Button
 						aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -161,9 +164,16 @@ export function Sidebar({
 						pathname={pathname}
 					/>
 				))}
-				<div className="mt-auto space-y-1 pt-3">
-					{!isDemoMode && !isCollapsed && <TrialSyncWidget />}
-				</div>
+				{session?.user?.role === USER_ROLE.ADMIN && (
+					<NavLink
+						collapsed={isCollapsed}
+						href="/admin"
+						icon={Shield}
+						label="Admin Tools"
+						onClick={onClose}
+						pathname={pathname}
+					/>
+				)}
 			</nav>
 
 			{/* Profile popout */}

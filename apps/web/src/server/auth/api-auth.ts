@@ -1,4 +1,5 @@
 import { logger } from "~/lib/logger";
+import type { UserRole } from "~/lib/user-role";
 import { getServerApiBaseUrl } from "~/server/api-url";
 
 type WebAuthUser = {
@@ -6,6 +7,7 @@ type WebAuthUser = {
 	email: string | null;
 	name: string | null;
 	image: string | null;
+	role: UserRole;
 	twoFactorEnabled: boolean;
 };
 

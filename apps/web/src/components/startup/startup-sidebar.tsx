@@ -4,15 +4,17 @@ import {
 	Building2,
 	ChevronUp,
 	Compass,
+	LogOut,
 	Map as MapIcon,
 	Settings,
+	Shield,
 	ShieldCheck,
 	Sparkles,
 	User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -20,6 +22,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "~/components/ui/popover";
+import { USER_ROLE } from "~/lib/user-role";
 import { cn } from "~/lib/utils";
 
 const navItems = [
@@ -86,6 +89,14 @@ export function StartupSidebar() {
 
 			{/* Nav */}
 			<nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+				{session?.user?.role === USER_ROLE.ADMIN && (
+					<NavLink
+						href="/admin"
+						icon={Shield}
+						label="Admin Tools"
+						pathname={pathname}
+					/>
+				)}
 				{navItems.map((item) => (
 					<NavLink key={item.href} {...item} pathname={pathname} />
 				))}
@@ -132,6 +143,14 @@ export function StartupSidebar() {
 							<Settings className="h-4 w-4" />
 							Account settings
 						</Link>
+						<button
+							className="flex w-full items-center gap-2 rounded-sm p-2 text-sm transition-colors hover:bg-slate-100"
+							onClick={() => void signOut({ callbackUrl: "/auth/signin" })}
+							type="button"
+						>
+							<LogOut className="h-4 w-4" />
+							Sign out
+						</button>
 					</PopoverContent>
 				</Popover>
 			</div>
