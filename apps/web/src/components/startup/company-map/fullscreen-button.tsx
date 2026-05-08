@@ -12,7 +12,7 @@ export function FullscreenButton({
 	return (
 		<button
 			aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
-			className="absolute right-3 bottom-24 z-10 flex size-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+			className="absolute right-[8px] bottom-26 z-10 flex size-[38px] items-center justify-center rounded-md border-2 border-gray-300 bg-white hover:bg-gray-200 cursor-pointer text-slate-700 shadow-lg transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
 			onClick={onToggle}
 			type="button"
 		>
