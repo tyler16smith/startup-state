@@ -71,7 +71,7 @@ export function ResourceCard({
 						)}
 						{typeof score === "number" && (
 							<Badge className="rounded-md bg-emerald-600 text-white">
-								{score} match
+								{score}% match
 							</Badge>
 						)}
 					</div>
@@ -138,11 +138,11 @@ export function ResourceCard({
 				{resource.websiteUrl ? (
 					<Button asChild size="sm" variant="outline">
 						<a href={resource.websiteUrl} rel="noreferrer" target="_blank">
-							Open
+							Open website
 							<ArrowUpRight className="size-4" />
 						</a>
 					</Button>
-				) : (
+			) : (
 					<Button asChild size="sm" variant="outline">
 						<Link href={`/resources/${resource.id}`}>
 							Open
@@ -157,10 +157,13 @@ export function ResourceCard({
 
 function taxonomyItems(items: unknown) {
 	if (!Array.isArray(items)) return [];
+	const seen = new Set<string>();
 	return items.flatMap((item) => {
 		if (typeof item !== "string") return [];
 		const trimmed = item.trim();
-		return trimmed ? [trimmed] : [];
+		if (!trimmed || seen.has(trimmed)) return [];
+		seen.add(trimmed);
+		return [trimmed];
 	});
 }
 
