@@ -107,13 +107,10 @@ const hiringOptions: NavigatorOption[] = [
 ];
 
 const defaultValues: FounderProfileInput = {
-	stage: "PRE_REVENUE",
-	region: "Wasatch Front",
 	sectors: [],
 	goals: [],
 	businessTypes: [],
 	fundingNeeds: [],
-	hiringStatus: "UNKNOWN",
 };
 
 function toggleValue(values: string[], value: string) {

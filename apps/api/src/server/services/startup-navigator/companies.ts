@@ -12,6 +12,7 @@ import {
 	reviewCompanySubmissionInputSchema,
 } from "./schemas";
 import { createUniqueSlug, slugify } from "./slug";
+import { getWebsiteDomain } from "./website-domain";
 
 type Db = PrismaClient;
 
@@ -187,7 +188,7 @@ export async function createCompany(
 			}
 
 			const emailDomain = workEmail.data.split("@").at(1)?.toLowerCase() ?? "";
-			const websiteDomain = getDomain(created.websiteUrl);
+			const websiteDomain = getWebsiteDomain(created.websiteUrl);
 			await tx.companyClaim.create({
 				data: {
 					companyId: created.id,
@@ -367,19 +368,6 @@ export async function archiveCompany(db: Db, companyId: string) {
 	});
 }
 
-function getDomain(value?: string | null) {
-	if (!value) return null;
-	try {
-		return new URL(
-			value.startsWith("http") ? value : `https://${value}`,
-		).hostname
-			.replace(/^www\./, "")
-			.toLowerCase();
-	} catch {
-		return null;
-	}
-}
-
 function domainsMatch(emailDomain: string, websiteDomain: string | null) {
 	if (!websiteDomain) return false;
 	return (
@@ -399,7 +387,7 @@ export async function createCompanyClaim(
 	if (!company) throw createApiError("Company not found", 404);
 
 	const emailDomain = data.workEmail.split("@").at(1)?.toLowerCase() ?? "";
-	const websiteDomain = getDomain(company.websiteUrl);
+	const websiteDomain = getWebsiteDomain(company.websiteUrl);
 	const domainMatches = domainsMatch(emailDomain, websiteDomain);
 
 	const claim = await db.companyClaim.create({
@@ -584,6 +572,78 @@ function parseRowToCompanyData(row: Record<string, unknown>) {
 	});
 }
 
+type ParsedCompanyRow = ReturnType<typeof parseRowToCompanyData>;
+
+function mergeDefinedCompanyData(
+	current: ParsedCompanyRow,
+	next: ParsedCompanyRow,
+) {
+	const merged = { ...current };
+	for (const [key, value] of Object.entries(next)) {
+		if (value !== undefined) {
+			merged[key as keyof ParsedCompanyRow] = value as never;
+		}
+	}
+	return merged;
+}
+
+function collapseCompanyRowsByWebsiteDomain(rows: ParsedCompanyRow[]) {
+	const rowsByDomain = new Map<string, ParsedCompanyRow>();
+	const rowsWithoutDomain: ParsedCompanyRow[] = [];
+
+	for (const row of rows) {
+		const domain = getWebsiteDomain(row.websiteUrl);
+		if (!domain) {
+			rowsWithoutDomain.push(row);
+			continue;
+		}
+
+		const current = rowsByDomain.get(domain);
+		rowsByDomain.set(
+			domain,
+			current ? mergeDefinedCompanyData(current, row) : row,
+		);
+	}
+
+	return [...rowsByDomain.values(), ...rowsWithoutDomain];
+}
+
+async function findCompaniesByWebsiteDomain(db: Db, domains: string[]) {
+	if (domains.length === 0) return new Map<string, string>();
+
+	const existing = await db.company.findMany({
+		where: {
+			OR: domains.map((domain) => ({
+				websiteUrl: { contains: domain, mode: "insensitive" },
+			})),
+		},
+		select: { id: true, websiteUrl: true },
+		orderBy: { updatedAt: "desc" },
+	});
+	const existingByDomain = new Map<string, string>();
+
+	for (const company of existing) {
+		const domain = getWebsiteDomain(company.websiteUrl);
+		if (domain && domains.includes(domain) && !existingByDomain.has(domain)) {
+			existingByDomain.set(domain, company.id);
+		}
+	}
+
+	return existingByDomain;
+}
+
+function companyImportData(data: ParsedCompanyRow) {
+	const { photos: _photos, ...companyFields } = data;
+	return {
+		...companyFields,
+		state: cleanOptional(companyFields.state) ?? "UT",
+		websiteUrl: cleanOptional(companyFields.websiteUrl),
+		linkedinUrl: cleanOptional(companyFields.linkedinUrl),
+		jobPostingsUrl: cleanOptional(companyFields.jobPostingsUrl),
+		status: "PUBLISHED" as const,
+	};
+}
+
 export async function importCompaniesFromCsv(db: Db, input: unknown) {
 	const { csv } = csvImportSchema.parse(input);
 	const parsed = Papa.parse<Record<string, unknown>>(csv, {
@@ -608,33 +668,26 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 	}
 
 	if (validRows.length === 0) return { imported: 0, errors };
-	validRows = await enrichCompanyLocations(validRows);
+	validRows = collapseCompanyRowsByWebsiteDomain(
+		await enrichCompanyLocations(validRows),
+	);
 
-	// Split creates vs updates using websiteUrl as the unique key
-	const websiteUrls = validRows
-		.map((r) => r.websiteUrl)
-		.filter((u): u is string => Boolean(u));
-
-	const existing =
-		websiteUrls.length > 0
-			? await db.company.findMany({
-					where: { websiteUrl: { in: websiteUrls } },
-					select: { id: true, websiteUrl: true },
-				})
-			: [];
-
-	const existingByUrl = new Map(
-		existing.flatMap((company) =>
-			company.websiteUrl ? [[company.websiteUrl, company.id]] : [],
+	const websiteDomains = Array.from(
+		new Set(
+			validRows
+				.map((row) => getWebsiteDomain(row.websiteUrl))
+				.filter((domain): domain is string => Boolean(domain)),
 		),
 	);
+	const existingByDomain = await findCompaniesByWebsiteDomain(db, websiteDomains);
 
-	const toCreate = validRows.filter(
-		(r) => !r.websiteUrl || !existingByUrl.has(r.websiteUrl),
-	);
+	const toCreate = validRows.filter((row) => {
+		const domain = getWebsiteDomain(row.websiteUrl);
+		return !domain || !existingByDomain.has(domain);
+	});
 	const toUpdate = validRows.flatMap((data) => {
-		if (!data.websiteUrl) return [];
-		const id = existingByUrl.get(data.websiteUrl);
+		const domain = getWebsiteDomain(data.websiteUrl);
+		const id = domain ? existingByDomain.get(domain) : undefined;
 		return id ? [{ data, id }] : [];
 	});
 
@@ -647,7 +700,6 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 	const usedSlugs = new Set(dbSlugsResult.map((c) => c.slug));
 
 	const createData = toCreate.map((data) => {
-		const { photos: _photos, ...companyFields } = data;
 		const base = slugify(data.name);
 		let slug = base;
 		let suffix = 2;
@@ -655,15 +707,7 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 			slug = `${base}-${suffix++}`;
 		}
 		usedSlugs.add(slug);
-		return {
-			...companyFields,
-			slug,
-			state: cleanOptional(companyFields.state) ?? "UT",
-			websiteUrl: cleanOptional(companyFields.websiteUrl),
-			linkedinUrl: cleanOptional(companyFields.linkedinUrl),
-			jobPostingsUrl: cleanOptional(companyFields.jobPostingsUrl),
-			status: "PUBLISHED" as const,
-		};
+		return { ...companyImportData(data), slug };
 	});
 
 	if (createData.length > 0) {
@@ -672,18 +716,12 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 
 	if (toUpdate.length > 0) {
 		await Promise.all(
-			toUpdate.map(({ data, id }) => {
-				const { photos: _photos, ...companyFields } = data;
-				return db.company.update({
+			toUpdate.map(({ data, id }) =>
+				db.company.update({
 					where: { id },
-					data: {
-						...companyFields,
-						websiteUrl: cleanOptional(companyFields.websiteUrl),
-						linkedinUrl: cleanOptional(companyFields.linkedinUrl),
-						jobPostingsUrl: cleanOptional(companyFields.jobPostingsUrl),
-					},
-				});
-			}),
+					data: companyImportData(data),
+				}),
+			),
 		);
 	}
 

@@ -6,6 +6,7 @@ import {
 	Compass,
 	Loader2,
 	Map as MapIcon,
+	Redo2,
 	Save,
 } from "lucide-react";
 import Link from "next/link";
@@ -196,6 +197,16 @@ export function FounderResults() {
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
+						<Button asChild variant="outline">
+							<Link href="/resources">
+								Browse all <ArrowRight className="size-4" />
+							</Link>
+						</Button>
+						<Button asChild variant="outline">
+							<Link href="/resources">
+								Retry <Redo2 className="size-4" />
+							</Link>
+						</Button>
 						<Button disabled={saving || saved} onClick={savePlan}>
 							{saving ? (
 								<Loader2 className="size-4 animate-spin" />
@@ -203,16 +214,6 @@ export function FounderResults() {
 								<Save className="size-4" />
 							)}
 							{saved ? "Saved" : "Save my plan"}
-						</Button>
-						<Button asChild variant="outline">
-							<Link href="/resources">
-								Browse all <ArrowRight className="size-4" />
-							</Link>
-						</Button>
-						<Button asChild>
-							<Link href="/map">
-								View map <MapIcon className="size-4" />
-							</Link>
 						</Button>
 					</div>
 				</div>

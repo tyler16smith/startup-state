@@ -1,15 +1,7 @@
 import Link from "next/link";
-import { ResourceCsvImportForm } from "~/components/startup/resource-csv-import-form";
+import { AdminResourcesTable } from "~/components/startup/admin-resources-table";
+import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import { Button } from "~/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCaption,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "~/components/ui/table";
 import type { Paginated, Resource } from "~/lib/startup-api";
 import { apiServer } from "~/lib/startup-server-api";
 
@@ -20,52 +12,18 @@ export default async function AdminResourcesPage() {
 	);
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+			<PageBreadcrumb
+				items={[
+					{ label: "Admin", href: "/admin" },
+					{ label: "Resources" },
+				]}
+			/>
 			<Header
 				href="/admin/resources/new"
 				label="New resource"
 				title="Resources"
 			/>
-			<div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
-				<div className="rounded-lg border bg-white p-4 shadow-sm">
-					<Table>
-						<TableCaption>Resources awaiting admin management</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Category</TableHead>
-								<TableHead>Source ID</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{resources.items.map((resource) => (
-								<TableRow key={resource.id}>
-									<TableCell className="max-w-[14rem] font-medium">
-										<span className="block truncate" title={resource.name}>
-											{resource.name}
-										</span>
-									</TableCell>
-									<TableCell>{resource.status}</TableCell>
-									<TableCell>{resource.category ?? "-"}</TableCell>
-									<TableCell>{resource.sourceId ?? "-"}</TableCell>
-									<TableCell className="text-right">
-										<Button asChild size="sm" variant="outline">
-											<Link
-												aria-label={`Edit ${resource.name}`}
-												href={`/admin/resources/${resource.id}/edit`}
-											>
-												Edit
-											</Link>
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-				<ResourceCsvImportForm />
-			</div>
+			<AdminResourcesTable resources={resources.items} />
 		</main>
 	);
 }

@@ -8,10 +8,10 @@ import {
 	Map as MapIcon,
 	Settings,
 	Shield,
-	ShieldCheck,
 	Sparkles,
 	User,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -52,6 +52,7 @@ function NavLink({
 		href === "/"
 			? pathname === "/" || pathname === "/plan"
 			: pathname === href || pathname.startsWith(href);
+	
 	return (
 		<Link
 			aria-current={active ? "page" : undefined}
@@ -113,8 +114,13 @@ export function StartupSidebar({
 					href="/"
 					onClick={onClose}
 				>
-					<span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-white">
-						<ShieldCheck className="size-4" />
+					<span className="flex size-8 items-center justify-center">
+						<Image
+							alt="Startup State Logo"
+							height={28}
+							src="/startup-state-s-logo.png"
+							width={28}
+						/>
 					</span>
 					<span className="text-sm">Startup State Navigator</span>
 				</Link>

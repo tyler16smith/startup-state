@@ -18,6 +18,7 @@ import {
 	resourceQuerySchema,
 } from "./schemas";
 import { createUniqueSlug } from "./slug";
+import { getWebsiteDomain } from "./website-domain";
 
 type Db = PrismaClient;
 type ResourceWithSaved = Prisma.ResourceGetPayload<{
@@ -652,15 +653,8 @@ function normalizeImportKey(value: string | null | undefined) {
 	return value?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
 }
 
-function normalizeImportUrl(value: string | null | undefined) {
-	if (!value) return "";
-	try {
-		const url = new URL(value.trim());
-		url.hash = "";
-		return url.toString().replace(/\/$/, "").toLowerCase();
-	} catch {
-		return value.trim().replace(/\/$/, "").toLowerCase();
-	}
+function normalizeImportDomain(value: string | null | undefined) {
+	return getWebsiteDomain(value) ?? "";
 }
 
 function isValidUrl(value: string) {
@@ -742,8 +736,9 @@ function pruneImportSessions() {
 }
 
 function duplicateKey(row: PreparedCsvResource) {
+	const websiteDomain = normalizeImportDomain(row.websiteUrl);
+	if (websiteDomain) return `domain:${websiteDomain}`;
 	if (row.sourceId) return `source:${normalizeImportKey(row.sourceId)}`;
-	if (row.websiteUrl) return `link:${normalizeImportUrl(row.websiteUrl)}`;
 	return `title:${normalizeImportKey(row.name)}`;
 }
 
@@ -869,10 +864,18 @@ async function matchCsvResources(db: Db, rows: PreparedCsvResource[]) {
 	const websiteUrls = uniqueValues(
 		rows.flatMap((row) => (row.websiteUrl ? [row.websiteUrl] : [])),
 	);
+	const websiteDomains = uniqueValues(
+		websiteUrls.flatMap((websiteUrl) => {
+			const domain = normalizeImportDomain(websiteUrl);
+			return domain ? [domain] : [];
+		}),
+	);
 	const names = uniqueValues(rows.map((row) => row.name));
 	const or: Prisma.ResourceWhereInput[] = [];
 	if (sourceIds.length) or.push({ sourceId: { in: sourceIds } });
-	if (websiteUrls.length) or.push({ websiteUrl: { in: websiteUrls } });
+	for (const domain of websiteDomains) {
+		or.push({ websiteUrl: { contains: domain, mode: "insensitive" } });
+	}
 	if (names.length) or.push({ name: { in: names, mode: "insensitive" } });
 
 	const existing = or.length
@@ -889,10 +892,10 @@ async function matchCsvResources(db: Db, rows: PreparedCsvResource[]) {
 				: [],
 		),
 	);
-	const byWebsiteUrl = new Map(
+	const byWebsiteDomain = new Map(
 		existing.flatMap((resource) =>
-			resource.websiteUrl
-				? [[normalizeImportUrl(resource.websiteUrl), resource] as const]
+			normalizeImportDomain(resource.websiteUrl)
+				? [[normalizeImportDomain(resource.websiteUrl), resource] as const]
 				: [],
 		),
 	);
@@ -903,12 +906,11 @@ async function matchCsvResources(db: Db, rows: PreparedCsvResource[]) {
 	);
 
 	return rows.map<MatchedCsvResource>((row) => {
+		const websiteDomain = normalizeImportDomain(row.websiteUrl);
 		const existingResource =
+			(websiteDomain ? byWebsiteDomain.get(websiteDomain) : undefined) ??
 			(row.sourceId
 				? bySourceId.get(normalizeImportKey(row.sourceId))
-				: undefined) ??
-			(row.websiteUrl
-				? byWebsiteUrl.get(normalizeImportUrl(row.websiteUrl))
 				: undefined) ??
 			byName.get(normalizeImportKey(row.name));
 

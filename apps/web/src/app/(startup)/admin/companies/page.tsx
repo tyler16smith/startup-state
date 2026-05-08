@@ -1,15 +1,7 @@
 import Link from "next/link";
-import { CsvImportForm } from "~/components/startup/csv-import-form";
+import { AdminCompaniesTable } from "~/components/startup/admin-companies-table";
+import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import { Button } from "~/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCaption,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "~/components/ui/table";
 import type { Company, Paginated } from "~/lib/startup-api";
 import { apiServer } from "~/lib/startup-server-api";
 
@@ -20,6 +12,12 @@ export default async function AdminCompaniesPage() {
 	);
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+			<PageBreadcrumb
+				items={[
+					{ label: "Admin", href: "/admin" },
+					{ label: "Companies" },
+				]}
+			/>
 			<div className="mb-8 flex items-end justify-between">
 				<div>
 					<p className="font-medium text-emerald-700 text-sm">Admin</p>
@@ -31,45 +29,7 @@ export default async function AdminCompaniesPage() {
 					<Link href="/admin/companies/new">New company</Link>
 				</Button>
 			</div>
-			<div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
-				<div className="rounded-lg border bg-white p-4 shadow-sm">
-					<Table>
-						<TableCaption>Companies awaiting admin management</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Sector</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{companies.items.map((company) => (
-								<TableRow key={company.id}>
-									<TableCell className="max-w-[14rem] font-medium">
-										<span className="block truncate" title={company.name}>
-											{company.name}
-										</span>
-									</TableCell>
-									<TableCell>{company.status}</TableCell>
-									<TableCell>{company.sector ?? "-"}</TableCell>
-									<TableCell className="text-right">
-										<Button asChild size="sm" variant="outline">
-											<Link
-												aria-label={`Edit ${company.name}`}
-												href={`/admin/companies/${company.id}/edit`}
-											>
-												Edit
-											</Link>
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-				<CsvImportForm endpoint="/api/v1/companies/import" />
-			</div>
+			<AdminCompaniesTable companies={companies.items} />
 		</main>
 	);
 }

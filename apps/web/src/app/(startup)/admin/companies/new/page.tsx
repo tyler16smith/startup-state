@@ -1,4 +1,5 @@
 import { CompanyForm } from "~/components/startup/company-form";
+import { CsvImportDropZone } from "~/components/startup/csv-import-drop-zone";
 import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 
 export default function AdminNewCompanyPage() {
@@ -10,6 +11,11 @@ export default function AdminNewCompanyPage() {
 					{ label: "Companies", href: "/admin/companies" },
 					{ label: "Create company" },
 				]}
+			/>
+			<CsvImportDropZone
+				endpoint="/api/v1/companies/import"
+				inputId="company-csv-import-drop-zone"
+				title="Upload companies CSV"
 			/>
 			<h1 className="mb-8 font-semibold text-4xl tracking-normal">
 				Create company
