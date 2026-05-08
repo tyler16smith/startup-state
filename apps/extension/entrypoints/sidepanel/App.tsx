@@ -1,6 +1,6 @@
-import "../popup/style.css";
-import { HelloWorldHome } from "../../lib/hello-world-home";
+import "./sidebar.css";
+import { Sidebar } from "../../lib/sidebar";
 
 export default function App() {
-	return <HelloWorldHome surface="sidepanel" />;
+	return <Sidebar />;
 }

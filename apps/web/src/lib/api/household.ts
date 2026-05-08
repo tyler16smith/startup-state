@@ -2,7 +2,7 @@ import { getCsrfToken } from "@app/client-ts";
 import type {
 	CreateHouseholdInviteInput,
 	HouseholdState,
-} from "~/app/dashboard/settings/household-section/types";
+} from "~/app/(startup)/settings/household-section/types";
 import { toApiUrl } from "~/lib/api-url";
 
 type ApiResponse<T> = {
