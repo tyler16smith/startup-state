@@ -8,13 +8,13 @@ export const COMPANY_CLUSTERS_LAYER_ID = "startup-company-clusters";
 export const COMPANY_CLUSTER_COUNT_LAYER_ID = "startup-company-cluster-count";
 
 export const DEFAULT_COMPANY_MAP_FILTERS: CompanyMapFilters = {
-	city: "",
-	county: "",
-	hiringStatus: "",
+	city: [],
+	county: [],
+	hiringStatus: [],
 	query: "",
-	sector: "",
-	size: "",
-	stage: "",
+	sector: [],
+	size: [],
+	stage: [],
 };
 
 export const HIRING_STATUS_OPTIONS: FilterOption[] = [

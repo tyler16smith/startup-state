@@ -152,26 +152,30 @@ export async function createCompany(
 	const submittedWorkEmail =
 		typeof rawInput.workEmail === "string" ? rawInput.workEmail.trim() : "";
 	const data = companyInputSchema.parse(input);
+	const [enrichedData] = await enrichCompanyLocations([data]);
+	const companyData = enrichedData ?? data;
 	const slug = await createUniqueSlug(
-		data.name,
+		companyData.name,
 		async (candidate) =>
 			Boolean(await db.company.findUnique({ where: { slug: candidate } })),
-		data.slug,
+		companyData.slug,
 	);
 	const status = options.admin ? "PUBLISHED" : "PENDING_REVIEW";
 
 	const company = await db.$transaction(async (tx) => {
 		const created = await tx.company.create({
 			data: {
-				...data,
+				...companyData,
 				slug,
 				status,
-				source: options.admin ? data.source : PUBLIC_COMPANY_SUBMISSION_SOURCE,
-				websiteUrl: cleanOptional(data.websiteUrl),
-				linkedinUrl: cleanOptional(data.linkedinUrl),
-				jobPostingsUrl: cleanOptional(data.jobPostingsUrl),
-				state: cleanOptional(data.state) ?? "UT",
-				photos: { create: photoData(data.photos) },
+				source: options.admin
+					? companyData.source
+					: PUBLIC_COMPANY_SUBMISSION_SOURCE,
+				websiteUrl: cleanOptional(companyData.websiteUrl),
+				linkedinUrl: cleanOptional(companyData.linkedinUrl),
+				jobPostingsUrl: cleanOptional(companyData.jobPostingsUrl),
+				state: cleanOptional(companyData.state) ?? "UT",
+				photos: { create: photoData(companyData.photos) },
 			},
 			include: { photos: true },
 		});
@@ -320,6 +324,22 @@ export async function updateCompany(db: Db, companyId: string, input: unknown) {
 	const { photos, ...companyData } = data;
 	const current = await db.company.findUnique({ where: { id: companyId } });
 	if (!current) throw createApiError("Company not found", 404);
+	const [enrichedLocation] = await enrichCompanyLocations([
+		{ ...current, ...companyData },
+	]);
+	const locationData = enrichedLocation
+		? {
+				address: enrichedLocation.address,
+				city: enrichedLocation.city,
+				county: enrichedLocation.county,
+				state: enrichedLocation.state,
+				postalCode: enrichedLocation.postalCode,
+				latitude: enrichedLocation.latitude,
+				longitude: enrichedLocation.longitude,
+				locationPrecision: enrichedLocation.locationPrecision,
+				geocodeProvider: enrichedLocation.geocodeProvider,
+			}
+		: {};
 
 	const slug =
 		data.name || data.slug
@@ -344,6 +364,7 @@ export async function updateCompany(db: Db, companyId: string, input: unknown) {
 			where: { id: companyId },
 			data: {
 				...companyData,
+				...locationData,
 				...(slug ? { slug } : {}),
 				...(companyData.websiteUrl !== undefined
 					? { websiteUrl: cleanOptional(companyData.websiteUrl) }
@@ -556,13 +577,26 @@ function parseRowToCompanyData(row: Record<string, unknown>) {
 			"Description of startup",
 			"Description",
 		]),
-		address: pickCsvValue(row, ["address", "Full Address"]),
-		city: pickCsvValue(row, ["city"]),
-		county: pickCsvValue(row, ["county"]),
-		state: pickCsvValue(row, ["state"]),
-		postalCode: pickCsvValue(row, ["postal code", "postalCode"]),
-		latitude: pickCsvValue(row, ["latitude"]),
-		longitude: pickCsvValue(row, ["longitude"]),
+		address: pickCsvValue(row, ["address", "Address", "Full Address"]),
+		city: pickCsvValue(row, ["city", "City"]),
+		county: pickCsvValue(row, ["county", "County"]),
+		state: pickCsvValue(row, ["state", "State"]),
+		postalCode: pickCsvValue(row, [
+			"postal code",
+			"postalCode",
+			"Postal Code",
+			"Zip",
+			"ZIP",
+		]),
+		latitude: pickCsvValue(row, ["latitude", "Latitude", "lat", "Lat"]),
+		longitude: pickCsvValue(row, [
+			"longitude",
+			"Longitude",
+			"lng",
+			"Lng",
+			"long",
+			"Long",
+		]),
 		hiringStatus:
 			pickCsvValue(row, ["hiring status", "hiringStatus"]) ?? "UNKNOWN",
 		jobPostingsUrl: normalizeUrl(
@@ -679,7 +713,10 @@ export async function importCompaniesFromCsv(db: Db, input: unknown) {
 				.filter((domain): domain is string => Boolean(domain)),
 		),
 	);
-	const existingByDomain = await findCompaniesByWebsiteDomain(db, websiteDomains);
+	const existingByDomain = await findCompaniesByWebsiteDomain(
+		db,
+		websiteDomains,
+	);
 
 	const toCreate = validRows.filter((row) => {
 		const domain = getWebsiteDomain(row.websiteUrl);

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_COMPANY_MAP_FILTERS } from "~/components/startup/company-map/constants";
 import { getInitialCompanyMapFilters } from "~/components/startup/company-map/filter-companies";
 import type {
-	CompanyMapFilterKey,
+	CompanyMapArrayFilterKey,
 	CompanyMapFilters,
 } from "~/components/startup/company-map/types";
 
@@ -17,9 +17,28 @@ export function useCompanyFilters() {
 		setFilters(getInitialCompanyMapFilters(window.location.search));
 	}, []);
 
-	const updateFilter = useCallback(
-		(key: CompanyMapFilterKey, value: string) => {
-			setFilters((current) => ({ ...current, [key]: value }));
+	const updateQuery = useCallback((value: string) => {
+		setFilters((current) => ({ ...current, query: value }));
+	}, []);
+
+	const setFilterValues = useCallback(
+		(key: CompanyMapArrayFilterKey, values: string[]) => {
+			setFilters((current) => ({ ...current, [key]: values }));
+		},
+		[],
+	);
+
+	const toggleFilterValue = useCallback(
+		(key: CompanyMapArrayFilterKey, value: string) => {
+			setFilters((current) => {
+				const values = current[key];
+				return {
+					...current,
+					[key]: values.includes(value)
+						? values.filter((item) => item !== value)
+						: [...values, value],
+				};
+			});
 		},
 		[],
 	);
@@ -28,5 +47,11 @@ export function useCompanyFilters() {
 		setFilters({ ...DEFAULT_COMPANY_MAP_FILTERS });
 	}, []);
 
-	return { clearFilters, filters, updateFilter };
+	return {
+		clearFilters,
+		filters,
+		setFilterValues,
+		toggleFilterValue,
+		updateQuery,
+	};
 }

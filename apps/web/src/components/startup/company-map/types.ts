@@ -5,15 +5,16 @@ export type FilterOption = {
 
 export type CompanyMapFilters = {
 	query: string;
-	sector: string;
-	stage: string;
-	hiringStatus: string;
-	city: string;
-	county: string;
-	size: string;
+	sector: string[];
+	stage: string[];
+	hiringStatus: string[];
+	city: string[];
+	county: string[];
+	size: string[];
 };
 
 export type CompanyMapFilterKey = keyof CompanyMapFilters;
+export type CompanyMapArrayFilterKey = Exclude<CompanyMapFilterKey, "query">;
 
 export type CompanyMapFilterOptions = {
 	sectors: FilterOption[];
