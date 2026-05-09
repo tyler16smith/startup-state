@@ -119,6 +119,24 @@ export const investorProfileInputSchema = z.object({
 	keywords: z.string().optional(),
 });
 
+export const newsletterAudienceSchema = z.enum(["FOUNDER", "INVESTOR"]);
+
+export const newsletterSubscriptionInputSchema = z.object({
+	email: z
+		.string()
+		.trim()
+		.email()
+		.max(254)
+		.transform((value) => value.toLowerCase()),
+	name: z.string().trim().max(120).optional().nullable(),
+	audiences: z.array(newsletterAudienceSchema).min(1).max(2),
+	interests: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
+	stage: z.string().trim().max(80).optional().nullable(),
+	intent: z.string().trim().max(80).optional().nullable(),
+	details: z.string().trim().max(1000).optional().nullable(),
+	source: z.string().trim().max(80).optional().default("startup_state_web"),
+});
+
 const compactResourceRecommendationSchema = z
 	.object({
 		resource: z.object({ id: z.string().min(1) }).passthrough(),

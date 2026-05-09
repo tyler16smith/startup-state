@@ -5,6 +5,7 @@ import {
 	ChevronUp,
 	Compass,
 	LogOut,
+	Mail,
 	Map as MapIcon,
 	Settings,
 	Shield,
@@ -29,6 +30,7 @@ import { cn } from "~/lib/utils";
 const navItems = [
 	{ href: "/", label: "Navigator", icon: Compass },
 	{ href: "/resources", label: "Resources", icon: Sparkles },
+	{ href: "/newsletter", label: "Newsletter", icon: Mail },
 	{ href: "/map", label: "Map", icon: MapIcon },
 	{ href: "/companies/new", label: "Add company", icon: Building2 },
 ];

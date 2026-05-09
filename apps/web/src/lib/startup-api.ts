@@ -124,6 +124,31 @@ export type NavigatorPlan = {
 	updatedAt: string;
 };
 
+export type NewsletterAudience = "FOUNDER" | "INVESTOR";
+
+export type NewsletterSubscriptionInput = {
+	email: string;
+	name?: string;
+	audiences: NewsletterAudience[];
+	interests: string[];
+	stage?: string;
+	intent?: string;
+	details?: string;
+};
+
+export type NewsletterSubscription = {
+	id: string;
+	email: string;
+	name?: string | null;
+	audiences: NewsletterAudience[];
+	interests: string[];
+	stage?: string | null;
+	intent?: string | null;
+	details?: string | null;
+	status: string;
+	updatedAt: string;
+};
+
 export type Paginated<T> = {
 	items: T[];
 	total: number;
@@ -197,6 +222,13 @@ export async function apiClient<T>(
 		},
 	});
 	return parseApiResponse<T>(response);
+}
+
+export function subscribeToNewsletter(input: NewsletterSubscriptionInput) {
+	return apiClient<NewsletterSubscription>("/api/v1/newsletter/subscribe", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
 }
 
 export function compactDate(value: string) {

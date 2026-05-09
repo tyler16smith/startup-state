@@ -7,6 +7,7 @@ export { landingPages } from "./landing-pages";
 export { mcp } from "./mcp";
 export { mobileAuth } from "./mobile-auth";
 export { navigatorPlans } from "./navigator-plans";
+export { newsletter } from "./newsletter";
 export { onboarding } from "./onboarding";
 export { ping } from "./ping";
 export { resources } from "./resources";

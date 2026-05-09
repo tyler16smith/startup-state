@@ -72,6 +72,39 @@ model User {
   savedResources               SavedResource[]
   companyClaims                CompanyClaim[]
   companyOwnerships            CompanyOwner[]
+  newsletterSubscriptions      NewsletterSubscription[]
+}
+
+enum NewsletterAudience {
+  FOUNDER
+  INVESTOR
+}
+
+enum NewsletterSubscriptionStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscription {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  email     String                       @unique
+  name      String?
+  audiences NewsletterAudience[]         @default([])
+  interests String[]                     @default([])
+  stage     String?
+  intent    String?
+  details   String?                      @db.Text
+  source    String?                      @default("startup_state_web")
+  status    NewsletterSubscriptionStatus @default(SUBSCRIBED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Resource {
