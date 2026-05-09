@@ -222,7 +222,11 @@ function FilterDropdown({
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				<Button className="min-w-0 justify-between" type="button" variant="outline">
+				<Button
+					className="min-w-0 justify-between"
+					type="button"
+					variant="outline"
+				>
 					<span className="truncate">
 						{label}
 						{selected.length ? ` (${selected.length})` : ""}

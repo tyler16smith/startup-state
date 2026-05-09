@@ -124,10 +124,7 @@ function isSameFounderProfile(
 		sameStringArray(left.goals, right.goals) &&
 		sameStringArray(left.businessTypes, right.businessTypes) &&
 		sameStringArray(left.fundingNeeds, right.fundingNeeds) &&
-		sameStringArray(
-			left.founderIdentities ?? [],
-			right.founderIdentities ?? [],
-		)
+		sameStringArray(left.founderIdentities ?? [], right.founderIdentities ?? [])
 	);
 }
 

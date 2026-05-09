@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { ChatComposer } from "./chat-composer";
 import { ChatHeader } from "./chat-header";

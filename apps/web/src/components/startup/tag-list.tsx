@@ -14,7 +14,7 @@ export function TagList({
 		<div className="flex min-w-0 flex-wrap gap-1.5">
 			{visible.map((item) => (
 				<Badge
-					className="max-w-full whitespace-normal rounded-md text-left break-words"
+					className="max-w-full whitespace-normal break-words rounded-md text-left"
 					key={item}
 					variant="secondary"
 				>

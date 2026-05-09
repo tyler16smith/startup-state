@@ -192,7 +192,7 @@ function CompanyMapPreview({
 	return (
 		<a
 			aria-label={`Open ${company.name} in maps`}
-			className="mt-4 block aspect-square overflow-hidden rounded-lg border bg-slate-100 bg-cover bg-center transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-700 focus-visible:outline-offset-2"
+			className="mt-4 block aspect-square overflow-hidden rounded-lg border bg-center bg-cover bg-slate-100 transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-700 focus-visible:outline-offset-2"
 			href={directionsUrl}
 			rel="noreferrer"
 			style={{ backgroundImage: `url("${imageUrl}")` }}

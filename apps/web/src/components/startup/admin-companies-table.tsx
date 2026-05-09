@@ -38,7 +38,7 @@ export function AdminCompaniesTable({ companies }: { companies: Company[] }) {
 				<div className="relative w-full sm:max-w-sm">
 					<Search
 						aria-hidden="true"
-						className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground"
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 					/>
 					<Input
 						aria-label="Search company names"
@@ -77,7 +77,10 @@ export function AdminCompaniesTable({ companies }: { companies: Company[] }) {
 									<TableCell>{company.status}</TableCell>
 									<TableCell>{company.sector ?? "-"}</TableCell>
 									<TableCell className="max-w-[18rem]">
-										<span className="block truncate" title={address || undefined}>
+										<span
+											className="block truncate"
+											title={address || undefined}
+										>
 											{address || "-"}
 										</span>
 									</TableCell>

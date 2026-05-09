@@ -173,7 +173,7 @@ export function FilterSelect({
 					aria-expanded={open}
 					aria-label={label}
 					className={[
-						"flex h-10 max-w-52 items-center shadow-md gap-2 border px-4 font-medium text-sm outline-none transition focus:ring-2",
+						"flex h-10 max-w-52 items-center gap-2 border px-4 font-medium text-sm shadow-md outline-none transition focus:ring-2",
 						isActive ? "rounded-l-full" : "rounded-full",
 						isActive
 							? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100/80 focus:border-emerald-500 focus:ring-emerald-500/20"

@@ -52,7 +52,7 @@ function NavLink({
 		href === "/"
 			? pathname === "/" || pathname === "/plan"
 			: pathname === href || pathname.startsWith(href);
-	
+
 	return (
 		<Link
 			aria-current={active ? "page" : undefined}

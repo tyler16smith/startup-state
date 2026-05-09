@@ -13,10 +13,7 @@ export default async function AdminResourcesPage() {
 	return (
 		<main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 			<PageBreadcrumb
-				items={[
-					{ label: "Admin", href: "/admin" },
-					{ label: "Resources" },
-				]}
+				items={[{ label: "Admin", href: "/admin" }, { label: "Resources" }]}
 			/>
 			<Header
 				href="/admin/resources/new"
@@ -40,8 +37,7 @@ function Header({
 	return (
 		<div className="mb-8 flex items-end justify-between">
 			<div>
-				<p className="font-medium text-emerald-700 text-sm">Admin</p>
-				<h1 className="mt-2 font-semibold text-4xl tracking-normal">{title}</h1>
+				<h1 className="font-semibold text-4xl tracking-normal">{title}</h1>
 			</div>
 			<Button asChild>
 				<Link href={href}>{label}</Link>

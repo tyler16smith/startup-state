@@ -38,7 +38,7 @@ export function AdminResourcesTable({ resources }: { resources: Resource[] }) {
 				<div className="relative w-full sm:max-w-sm">
 					<Search
 						aria-hidden="true"
-						className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground"
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 					/>
 					<Input
 						aria-label="Search resource names"
@@ -78,7 +78,10 @@ export function AdminResourcesTable({ resources }: { resources: Resource[] }) {
 									<TableCell>{resource.status}</TableCell>
 									<TableCell>{resource.category ?? "-"}</TableCell>
 									<TableCell className="max-w-[18rem]">
-										<span className="block truncate" title={address || undefined}>
+										<span
+											className="block truncate"
+											title={address || undefined}
+										>
 											{address || "-"}
 										</span>
 									</TableCell>

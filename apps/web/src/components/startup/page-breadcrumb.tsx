@@ -35,7 +35,7 @@ export function PageBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
 							</span>
 						) : (
 							<Link
-								className="text-muted-foreground transition-colors hover:text-slate-950"
+								className="font-medium text-emerald-700 transition-colors hover:text-emerald-900"
 								href={item.href}
 							>
 								{item.label}

@@ -311,7 +311,9 @@ export function FounderIntakeForm() {
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="founderIdentities">Are any of these relevant to you?</Label>
+							<Label htmlFor="founderIdentities">
+								Are any of these relevant to you?
+							</Label>
 							<DropdownAutocomplete
 								allowCreate={false}
 								defaultValue={(values.founderIdentities ?? []).join(", ")}

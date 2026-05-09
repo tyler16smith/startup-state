@@ -67,7 +67,7 @@ export function ResourceCard({
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">
 						{primaryTopic && (
-							<Badge className="max-w-full whitespace-normal rounded-md text-left break-words">
+							<Badge className="max-w-full whitespace-normal break-words rounded-md text-left">
 								{primaryTopic}
 							</Badge>
 						)}
@@ -78,7 +78,7 @@ export function ResourceCard({
 						)}
 					</div>
 					<Link href={`/resources/${resource.id}`}>
-						<h3 className="mt-3 line-clamp-2 font-semibold text-xl leading-tight break-words hover:text-emerald-700">
+						<h3 className="mt-3 line-clamp-2 break-words font-semibold text-xl leading-tight hover:text-emerald-700">
 							{resource.name}
 						</h3>
 					</Link>
@@ -128,7 +128,7 @@ export function ResourceCard({
 				<TaxonomyRow items={goals} label="Topics" />
 			</div>
 			{resource.contactEmail && (
-				<p className="mt-4 flex min-w-0 items-center gap-2 text-muted-foreground text-sm break-all">
+				<p className="mt-4 flex min-w-0 items-center gap-2 break-all text-muted-foreground text-sm">
 					<Mail className="size-4" />
 					{resource.contactEmail}
 				</p>

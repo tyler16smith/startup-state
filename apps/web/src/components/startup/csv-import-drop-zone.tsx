@@ -23,10 +23,7 @@ export function PageDropOverlay() {
 	return (
 		<div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-emerald-50/95 p-8">
 			<div className="flex h-full w-full flex-col items-center justify-center gap-6 rounded-2xl border-4 border-emerald-400 border-dashed">
-				<UploadCloud
-					aria-hidden="true"
-					className="size-24 text-emerald-500"
-				/>
+				<UploadCloud aria-hidden="true" className="size-24 text-emerald-500" />
 				<p className="font-semibold text-3xl text-emerald-700">
 					Drop CSV to import
 				</p>
