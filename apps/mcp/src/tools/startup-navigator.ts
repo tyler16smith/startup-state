@@ -7,11 +7,209 @@ import {
 	mcpToolContracts,
 } from "@app/mcp-contracts";
 import type { Prisma } from "../../../api/generated/prisma/index.js";
+import type { DbClient } from "../lib/db";
 import { schemaEnvelope } from "./format";
 import type { McpToolImplementation } from "./types";
 
 type ResourceRecord = Prisma.ResourceGetPayload<Record<string, never>>;
 type CompanyRecord = Prisma.CompanyGetPayload<Record<string, never>>;
+
+type ResourceArrayField =
+	| "stages"
+	| "communities"
+	| "sectors"
+	| "goals"
+	| "regions"
+	| "businessTypes"
+	| "eligibilityTags";
+
+type ResourceFitCategory =
+	| "First-step support"
+	| "Mentorship and community"
+	| "Funding and capital"
+	| "Incubator and workspace"
+	| "Founder-specific support"
+	| "Regional business support"
+	| "Growth support"
+	| "General startup support";
+
+const STOP_WORDS = new Set([
+	"a",
+	"an",
+	"and",
+	"are",
+	"for",
+	"in",
+	"like",
+	"me",
+	"of",
+	"or",
+	"stage",
+	"the",
+	"there",
+	"to",
+	"what",
+	"with",
+]);
+
+const STAGE_ALIASES: Record<string, string[]> = {
+	"early stage": [
+		"IDEA",
+		"PRE_REVENUE",
+		"EARLY_REVENUE",
+		"Idea",
+		"Pre-Revenue",
+		"Early Revenue",
+		"early stage",
+		"early-stage",
+		"pre-seed",
+		"pre seed",
+		"startup",
+		"startups",
+		"founder",
+		"founders",
+		"entrepreneur",
+		"entrepreneurs",
+		"launch",
+		"Start a Business",
+	],
+	idea: [
+		"IDEA",
+		"Idea",
+		"idea",
+		"pre-idea",
+		"pre idea",
+		"aspiring entrepreneur",
+		"aspiring entrepreneurs",
+		"Start a Business",
+	],
+	"pre revenue": [
+		"PRE_REVENUE",
+		"Pre-Revenue",
+		"pre revenue",
+		"pre-revenue",
+		"early stage",
+		"early-stage",
+		"launch",
+		"Start a Business",
+	],
+	"early revenue": [
+		"EARLY_REVENUE",
+		"Early Revenue",
+		"early revenue",
+		"early-revenue",
+		"early stage",
+		"startup",
+	],
+	seed: ["SEED", "Seed", "seed", "pre-seed", "pre seed", "early stage"],
+};
+
+const GOAL_ALIASES: Record<string, string[]> = {
+	capital: ["Funding", "Capital", "funding", "financing", "investment"],
+	"customer discovery": [
+		"Start a Business",
+		"Marketing and Sales",
+		"customer discovery",
+		"customers",
+		"market validation",
+	],
+	education: ["Education", "Start a Business", "training", "workshops"],
+	funding: ["Funding", "Capital", "funding", "financing", "investment"],
+	mentoring: [
+		"Mentorship",
+		"Entrepreneurship Communities",
+		"mentoring",
+		"mentor",
+		"mentors",
+	],
+	mentor: [
+		"Mentorship",
+		"Entrepreneurship Communities",
+		"mentor",
+		"mentoring",
+		"mentors",
+	],
+	mentorship: [
+		"Mentorship",
+		"Entrepreneurship Communities",
+		"mentorship",
+		"mentoring",
+		"mentor",
+		"mentors",
+	],
+	"start a business": [
+		"Start a Business",
+		"Entrepreneurship Communities",
+		"startup",
+		"launch",
+		"business plan",
+		"business planning",
+	],
+	"business planning": [
+		"Start a Business",
+		"Education",
+		"business plan",
+		"business planning",
+		"planning",
+	],
+};
+
+const KEYWORD_ALIASES: Record<string, string[]> = {
+	accelerator: ["accelerator", "incubator", "cohort", "program"],
+	incubator: ["incubator", "accelerator", "workspace", "launchpad"],
+	investor: ["investor", "investment", "venture", "capital", "funding"],
+	mentor: ["mentor", "mentors", "mentoring", "mentorship", "advising"],
+	mentorship: ["mentorship", "mentoring", "mentor", "advising"],
+	startup: ["startup", "startups", "entrepreneur", "entrepreneurs", "founder"],
+	vc: ["venture", "capital", "investment", "funding"],
+};
+
+const STAGE_TEXT_TERMS: Record<string, string[]> = {
+	"early stage": [
+		"early stage",
+		"early-stage",
+		"pre seed",
+		"pre-seed",
+		"pre revenue",
+		"pre-revenue",
+		"early revenue",
+		"idea",
+		"launch",
+		"validated business ideas",
+		"start a business",
+	],
+	idea: [
+		"idea",
+		"pre idea",
+		"pre-idea",
+		"aspiring entrepreneur",
+		"aspiring entrepreneurs",
+		"start a business",
+	],
+	"pre revenue": [
+		"pre revenue",
+		"pre-revenue",
+		"early stage",
+		"early-stage",
+		"launch",
+		"start a business",
+	],
+	"early revenue": ["early revenue", "early-revenue", "early stage"],
+	seed: ["seed", "pre seed", "pre-seed", "early stage"],
+};
+
+const FIRST_STOP_TERMS = [
+	"1 million cups",
+	"1mc",
+	"business resource center",
+	"first step entrepreneur",
+	"fstep",
+	"ihub",
+	"sbdc",
+	"small business development center",
+	"the mill",
+	"startup training",
+];
 
 function containsInsensitive(value: string): Prisma.StringFilter {
 	return { contains: value, mode: "insensitive" };
@@ -25,13 +223,199 @@ function trimText(value: string | null | undefined, limit: number) {
 
 function normalizeSet(values: string[]) {
 	return new Set(
-		values.map((value) => value.toLowerCase().trim()).filter(Boolean),
+		values.map((value) => normalizeSearchKey(value)).filter(Boolean),
 	);
 }
 
-function intersect(source: string[], target: string[]) {
-	const sourceSet = normalizeSet(source);
-	return target.filter((value) => sourceSet.has(value.toLowerCase().trim()));
+function normalizeSearchKey(value: string) {
+	return value
+		.toLowerCase()
+		.replace(/&/g, " and ")
+		.replace(/[_-]+/g, " ")
+		.replace(/[^a-z0-9]+/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function uniqueValues(values: string[]) {
+	const seen = new Set<string>();
+	const unique: string[] = [];
+	for (const value of values) {
+		const key = normalizeSearchKey(value);
+		if (!key || seen.has(key)) continue;
+		seen.add(key);
+		unique.push(value.trim());
+	}
+	return unique;
+}
+
+function expandAliasValue(value: string, aliases: Record<string, string[]>[]) {
+	const key = normalizeSearchKey(value);
+	return uniqueValues([
+		value,
+		key,
+		...aliases.flatMap((aliasMap) => aliasMap[key] ?? []),
+	]);
+}
+
+function expandKeywordTerms(value: string | undefined) {
+	if (!value) return [];
+	const normalized = normalizeSearchKey(value);
+	const tokens = normalized
+		.split(" ")
+		.filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+	return uniqueValues([
+		normalized,
+		...tokens,
+		...expandAliasValue(normalized, [
+			STAGE_ALIASES,
+			GOAL_ALIASES,
+			KEYWORD_ALIASES,
+		]),
+		...tokens.flatMap((token) =>
+			expandAliasValue(token, [GOAL_ALIASES, KEYWORD_ALIASES]),
+		),
+	]).slice(0, 18);
+}
+
+function compactSearchTerms(values: string[]) {
+	return uniqueValues(values).filter(
+		(value) => normalizeSearchKey(value).length > 2,
+	);
+}
+
+function intersect(
+	source: string[],
+	target: string[],
+	aliases: Record<string, string[]>[] = [],
+) {
+	const expandedTargetSet = normalizeSet(
+		target.flatMap((value) => expandAliasValue(value, aliases)),
+	);
+	return source.filter((value) =>
+		expandedTargetSet.has(normalizeSearchKey(value)),
+	);
+}
+
+function matchRegions(source: string[], target: string[]) {
+	const matchedRegions = intersect(source, target);
+	if (matchedRegions.length || target.length === 0) return matchedRegions;
+	return source.filter((value) =>
+		["statewide", "utah"].includes(normalizeSearchKey(value)),
+	);
+}
+
+function resourceSearchText(resource: ResourceRecord) {
+	return normalizeSearchKey(
+		[
+			resource.name,
+			resource.description,
+			resource.shortDescription,
+			resource.category,
+			resource.subcategory,
+			resource.city,
+			resource.county,
+			...resource.stages,
+			...resource.communities,
+			...resource.sectors,
+			...resource.goals,
+			...resource.regions,
+			...resource.businessTypes,
+			...resource.eligibilityTags,
+		]
+			.filter(Boolean)
+			.join(" "),
+	);
+}
+
+function matchedKeywordTerms(resource: ResourceRecord, keywords?: string) {
+	const terms = expandKeywordTerms(keywords);
+	if (terms.length === 0) return [];
+	const searchText = resourceSearchText(resource);
+	return terms.filter((term) => searchText.includes(normalizeSearchKey(term)));
+}
+
+function matchesResourceStage(resource: ResourceRecord, stage?: string) {
+	if (!stage) return false;
+	const stageTerms = expandAliasValue(stage, [STAGE_ALIASES]);
+	const stageSet = normalizeSet(stageTerms);
+	const hasDirectStage = resource.stages.some((value) =>
+		stageSet.has(normalizeSearchKey(value)),
+	);
+	if (hasDirectStage) return true;
+
+	const text = resourceSearchText(resource);
+	const textTerms = STAGE_TEXT_TERMS[normalizeSearchKey(stage)] ?? stageTerms;
+	return textTerms.some((term) => {
+		const normalized = normalizeSearchKey(term);
+		return normalized.length > 3 && text.includes(normalized);
+	});
+}
+
+function isEarlyFounderInput(input: McpRecommendResourcesInput) {
+	const stage = input.stage ? normalizeSearchKey(input.stage) : "";
+	return Boolean(
+		stage.includes("early") ||
+			stage.includes("idea") ||
+			stage.includes("pre revenue") ||
+			stage.includes("pre seed") ||
+			intersect(
+				["Start a Business", "Mentorship", "Education"],
+				[...input.goals, ...input.fundingNeeds],
+				[GOAL_ALIASES],
+			).length,
+	);
+}
+
+function firstStopBonus(
+	resource: ResourceRecord,
+	input: McpRecommendResourcesInput,
+) {
+	if (!isEarlyFounderInput(input)) return 0;
+	const text = resourceSearchText(resource);
+	return FIRST_STOP_TERMS.some((term) => text.includes(term)) ? 14 : 0;
+}
+
+function formatStageLabel(stage: string) {
+	const label = stage.replace(/_/g, " ").toLowerCase();
+	return label.endsWith("stage") ? label : `${label} stage`;
+}
+
+function resourceTextClauses(terms: string[]) {
+	return compactSearchTerms(terms).flatMap<Prisma.ResourceWhereInput>(
+		(term) => [
+			{ name: containsInsensitive(term) },
+			{ description: containsInsensitive(term) },
+			{ shortDescription: containsInsensitive(term) },
+			{ websiteUrl: containsInsensitive(term) },
+			{ category: containsInsensitive(term) },
+			{ subcategory: containsInsensitive(term) },
+			{ city: containsInsensitive(term) },
+			{ county: containsInsensitive(term) },
+			{ communities: { has: term } },
+			{ sectors: { has: term } },
+			{ goals: { has: term } },
+			{ regions: { has: term } },
+			{ businessTypes: { has: term } },
+			{ eligibilityTags: { has: term } },
+		],
+	);
+}
+
+function resourceArrayClause(field: ResourceArrayField, values: string[]) {
+	return {
+		[field]: { hasSome: uniqueValues(values) },
+	} as Prisma.ResourceWhereInput;
+}
+
+function resourceFilterClauses(
+	field: ResourceArrayField,
+	value: string | undefined,
+	aliases: Record<string, string[]>[] = [],
+) {
+	if (!value) return [];
+	const terms = expandAliasValue(value, aliases);
+	return [resourceArrayClause(field, terms), ...resourceTextClauses(terms)];
 }
 
 function buildReference(
@@ -160,10 +544,14 @@ function compactResource(resource: ResourceRecord) {
 		id: resource.id,
 		slug: resource.slug,
 		name: resource.name,
-		description: resource.shortDescription ?? resource.description,
+		description: trimText(
+			resource.shortDescription ?? resource.description,
+			360,
+		),
 		category: resource.category,
 		subcategory: resource.subcategory,
 		stages: resource.stages.slice(0, 6),
+		communities: resource.communities.slice(0, 6),
 		sectors: resource.sectors.slice(0, 6),
 		goals: resource.goals.slice(0, 6),
 		regions: resource.regions.slice(0, 6),
@@ -195,29 +583,235 @@ function buildResourceWhere(
 	input: McpSearchResourcesInput,
 ): Prisma.ResourceWhereInput {
 	const where: Prisma.ResourceWhereInput = { status: "PUBLISHED" };
+	const andClauses: Prisma.ResourceWhereInput[] = [];
 
 	if (input.q) {
-		where.OR = [
-			{ name: containsInsensitive(input.q) },
-			{ description: containsInsensitive(input.q) },
-			{ shortDescription: containsInsensitive(input.q) },
-			{ websiteUrl: containsInsensitive(input.q) },
-			{ category: containsInsensitive(input.q) },
-			{ subcategory: containsInsensitive(input.q) },
-			{ communities: { has: input.q } },
-			{ sectors: { has: input.q } },
-			{ goals: { has: input.q } },
-			{ regions: { has: input.q } },
-		];
+		const clauses = resourceTextClauses(expandKeywordTerms(input.q));
+		if (clauses.length) andClauses.push({ OR: clauses });
 	}
 
-	if (input.stage) where.stages = { has: input.stage };
-	if (input.sector) where.sectors = { has: input.sector };
-	if (input.goal) where.goals = { has: input.goal };
-	if (input.region) where.regions = { has: input.region };
-	if (input.businessType) where.businessTypes = { has: input.businessType };
+	for (const clauses of [
+		resourceFilterClauses("stages", input.stage, [STAGE_ALIASES]),
+		resourceFilterClauses("sectors", input.sector),
+		resourceFilterClauses("goals", input.goal, [GOAL_ALIASES]),
+		resourceFilterClauses("regions", input.region),
+		resourceFilterClauses("businessTypes", input.businessType),
+	]) {
+		if (clauses.length) andClauses.push({ OR: clauses });
+	}
+
+	if (andClauses.length) where.AND = andClauses;
 
 	return where;
+}
+
+function searchProfileFromInput(
+	input: McpSearchResourcesInput,
+): McpRecommendResourcesInput {
+	return {
+		stage: input.stage,
+		region: input.region,
+		sectors: input.sector ? [input.sector] : [],
+		goals: input.goal ? [input.goal] : [],
+		businessTypes: input.businessType ? [input.businessType] : [],
+		fundingNeeds: [],
+		founderIdentities: [],
+		keywords: input.q,
+		limit: input.limit,
+	};
+}
+
+function fitCategoryForResource(
+	resource: ResourceRecord,
+	input: McpRecommendResourcesInput,
+): ResourceFitCategory {
+	const text = resourceSearchText(resource);
+	const goals = normalizeSet(resource.goals);
+	const eligibility = normalizeSet(resource.eligibilityTags);
+	const requestedFounderIdentity = input.founderIdentities.length > 0;
+
+	if (
+		requestedFounderIdentity &&
+		resource.eligibilityTags.some(
+			(tag) => intersect([tag], input.founderIdentities).length,
+		)
+	) {
+		return "Founder-specific support";
+	}
+
+	if (
+		eligibility.size > 0 &&
+		!["none of these", "prefer not to say"].some((neutralIdentity) =>
+			eligibility.has(neutralIdentity),
+		)
+	) {
+		return "Founder-specific support";
+	}
+
+	if (FIRST_STOP_TERMS.some((term) => text.includes(term))) {
+		return "First-step support";
+	}
+
+	if (
+		["incubator", "accelerator", "workspace", "office space", "lab space"].some(
+			(term) => text.includes(term),
+		)
+	) {
+		return "Incubator and workspace";
+	}
+
+	if (
+		["mentor", "mentoring", "mentorship", "community", "networking"].some(
+			(term) => text.includes(term),
+		) ||
+		goals.has("entrepreneurship communities")
+	) {
+		return "Mentorship and community";
+	}
+
+	if (
+		["funding", "capital", "venture", "investment", "grant", "sbir"].some(
+			(term) => text.includes(term),
+		) ||
+		goals.has("funding") ||
+		goals.has("capital")
+	) {
+		return "Funding and capital";
+	}
+
+	if (
+		["idea", "aspiring", "start a business", "business plan", "launch"].some(
+			(term) => text.includes(term),
+		) ||
+		goals.has("start a business")
+	) {
+		return "First-step support";
+	}
+
+	if (
+		["late stage", "scale", "growth", "export", "international trade"].some(
+			(term) => text.includes(term),
+		)
+	) {
+		return "Growth support";
+	}
+
+	if (resource.regions.length || resource.county || resource.city) {
+		return "Regional business support";
+	}
+
+	return "General startup support";
+}
+
+function dedupeRecommendations<
+	T extends { resource: ResourceRecord; score: number },
+>(recommendations: T[]) {
+	const byKey = new Map<string, T>();
+	for (const recommendation of recommendations) {
+		const websiteKey = recommendation.resource.websiteUrl
+			? normalizeSearchKey(recommendation.resource.websiteUrl)
+			: undefined;
+		const key = websiteKey || normalizeSearchKey(recommendation.resource.name);
+		const current = byKey.get(key);
+		if (!current || recommendation.score > current.score) {
+			byKey.set(key, recommendation);
+		}
+	}
+	return [...byKey.values()];
+}
+
+function groupRecommendations<
+	T extends { resource: ResourceRecord; score: number; fitCategory: string },
+>(recommendations: T[]) {
+	const groups = new Map<string, T[]>();
+	for (const recommendation of recommendations) {
+		const group = groups.get(recommendation.fitCategory) ?? [];
+		group.push(recommendation);
+		groups.set(recommendation.fitCategory, group);
+	}
+	return [...groups.entries()].map(([name, items]) => ({
+		name,
+		items: items.slice(0, 4).map((item) => ({
+			id: item.resource.id,
+			slug: item.resource.slug,
+			name: item.resource.name,
+			score: item.score,
+		})),
+	}));
+}
+
+function hasResourceSearchIntent(input: McpSearchResourcesInput) {
+	return Boolean(
+		input.q ||
+			input.stage ||
+			input.sector ||
+			input.goal ||
+			input.region ||
+			input.businessType,
+	);
+}
+
+function scoreSearchResource(
+	resource: ResourceRecord,
+	input: McpSearchResourcesInput,
+) {
+	const profile = searchProfileFromInput(input);
+	const recommendation = scoreResource(resource, profile);
+	const keywordTerms = matchedKeywordTerms(resource, input.q);
+	const score = Math.min(
+		100,
+		recommendation.score + Math.min(keywordTerms.length, 5) * 6,
+	);
+	const reasons = uniqueValues([
+		...recommendation.reasons,
+		...(keywordTerms.length
+			? [`Matches ${keywordTerms.slice(0, 3).join(", ")}.`]
+			: []),
+	]);
+
+	return {
+		...recommendation,
+		score,
+		reasons,
+		fitCategory: fitCategoryForResource(resource, profile),
+	};
+}
+
+async function findResourceSearchMatches(
+	db: DbClient,
+	input: McpSearchResourcesInput,
+) {
+	const where = buildResourceWhere(input);
+	const take = Math.max(input.limit * 6, 36);
+	const [items, total] = await Promise.all([
+		db.resource.findMany({
+			where,
+			orderBy: { updatedAt: "desc" },
+			take,
+		}),
+		db.resource.count({ where }),
+	]);
+
+	if (items.length || !hasResourceSearchIntent(input)) {
+		return { items, total, fallback: false };
+	}
+
+	const fallbackItems = await db.resource.findMany({
+		where: { status: "PUBLISHED" },
+		orderBy: { updatedAt: "desc" },
+		take: 200,
+	});
+	const rankedFallbackItems = dedupeRecommendations(
+		fallbackItems
+			.map((resource) => scoreSearchResource(resource, input))
+			.filter((recommendation) => recommendation.score > 0),
+	);
+
+	return {
+		items: rankedFallbackItems.map((recommendation) => recommendation.resource),
+		total: rankedFallbackItems.length,
+		fallback: true,
+	};
 }
 
 function buildCompanyWhere(
@@ -256,12 +850,13 @@ function scoreResource(
 	resource: ResourceRecord,
 	input: McpRecommendResourcesInput,
 ) {
-	const matchedGoals = intersect(resource.goals, [
-		...input.goals,
-		...input.fundingNeeds,
-	]);
+	const matchedGoals = intersect(
+		resource.goals,
+		[...input.goals, ...input.fundingNeeds],
+		[GOAL_ALIASES],
+	);
 	const matchedSectors = intersect(resource.sectors, input.sectors);
-	const matchedRegions = intersect(
+	const matchedRegions = matchRegions(
 		resource.regions,
 		[input.region, input.city, input.county].filter(Boolean) as string[],
 	);
@@ -273,40 +868,34 @@ function scoreResource(
 		resource.eligibilityTags,
 		input.founderIdentities,
 	);
-	const stageMatch = Boolean(
-		input.stage && normalizeSet(resource.stages).has(input.stage.toLowerCase()),
-	);
-	const keywordMatch = input.keywords
-		? [
-				resource.name,
-				resource.description,
-				resource.shortDescription,
-				resource.category,
-				resource.subcategory,
-			]
-				.filter(Boolean)
-				.join(" ")
-				.toLowerCase()
-				.includes(input.keywords.toLowerCase())
-		: false;
+	const stageMatch = matchesResourceStage(resource, input.stage);
+	const keywordTerms = matchedKeywordTerms(resource, input.keywords);
+	const keywordMatch = keywordTerms.length > 0;
+	const fitCategory = fitCategoryForResource(resource, input);
+	const firstStopScore = firstStopBonus(resource, input);
 
-	const score =
+	const score = Math.min(
+		100,
 		(stageMatch ? 30 : 0) +
-		(matchedGoals.length > 0
-			? 25 + Math.min(matchedGoals.length - 1, 3) * 3
-			: 0) +
-		(matchedSectors.length > 0 ? 15 : 0) +
-		(matchedRegions.length > 0 ? 15 : 0) +
-		(matchedBusinessTypes.length > 0 ? 10 : 0) +
-		(matchedFounderIdentities.length > 0 ? 12 : 0) +
-		(keywordMatch ? 5 : 0);
+			(matchedGoals.length > 0
+				? 25 + Math.min(matchedGoals.length - 1, 3) * 3
+				: 0) +
+			(matchedSectors.length > 0 ? 15 : 0) +
+			(matchedRegions.length > 0 ? 15 : 0) +
+			(matchedBusinessTypes.length > 0 ? 10 : 0) +
+			(matchedFounderIdentities.length > 0 ? 12 : 0) +
+			(keywordMatch ? 8 + Math.min(keywordTerms.length - 1, 4) * 2 : 0) +
+			(firstStopScore > 0 ? firstStopScore : 0) +
+			(fitCategory === "General startup support" ? 0 : 4),
+	);
 
 	const reasons = [
 		stageMatch && input.stage
-			? `Fits the ${input.stage.replace(/_/g, " ").toLowerCase()} stage.`
+			? `Fits founders around the ${formatStageLabel(input.stage)}.`
 			: null,
+		firstStopScore > 0 ? "Strong first stop for early founder guidance." : null,
 		matchedGoals.length
-			? `Supports ${matchedGoals.slice(0, 3).join(", ")}.`
+			? `Useful for ${matchedGoals.slice(0, 3).join(", ")}.`
 			: null,
 		matchedSectors.length
 			? `Relevant to ${matchedSectors.slice(0, 2).join(", ")}.`
@@ -320,12 +909,15 @@ function scoreResource(
 		matchedFounderIdentities.length
 			? `Matches eligibility for ${matchedFounderIdentities.slice(0, 2).join(", ")}.`
 			: null,
-		keywordMatch ? "Matches the search language." : null,
+		keywordMatch
+			? `Matches intent around ${keywordTerms.slice(0, 3).join(", ")}.`
+			: null,
 	].filter(Boolean) as string[];
 
 	return {
 		resource,
 		score,
+		fitCategory,
 		reasons: reasons.length
 			? reasons
 			: ["A broad Utah startup resource worth reviewing."],
@@ -336,24 +928,50 @@ export const searchResourcesTool: McpToolImplementation<McpSearchResourcesInput>
 	{
 		contract: mcpToolContracts.search_resources,
 		async execute(input, context) {
-			const where = buildResourceWhere(input);
-			const [items, total] = await Promise.all([
-				context.db.resource.findMany({
-					where,
-					orderBy: { updatedAt: "desc" },
-					take: input.limit,
-				}),
-				context.db.resource.count({ where }),
-			]);
+			const searchResult = await findResourceSearchMatches(context.db, input);
+			const hasIntent = hasResourceSearchIntent(input);
+			const rankedItems = hasIntent
+				? dedupeRecommendations(
+						searchResult.items.map((resource) =>
+							scoreSearchResource(resource, input),
+						),
+					)
+						.sort(
+							(left, right) =>
+								right.score - left.score ||
+								left.resource.name.localeCompare(right.resource.name),
+						)
+						.slice(0, input.limit)
+				: searchResult.items.slice(0, input.limit).map((resource) => ({
+						resource,
+						score: 0,
+						fitCategory: fitCategoryForResource(
+							resource,
+							searchProfileFromInput(input),
+						),
+						reasons: ["Recent published startup resource."],
+					}));
 
 			return schemaEnvelope("resources.search", {
-				items: items.map(compactResource),
-				total,
+				items: rankedItems.map((item) => ({
+					...compactResource(item.resource),
+					score: item.score,
+					fitCategory: item.fitCategory,
+					reasons: item.reasons,
+				})),
+				total: searchResult.total,
+				query: {
+					usedFallback: searchResult.fallback,
+					expandedTerms: expandKeywordTerms(input.q).slice(0, 10),
+				},
+				groups: groupRecommendations(rankedItems),
 				references: [
-					...items.map((resource) =>
+					...rankedItems.map((item) =>
 						createResourceReference({
-							resource,
+							resource: item.resource,
 							toolName: "search_resources",
+							score: item.score,
+							reasons: item.reasons,
 						}),
 					),
 					createSearchReference({
@@ -428,10 +1046,11 @@ export const recommendResourcesTool: McpToolImplementation<McpRecommendResources
 			const resources = await context.db.resource.findMany({
 				where: { status: "PUBLISHED" },
 				orderBy: { updatedAt: "desc" },
-				take: 100,
+				take: 300,
 			});
-			const recommendations = resources
-				.map((resource) => scoreResource(resource, input))
+			const recommendations = dedupeRecommendations(
+				resources.map((resource) => scoreResource(resource, input)),
+			)
 				.sort(
 					(left, right) =>
 						right.score - left.score ||
@@ -443,8 +1062,16 @@ export const recommendResourcesTool: McpToolImplementation<McpRecommendResources
 				recommendations: recommendations.map((recommendation) => ({
 					resource: compactResource(recommendation.resource),
 					score: recommendation.score,
+					fitCategory: recommendation.fitCategory,
 					reasons: recommendation.reasons,
 				})),
+				query: {
+					stageTerms: input.stage
+						? expandAliasValue(input.stage, [STAGE_ALIASES]).slice(0, 10)
+						: [],
+					expandedTerms: expandKeywordTerms(input.keywords).slice(0, 10),
+				},
+				groups: groupRecommendations(recommendations),
 				references: [
 					...recommendations.map((recommendation) =>
 						createResourceReference({
