@@ -222,16 +222,6 @@ function RegisterForm() {
 							</p>
 						)}
 
-						<p className="text-muted-foreground text-xs leading-relaxed">
-							By signing up, you consent to the collection, processing, and
-							storage of your financial data on our platform. This service is
-							for informational purposes only and does not constitute financial,
-							tax, or legal advice. We are not financial advisors. You are
-							responsible for verifying the accuracy of your data and should
-							consult with a qualified professional before making financial
-							decisions.
-						</p>
-
 						<Button
 							className="w-full"
 							disabled={register.isPending}
