@@ -13,7 +13,7 @@ export function CompanyCard({ company }: { company: Company }) {
 				{photo ? (
 					<Image
 						alt={photo.altText || company.name}
-						className="object-cover"
+						className="object-contain p-3"
 						fill
 						src={photo.url}
 						unoptimized

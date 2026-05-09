@@ -79,7 +79,7 @@ export function CompanyProfileContent({
 						{photos[0]?.url ? (
 							<Image
 								alt={photos[0].altText ?? company.name}
-								className="object-cover"
+								className="object-contain p-4"
 								fill
 								src={photos[0].url}
 								unoptimized
