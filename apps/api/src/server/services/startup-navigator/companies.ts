@@ -180,7 +180,10 @@ export async function searchCompanies(
 	const [items, total] = await Promise.all([
 		db.company.findMany({
 			where,
-			include: { photos: { orderBy: { sortOrder: "asc" }, take: 1 } },
+			include: {
+				_count: { select: { owners: true } },
+				photos: { orderBy: { sortOrder: "asc" }, take: 1 },
+			},
 			orderBy,
 			take: query.limit,
 			skip: query.offset,
@@ -188,7 +191,15 @@ export async function searchCompanies(
 		db.company.count({ where }),
 	]);
 
-	return { items, total, limit: query.limit, offset: query.offset };
+	return {
+		items: items.map((company) => ({
+			...company,
+			isClaimed: company._count.owners > 0,
+		})),
+		total,
+		limit: query.limit,
+		offset: query.offset,
+	};
 }
 
 export async function getCompanyById(
@@ -227,7 +238,7 @@ export async function getCompanyById(
 		orderBy: { updatedAt: "desc" },
 	});
 
-	return { ...company, related };
+	return { ...company, isClaimed: company.owners.length > 0, related };
 }
 
 function photoData(
@@ -673,7 +684,7 @@ export async function listCompanyClaims(db: Db, input: unknown) {
 		.object({ status: claimStatusSchema.optional() })
 		.partial()
 		.parse(input);
-	return db.companyClaim.findMany({
+	const claims = await db.companyClaim.findMany({
 		where: query.status ? { status: query.status } : undefined,
 		include: {
 			company: true,
@@ -682,6 +693,21 @@ export async function listCompanyClaims(db: Db, input: unknown) {
 		orderBy: { createdAt: "desc" },
 		take: 100,
 	});
+
+	return claims.sort((first, second) => {
+		const rankDifference =
+			claimReviewRank(first.status) - claimReviewRank(second.status);
+		if (rankDifference !== 0) return rankDifference;
+		return second.createdAt.getTime() - first.createdAt.getTime();
+	});
+}
+
+function claimReviewRank(status: ClaimStatus) {
+	if (status === "pending_review") return 0;
+	if (status === "on_hold") return 1;
+	if (status === "email_pending") return 2;
+	if (status === "approved") return 3;
+	return 4;
 }
 
 export async function getCompanyClaimForUser(

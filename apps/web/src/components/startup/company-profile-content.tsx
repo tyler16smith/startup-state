@@ -26,6 +26,7 @@ export function CompanyProfileContent({
 		? company.photos
 		: [{ url: "", altText: company.name }];
 	const isPanel = layout === "panel";
+	const showClaimButton = !company.isClaimed;
 
 	return (
 		<div className={isPanel ? "space-y-5" : undefined}>
@@ -55,11 +56,13 @@ export function CompanyProfileContent({
 								"A Utah ecosystem company profile ready for richer imported data."}
 						</p>
 						<div className="mt-6 flex flex-wrap gap-3">
-							<Button asChild>
-								<Link href={`/companies/${company.id}/claim`}>
-									Claim this listing
-								</Link>
-							</Button>
+							{showClaimButton ? (
+								<Button asChild>
+									<Link href={`/companies/${company.id}/claim`}>
+										Claim this listing
+									</Link>
+								</Button>
+							) : null}
 							{company.websiteUrl && (
 								<Button asChild variant="outline">
 									<a href={company.websiteUrl} rel="noreferrer" target="_blank">

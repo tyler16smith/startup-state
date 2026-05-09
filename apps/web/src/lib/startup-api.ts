@@ -61,6 +61,7 @@ export type Company = {
 	jobPostingsUrl?: string | null;
 	status: string;
 	photos: CompanyPhoto[];
+	isClaimed?: boolean;
 	related?: Company[];
 	updatedAt: string;
 };
