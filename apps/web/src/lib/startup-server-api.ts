@@ -69,3 +69,7 @@ export function getCompany(idOrSlug: string) {
 export function getLatestNavigatorPlan() {
 	return apiServer<NavigatorPlan | null>("/api/v1/navigatorPlans/latest");
 }
+
+export function listNavigatorPlans() {
+	return apiServer<NavigatorPlan[]>("/api/v1/navigatorPlans/list");
+}

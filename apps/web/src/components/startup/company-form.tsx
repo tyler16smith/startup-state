@@ -41,6 +41,7 @@ export function CompanyForm({
 	const resolvedMode = mode ?? (!admin && !company ? "submission" : "full");
 	const isDraftable = !company;
 	const formRef = useRef<HTMLFormElement>(null);
+	const draftPersistenceDisabled = useRef(false);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
@@ -61,6 +62,11 @@ export function CompanyForm({
 		setFormVersion((current) => current + 1);
 	}, [isDraftable]);
 
+	const canPersistDraft = useCallback(
+		() => isDraftable && !draftPersistenceDisabled.current,
+		[isDraftable],
+	);
+
 	function updatePreview(event: React.FormEvent<HTMLFormElement>) {
 		const field = event.target;
 		if (
@@ -74,16 +80,22 @@ export function CompanyForm({
 		setPreviewValues((current) => ({ ...current, [field.name]: field.value }));
 	}
 
+	function clearCompanyDraft() {
+		if (!isDraftable) return;
+		draftPersistenceDisabled.current = true;
+		localStorage.removeItem(COMPANY_DRAFT_KEY);
+	}
+
 	function updatePreviewValue(name: string, value: string) {
 		setPreviewValues((current) => {
 			const next = { ...current, [name]: value };
-			if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+			if (canPersistDraft()) writeFormDraft(COMPANY_DRAFT_KEY, next);
 			return next;
 		});
 	}
 
 	function persistDraftFromForm(form: HTMLFormElement) {
-		if (!isDraftable) return;
+		if (!canPersistDraft()) return;
 		writeFormDraft(COMPANY_DRAFT_KEY, {
 			...previewValues,
 			...formValues(form),
@@ -103,7 +115,7 @@ export function CompanyForm({
 					value,
 				),
 			};
-			if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+			if (canPersistDraft()) writeFormDraft(COMPANY_DRAFT_KEY, next);
 			return next;
 		});
 		setFormVersion((current) => current + 1);
@@ -114,11 +126,11 @@ export function CompanyForm({
 			setAddressFields((current) => ({ ...current, ...selection }));
 			setPreviewValues((current) => {
 				const next = { ...current, ...selection };
-				if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+				if (canPersistDraft()) writeFormDraft(COMPANY_DRAFT_KEY, next);
 				return next;
 			});
 		},
-		[isDraftable],
+		[canPersistDraft],
 	);
 
 	async function submit(formData: FormData) {
@@ -144,7 +156,7 @@ export function CompanyForm({
 					photos,
 				}),
 			});
-			if (isDraftable) localStorage.removeItem(COMPANY_DRAFT_KEY);
+			clearCompanyDraft();
 			if (!admin && !company) {
 				setSuccess(
 					"Company submitted for review. An admin can publish it and approve ownership from the claims queue.",

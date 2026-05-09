@@ -296,8 +296,8 @@ export async function reviewCompanySubmission(
 				update: {},
 			});
 
-			await tx.user.update({
-				where: { id: claim.userId },
+			await tx.user.updateMany({
+				where: { id: claim.userId, role: { not: "ADMIN" } },
 				data: { role: "COMPANY_OWNER" },
 			});
 		}
@@ -457,8 +457,8 @@ export async function approveCompanyClaim(
 			update: {},
 		});
 
-		await tx.user.update({
-			where: { id: claim.userId },
+		await tx.user.updateMany({
+			where: { id: claim.userId, role: { not: "ADMIN" } },
 			data: { role: "COMPANY_OWNER" },
 		});
 

@@ -39,6 +39,5 @@ export async function listNavigatorPlans(db: Db, userId: string) {
 	return db.navigatorPlan.findMany({
 		where: { userId },
 		orderBy: { updatedAt: "desc" },
-		take: 20,
 	});
 }
