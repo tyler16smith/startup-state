@@ -112,7 +112,7 @@ function getMcpDocumentation(env: ReturnType<typeof getEnv>) {
 				type: "stdio",
 				command: "pnpm",
 				args: ["--filter", "@app/mcp", "dev:stdio"],
-				env: ["FIN_MCP_TOKEN", "DATABASE_URL", "MCP_TOKEN_PEPPER"],
+				env: ["STARTUP_STATE_MCP_TOKEN", "DATABASE_URL", "MCP_TOKEN_PEPPER"],
 			},
 		},
 	};

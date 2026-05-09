@@ -159,7 +159,7 @@ const supportSections: SupportSection[] = [
 			"Which clients are expected? The server has profiles for ChatGPT, Claude, Claude Desktop, Cursor, Codex, Gemini, OpenAI API, and local development.",
 		],
 		nextSteps: [
-			"For local stdio, provide FIN_MCP_TOKEN, DATABASE_URL, and MCP_TOKEN_PEPPER.",
+			"For local stdio, provide STARTUP_STATE_MCP_TOKEN and DATABASE_URL. MCP_TOKEN_PEPPER is optional for local dev when DATABASE_URL was used as the token hash pepper.",
 			"For remote clients, connect through mcp-remote using the deployed /mcp URL.",
 		],
 	},
@@ -174,7 +174,7 @@ const supportSections: SupportSection[] = [
 			"Check the API and web app env values when browser actions fail.",
 		],
 		commonQuestions: [
-			"Why does an MCP request return unauthorized? The bearer token may be missing, revoked, expired, or hashed with a different MCP_TOKEN_PEPPER.",
+			"Why does an MCP request return unauthorized? The bearer token may be missing, revoked, expired, or hashed with a different token pepper.",
 			"Why do OAuth redirects fail? Hosted clients must match trusted redirect host policy, and loopback clients must use http://localhost:<port>/oauth/callback.",
 		],
 		nextSteps: [

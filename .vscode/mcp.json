@@ -5,9 +5,8 @@
 			"command": "pnpm",
 			"args": ["--filter", "@app/mcp", "dev:stdio"],
 			"env": {
-				"FIN_MCP_TOKEN": "${env:FIN_MCP_TOKEN}",
-				"DATABASE_URL": "${env:DATABASE_URL}",
-				"MCP_TOKEN_PEPPER": "${env:MCP_TOKEN_PEPPER}"
+				"STARTUP_STATE_MCP_TOKEN": "paste_your_mcp_personal_access_token_here",
+				"DATABASE_URL": "paste_your_database_url_here"
 			}
 		},
 		"startup-state-prod": {

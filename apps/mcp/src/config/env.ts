@@ -50,9 +50,6 @@ export function getEnv(): McpEnv {
 }
 
 export function getTokenPepper(): string {
-	const pepper = getEnv().MCP_TOKEN_PEPPER;
-	if (!pepper) {
-		throw new Error("MCP_TOKEN_PEPPER is required for token hashing");
-	}
-	return pepper;
+	const env = getEnv();
+	return env.MCP_TOKEN_PEPPER ?? env.DATABASE_URL;
 }

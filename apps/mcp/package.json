@@ -6,8 +6,7 @@
 	"scripts": {
 		"dev:http": "tsx src/server.ts --transport=http",
 		"dev:stdio": "tsx src/server.ts --transport=stdio",
-		"prebuild": "pnpm --filter @app/api exec prisma generate",
-		"build": "rm -rf dist && tsc --project tsconfig.json && tsc-alias --project tsconfig.json --resolve-full-paths --resolve-full-extension .js && mkdir -p dist/apps/api && cp -R ../api/generated dist/apps/api/generated",
+		"build": "pnpm --filter @app/api exec prisma generate && rm -rf dist && tsc --project tsconfig.json && tsc-alias --project tsconfig.json --resolve-full-paths --resolve-full-extension .js && mkdir -p dist/apps/api && cp -R ../api/generated dist/apps/api/generated",
 		"check": "biome check .",
 		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf dist .turbo tsconfig.tsbuildinfo"

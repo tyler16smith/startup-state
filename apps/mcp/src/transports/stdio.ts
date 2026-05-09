@@ -2,14 +2,27 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { verifyAuthorizationHeader } from "~/auth/verify-token";
 import { createFinMcpServer } from "~/mcp-server";
 
-export async function startStdioTransport() {
-	if (!process.env.FIN_MCP_TOKEN) {
-		throw new Error("FIN_MCP_TOKEN is required for MCP stdio transport");
+function getStdioToken() {
+	const token =
+		process.env.STARTUP_STATE_MCP_TOKEN ?? process.env.FIN_MCP_TOKEN;
+	if (!token) {
+		throw new Error(
+			"STARTUP_STATE_MCP_TOKEN is required for MCP stdio transport",
+		);
 	}
 
+	return token;
+}
+
+export async function startStdioTransport() {
+	const token = getStdioToken();
+
 	const context = await verifyAuthorizationHeader({
-		authorizationHeader: `Bearer ${process.env.FIN_MCP_TOKEN}`,
-		requestedClientProfile: process.env.FIN_MCP_CLIENT_PROFILE ?? "local-dev",
+		authorizationHeader: `Bearer ${token}`,
+		requestedClientProfile:
+			process.env.STARTUP_STATE_MCP_CLIENT_PROFILE ??
+			process.env.FIN_MCP_CLIENT_PROFILE ??
+			"local-dev",
 	});
 	const server = createFinMcpServer(context);
 	const transport = new StdioServerTransport();
