@@ -289,9 +289,13 @@ model CompanyClaim {
   explanation   String?
   domainMatches Boolean @default(false)
 
-  status       ClaimStatus @default(PENDING)
-  reviewedAt   DateTime?
-  reviewedById String?
+  status                 ClaimStatus @default(email_pending)
+  emailVerifiedAt        DateTime?
+  verificationTokenHash  String?
+  verificationExpiresAt  DateTime?
+  lastVerificationSentAt DateTime?
+  reviewedAt             DateTime?
+  reviewedById           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -299,6 +303,7 @@ model CompanyClaim {
   @@index([companyId])
   @@index([userId])
   @@index([status])
+  @@index([verificationTokenHash])
 }
 
 model CompanyOwner {
@@ -772,9 +777,10 @@ enum GeocodeProvider {
 }
 
 enum ClaimStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  email_pending
+  pending_review
+  approved
+  rejected
 }
 
 enum ResourceStatus {

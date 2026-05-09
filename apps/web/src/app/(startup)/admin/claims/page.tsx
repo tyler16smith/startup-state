@@ -16,9 +16,16 @@ type Claim = {
 	workEmail: string;
 	explanation?: string | null;
 	domainMatches: boolean;
-	status: string;
+	status: "email_pending" | "pending_review" | "approved" | "rejected";
 	company: { name: string };
 	user: { email?: string | null; name?: string | null };
+};
+
+const claimStatusLabel: Record<Claim["status"], string> = {
+	email_pending: "email pending",
+	pending_review: "pending review",
+	approved: "approved",
+	rejected: "rejected",
 };
 
 export default async function AdminClaimsPage() {
@@ -65,11 +72,11 @@ export default async function AdminClaimsPage() {
 								<TableCell>
 									{claim.domainMatches ? "matches" : "review"}
 								</TableCell>
-								<TableCell>{claim.status}</TableCell>
+								<TableCell>{claimStatusLabel[claim.status]}</TableCell>
 								<TableCell className="text-right">
 									<ClaimActions
 										claimId={claim.id}
-										disabled={claim.status !== "PENDING"}
+										disabled={claim.status !== "pending_review"}
 									/>
 								</TableCell>
 							</TableRow>

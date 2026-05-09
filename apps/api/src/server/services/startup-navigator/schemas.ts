@@ -7,6 +7,12 @@ export const companyStatusSchema = z.enum([
 	"PUBLISHED",
 	"ARCHIVED",
 ]);
+export const claimStatusSchema = z.enum([
+	"email_pending",
+	"pending_review",
+	"approved",
+	"rejected",
+]);
 export const hiringStatusSchema = z.enum([
 	"NOT_HIRING",
 	"HIRING",
@@ -237,8 +243,22 @@ export const companyInputSchema = z.object({
 
 export const claimCompanyInputSchema = z.object({
 	companyId: z.string().min(1),
-	workEmail: z.string().email(),
-	explanation: z.string().max(1000).optional(),
+	workEmail: z
+		.string()
+		.trim()
+		.email()
+		.max(254)
+		.transform((value) => value.toLowerCase()),
+	explanation: z.string().trim().max(1000).optional(),
+});
+
+export const claimVerificationInputSchema = z.object({
+	claimId: z.string().min(1),
+	token: z.string().min(1),
+});
+
+export const claimIdInputSchema = z.object({
+	claimId: z.string().min(1),
 });
 
 export const reviewCompanySubmissionInputSchema = z.object({

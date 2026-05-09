@@ -1,11 +1,20 @@
 import Papa from "papaparse";
 import { z } from "zod";
+import { sendCompanyClaimVerificationEmail } from "~/lib/email/send-company-claim-verification-email";
+import { logger } from "~/lib/logger";
 import { createApiError } from "~/server/api-context";
+import {
+	generateClaimVerificationTokenPair,
+	hashClaimVerificationToken,
+} from "~/server/lib/claim-verification-token";
 import type { Prisma, PrismaClient } from "../../../../generated/prisma";
 import { enrichCompanyLocations } from "./geocoding";
 import {
 	asArray,
 	claimCompanyInputSchema,
+	claimIdInputSchema,
+	claimStatusSchema,
+	claimVerificationInputSchema,
 	companyInputSchema,
 	companyQuerySchema,
 	csvImportSchema,
@@ -17,11 +26,84 @@ import { getWebsiteDomain } from "./website-domain";
 type Db = PrismaClient;
 
 const PUBLIC_COMPANY_SUBMISSION_SOURCE = "public_company_submission";
+const CLAIM_VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const CLAIM_VERIFICATION_RESEND_COOLDOWN_MS = 60_000;
+const PERSONAL_EMAIL_DOMAINS = new Set([
+	"gmail.com",
+	"yahoo.com",
+	"outlook.com",
+	"hotmail.com",
+	"icloud.com",
+	"proton.me",
+]);
+const MULTI_PART_PUBLIC_SUFFIXES = new Set([
+	"co.uk",
+	"com.au",
+	"com.br",
+	"com.mx",
+	"com.sg",
+	"co.in",
+	"co.jp",
+	"co.nz",
+]);
 
 function cleanOptional(value: string | null | undefined): string | undefined {
 	if (!value) return undefined;
 	const trimmed = value.trim();
 	return trimmed ? trimmed : undefined;
+}
+
+function getClaimBaseUrl(): string {
+	const baseUrl = process.env.APP_BASE_URL?.trim();
+	if (!baseUrl) throw createApiError("APP_BASE_URL is not configured", 500);
+	return baseUrl.replace(/\/$/, "");
+}
+
+function getRootDomain(domain: string): string {
+	const parts = domain
+		.toLowerCase()
+		.replace(/\.$/, "")
+		.split(".")
+		.filter(Boolean);
+	if (parts.length <= 2) return parts.join(".");
+	const suffix = parts.slice(-2).join(".");
+	if (MULTI_PART_PUBLIC_SUFFIXES.has(suffix)) {
+		return parts.slice(-3).join(".");
+	}
+	return parts.slice(-2).join(".");
+}
+
+function getEmailRootDomain(email: string): string {
+	const emailDomain = email.split("@").at(1)?.toLowerCase() ?? "";
+	return getRootDomain(emailDomain);
+}
+
+function validateClaimEmailDomain(email: string, websiteUrl?: string | null) {
+	const emailRootDomain = getEmailRootDomain(email);
+	if (PERSONAL_EMAIL_DOMAINS.has(emailRootDomain)) {
+		throw createApiError(
+			"Use your company email address to claim a listing",
+			400,
+		);
+	}
+
+	const websiteDomain = getWebsiteDomain(websiteUrl);
+	if (!websiteDomain) {
+		throw createApiError(
+			"Company website is required before this listing can be claimed",
+			400,
+		);
+	}
+
+	const websiteRootDomain = getRootDomain(websiteDomain);
+	if (emailRootDomain !== websiteRootDomain) {
+		throw createApiError(
+			"Work email domain must match the company website domain",
+			400,
+		);
+	}
+
+	return { emailRootDomain, websiteRootDomain };
 }
 
 function containsInsensitive(value: string): Prisma.StringFilter {
@@ -202,6 +284,7 @@ export async function createCompany(
 					workEmail: workEmail.data,
 					explanation: "Created this company listing.",
 					domainMatches: domainsMatch(emailDomain, websiteDomain),
+					status: "pending_review",
 				},
 			});
 
@@ -268,9 +351,9 @@ export async function reviewCompanySubmission(
 
 		if (data.action === "reject") {
 			await tx.companyClaim.updateMany({
-				where: { companyId: company.id, status: "PENDING" },
+				where: { companyId: company.id, status: "pending_review" },
 				data: {
-					status: "REJECTED",
+					status: "rejected",
 					reviewedAt: new Date(),
 					reviewedById: reviewerId,
 				},
@@ -284,7 +367,7 @@ export async function reviewCompanySubmission(
 		}
 
 		const pendingClaims = company.claims.filter(
-			(claim) => claim.status === "PENDING",
+			(claim) => claim.status === "pending_review",
 		);
 		for (const claim of pendingClaims) {
 			await tx.companyOwner.upsert({
@@ -305,9 +388,9 @@ export async function reviewCompanySubmission(
 		}
 
 		await tx.companyClaim.updateMany({
-			where: { companyId: company.id, status: "PENDING" },
+			where: { companyId: company.id, status: "pending_review" },
 			data: {
-				status: "APPROVED",
+				status: "approved",
 				reviewedAt: new Date(),
 				reviewedById: reviewerId,
 			},
@@ -393,9 +476,57 @@ export async function archiveCompany(db: Db, companyId: string) {
 
 function domainsMatch(emailDomain: string, websiteDomain: string | null) {
 	if (!websiteDomain) return false;
-	return (
-		emailDomain === websiteDomain || emailDomain.endsWith(`.${websiteDomain}`)
-	);
+	return getRootDomain(emailDomain) === getRootDomain(websiteDomain);
+}
+
+async function sendVerificationForClaim(
+	db: Db,
+	claim: {
+		id: string;
+		companyId: string;
+		workEmail: string;
+		company: { name: string };
+	},
+	context: { operation: string; userId: string },
+) {
+	const { rawToken, tokenHash } = generateClaimVerificationTokenPair();
+	const expiresAt = new Date(Date.now() + CLAIM_VERIFICATION_EXPIRY_MS);
+	await db.companyClaim.update({
+		where: { id: claim.id },
+		data: {
+			verificationTokenHash: tokenHash,
+			verificationExpiresAt: expiresAt,
+		},
+	});
+
+	const verificationUrl = `${getClaimBaseUrl()}/claims/${claim.id}/verify-email?token=${encodeURIComponent(rawToken)}`;
+
+	try {
+		await sendCompanyClaimVerificationEmail({
+			to: claim.workEmail,
+			companyName: claim.company.name,
+			verificationUrl,
+			expiresAt,
+		});
+	} catch (error) {
+		logger.logError("Failed to send company claim verification email", error, {
+			feature: "company_claims",
+			operation: context.operation,
+			userId: context.userId,
+			claimId: claim.id,
+			companyId: claim.companyId,
+		});
+		throw createApiError("Failed to send verification email", 500);
+	}
+
+	return db.companyClaim.update({
+		where: { id: claim.id },
+		data: { lastVerificationSentAt: new Date() },
+		include: {
+			company: true,
+			user: { select: { id: true, email: true, name: true } },
+		},
+	});
 }
 
 export async function createCompanyClaim(
@@ -409,36 +540,153 @@ export async function createCompanyClaim(
 	});
 	if (!company) throw createApiError("Company not found", 404);
 
+	validateClaimEmailDomain(data.workEmail, company.websiteUrl);
 	const emailDomain = data.workEmail.split("@").at(1)?.toLowerCase() ?? "";
 	const websiteDomain = getWebsiteDomain(company.websiteUrl);
 	const domainMatches = domainsMatch(emailDomain, websiteDomain);
-
-	const claim = await db.companyClaim.create({
-		data: { ...data, userId, domainMatches },
-		include: {
-			company: true,
-			user: { select: { id: true, email: true, name: true } },
+	const existingClaim = await db.companyClaim.findFirst({
+		where: {
+			companyId: data.companyId,
+			userId,
+			status: { in: ["email_pending", "pending_review", "approved"] },
 		},
+		include: { company: true },
+		orderBy: { createdAt: "desc" },
 	});
 
-	await db.user.updateMany({
-		where: { id: userId, role: "USER" },
-		data: { role: "PENDING_COMPANY_OWNER" },
-	});
+	if (existingClaim?.status === "pending_review") {
+		throw createApiError("Claim is already pending review", 409);
+	}
+	if (existingClaim?.status === "approved") {
+		throw createApiError("Claim has already been approved", 409);
+	}
 
-	return claim;
+	const claim = existingClaim
+		? await db.companyClaim.update({
+				where: { id: existingClaim.id },
+				data: {
+					workEmail: data.workEmail,
+					explanation: data.explanation,
+					domainMatches,
+					emailVerifiedAt: null,
+				},
+				include: { company: true },
+			})
+		: await db.companyClaim.create({
+				data: {
+					...data,
+					userId,
+					domainMatches,
+					status: "email_pending",
+				},
+				include: { company: true },
+			});
+
+	return sendVerificationForClaim(db, claim, {
+		operation: existingClaim ? "updateClaimEmail" : "createClaim",
+		userId,
+	});
 }
 
 export async function listCompanyClaims(db: Db, input: unknown) {
-	const query = companyQuerySchema.partial().parse(input);
+	const query = z
+		.object({ status: claimStatusSchema.optional() })
+		.partial()
+		.parse(input);
 	return db.companyClaim.findMany({
-		where: query.status ? { status: query.status as never } : undefined,
+		where: query.status ? { status: query.status } : undefined,
 		include: {
 			company: true,
 			user: { select: { id: true, email: true, name: true } },
 		},
 		orderBy: { createdAt: "desc" },
 		take: 100,
+	});
+}
+
+export async function getCompanyClaimForUser(
+	db: Db,
+	userId: string,
+	input: unknown,
+) {
+	const data = claimIdInputSchema.parse(input);
+	const claim = await db.companyClaim.findFirst({
+		where: { id: data.claimId, userId },
+		include: { company: true },
+	});
+
+	if (!claim) throw createApiError("Claim not found", 404);
+	return claim;
+}
+
+export async function resendCompanyClaimVerification(
+	db: Db,
+	userId: string,
+	input: unknown,
+) {
+	const data = claimIdInputSchema.parse(input);
+	const claim = await db.companyClaim.findFirst({
+		where: { id: data.claimId, userId },
+		include: { company: true },
+	});
+
+	if (!claim) throw createApiError("Claim not found", 404);
+	if (claim.status !== "email_pending") {
+		throw createApiError("Only unverified claims can be resent", 409);
+	}
+	if (
+		claim.lastVerificationSentAt &&
+		Date.now() - claim.lastVerificationSentAt.getTime() <
+			CLAIM_VERIFICATION_RESEND_COOLDOWN_MS
+	) {
+		throw createApiError("Please wait before requesting another email.", 429);
+	}
+
+	return sendVerificationForClaim(db, claim, {
+		operation: "resendClaimVerification",
+		userId,
+	});
+}
+
+export async function verifyCompanyClaimEmail(db: Db, input: unknown) {
+	const data = claimVerificationInputSchema.parse(input);
+	const tokenHash = hashClaimVerificationToken(data.token);
+	const claim = await db.companyClaim.findUnique({
+		where: { id: data.claimId },
+		include: { company: true },
+	});
+
+	if (!claim || claim.verificationTokenHash !== tokenHash) {
+		throw createApiError("Invalid verification link", 400);
+	}
+	if (claim.status !== "email_pending") {
+		throw createApiError("Claim email has already been verified", 409);
+	}
+	if (
+		!claim.verificationExpiresAt ||
+		claim.verificationExpiresAt <= new Date()
+	) {
+		throw createApiError("Verification link has expired", 410);
+	}
+
+	return db.$transaction(async (tx) => {
+		const verifiedClaim = await tx.companyClaim.update({
+			where: { id: claim.id },
+			data: {
+				emailVerifiedAt: new Date(),
+				status: "pending_review",
+				verificationTokenHash: null,
+				verificationExpiresAt: null,
+			},
+			include: { company: true },
+		});
+
+		await tx.user.updateMany({
+			where: { id: claim.userId, role: "USER" },
+			data: { role: "PENDING_COMPANY_OWNER" },
+		});
+
+		return verifiedClaim;
 	});
 }
 
@@ -449,6 +697,9 @@ export async function approveCompanyClaim(
 ) {
 	const claim = await db.companyClaim.findUnique({ where: { id: claimId } });
 	if (!claim) throw createApiError("Claim not found", 404);
+	if (claim.status !== "pending_review") {
+		throw createApiError("Only verified claims can be approved", 409);
+	}
 
 	return db.$transaction(async (tx) => {
 		await tx.companyOwner.upsert({
@@ -467,7 +718,7 @@ export async function approveCompanyClaim(
 		return tx.companyClaim.update({
 			where: { id: claimId },
 			data: {
-				status: "APPROVED",
+				status: "approved",
 				reviewedAt: new Date(),
 				reviewedById: reviewerId,
 			},
@@ -483,7 +734,7 @@ export async function rejectCompanyClaim(
 	return db.companyClaim.update({
 		where: { id: claimId },
 		data: {
-			status: "REJECTED",
+			status: "rejected",
 			reviewedAt: new Date(),
 			reviewedById: reviewerId,
 		},
@@ -501,7 +752,7 @@ export async function getAdminSummary(db: Db) {
 	] = await Promise.all([
 		db.resource.count({ where: { status: { not: "ARCHIVED" } } }),
 		db.company.count({ where: { status: { not: "ARCHIVED" } } }),
-		db.companyClaim.count({ where: { status: "PENDING" } }),
+		db.companyClaim.count({ where: { status: "pending_review" } }),
 		db.company.count({ where: publicCompanySubmissionWhere() }),
 		db.resource.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
 		db.company.findMany({

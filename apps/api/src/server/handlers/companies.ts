@@ -16,13 +16,16 @@ import {
 	createCompanyClaim,
 	getAdminSummary,
 	getCompanyById,
+	getCompanyClaimForUser,
 	importCompaniesFromCsv,
 	listCompanyClaims,
 	listCompanySubmissions,
 	rejectCompanyClaim,
+	resendCompanyClaimVerification,
 	reviewCompanySubmission,
 	searchCompanies,
 	updateCompany,
+	verifyCompanyClaimEmail,
 } from "../services/startup-navigator/companies";
 import { recommendCompaniesForInvestorProfile } from "../services/startup-navigator/investor-recommendations";
 import { idInputSchema } from "../services/startup-navigator/schemas";
@@ -67,6 +70,20 @@ export const companies = {
 		const input = typeof body === "object" && body !== null ? body : {};
 		return createCompanyClaim(ctx.db, ctx.userId, { ...input, companyId });
 	}),
+
+	getClaim: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
+		return getCompanyClaimForUser(ctx.db, ctx.userId, body);
+	}),
+
+	resendClaimVerification: withAuth(
+		async (ctx: AuthenticatedContext, body: unknown) => {
+			return resendCompanyClaimVerification(ctx.db, ctx.userId, body);
+		},
+	),
+
+	verifyClaimEmail: withPublic(async (ctx, body) => {
+		return verifyCompanyClaimEmail(ctx.db, body);
+	}) satisfies PublicHandler,
 
 	recommend: withPublic(async (ctx, body) => {
 		return recommendCompaniesForInvestorProfile(ctx.db, body);
