@@ -159,13 +159,15 @@ export function CompanyProfileContent({
 						<Detail label="Job postings" value={company.jobPostingsUrl} />
 					</dl>
 				</div>
-				<div
-					className="rounded-lg border bg-white p-6 shadow-sm"
-					id="company-map"
-				>
-					<h2 className="font-semibold text-2xl">Map preview</h2>
-					<CompanyMapPreview company={company} mapToken={mapToken} />
-				</div>
+				{!isPanel && (
+					<div
+						className="rounded-lg border bg-white p-6 shadow-sm"
+						id="company-map"
+					>
+						<h2 className="font-semibold text-2xl">Map preview</h2>
+						<CompanyMapPreview company={company} mapToken={mapToken} />
+					</div>
+				)}
 			</section>
 			{company.related?.length ? (
 				<section

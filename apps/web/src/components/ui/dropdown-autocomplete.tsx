@@ -12,6 +12,7 @@ type DropdownAutocompleteProps = {
 	defaultValue?: string;
 	emptyMessage?: string;
 	id?: string;
+	maxSuggestions?: number;
 	multiple?: boolean;
 	name: string;
 	onValueChange?: (value: string) => void;
@@ -21,7 +22,7 @@ type DropdownAutocompleteProps = {
 	single?: boolean;
 };
 
-const visibleOptionCount = 5;
+
 
 export function DropdownAutocomplete({
 	allowCreate = true,
@@ -31,6 +32,7 @@ export function DropdownAutocomplete({
 	defaultValue = "",
 	emptyMessage = "No options found",
 	id,
+	maxSuggestions = 5,
 	multiple = false,
 	name,
 	onValueChange,
@@ -70,7 +72,7 @@ export function DropdownAutocomplete({
 	const suggestions = useMemo(() => {
 		const query = inputValue.trim().toLowerCase();
 		if (!query || (!isMultiple && selectedValues[0] === inputValue)) {
-			return availableOptions.slice(0, visibleOptionCount);
+			return availableOptions.slice(0, maxSuggestions);
 		}
 
 		return availableOptions
@@ -79,7 +81,7 @@ export function DropdownAutocomplete({
 				(leftOption, rightOption) =>
 					scoreOption(rightOption, query) - scoreOption(leftOption, query),
 			)
-			.slice(0, visibleOptionCount);
+			.slice(0, maxSuggestions);
 	}, [availableOptions, inputValue, isMultiple, selectedValues]);
 	const trimmedInput = inputValue.trim();
 	const matchesExisting = normalizedOptions.some(

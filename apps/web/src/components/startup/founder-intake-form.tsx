@@ -34,6 +34,7 @@ import { DropdownAutocomplete } from "~/components/ui/dropdown-autocomplete";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import type { FounderProfileInput } from "~/lib/startup-api";
+import { HIRING_STATUS_OPTIONS } from "./company-map/constants";
 
 const STORAGE_KEY = "startup-founder-intake";
 
@@ -89,7 +90,6 @@ const stageOptions: NavigatorOption[] = [
 	{ id: "PRE_REVENUE", label: "Pre revenue", icon: Rocket },
 	{ id: "EARLY_REVENUE", label: "Early revenue", icon: TrendingUp },
 	{ id: "GROWTH", label: "Growth", icon: Sparkles },
-	{ id: "SCALING", label: "Scaling", icon: Building2 },
 ];
 
 const regionOptions: NavigatorOption[] = [
@@ -97,7 +97,6 @@ const regionOptions: NavigatorOption[] = [
 	{ id: "Wasatch Front", label: "Wasatch Front", icon: MapPin },
 	{ id: "Central Utah", label: "Central Utah", icon: MapPin },
 	{ id: "Southern Utah", label: "Southern Utah", icon: MapPin },
-	{ id: "Statewide", label: "Statewide", icon: Search },
 ];
 
 const hiringOptions: NavigatorOption[] = [
@@ -281,6 +280,7 @@ export function FounderIntakeForm() {
 								Company stage
 							</legend>
 							<OptionGrid
+								columns="four"
 								onToggle={(id) => update({ stage: id })}
 								options={stageOptions}
 								selected={values.stage ? [values.stage] : []}
@@ -291,13 +291,14 @@ export function FounderIntakeForm() {
 								Utah region
 							</legend>
 							<OptionGrid
+							  columns="four"
 								onToggle={(id) => update({ region: id })}
 								options={regionOptions}
 								selected={values.region ? [values.region] : []}
 							/>
 						</fieldset>
 					</div>
-					<div className="grid gap-4 md:grid-cols-3">
+					<div className="grid gap-4 md:grid-cols-3 py-8">
 						<div className="space-y-2">
 							<Label htmlFor="county">County</Label>
 							<Input
@@ -308,12 +309,22 @@ export function FounderIntakeForm() {
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="keywords">Specific focus</Label>
-							<Input
-								id="keywords"
-								onChange={(event) => update({ keywords: event.target.value })}
-								placeholder="Clean energy grants"
-								value={values.keywords ?? ""}
+							<Label htmlFor="hiringStatus">Hiring status</Label>
+							<DropdownAutocomplete
+								allowCreate={false}
+								defaultValue={values.hiringStatus ?? ""}
+								id="hiringStatus"
+								name="hiringStatus"
+								onValueChange={(value) =>
+									update({ hiringStatus: value ?? undefined })
+								}
+								options={[
+									"Not sure yet",
+									"Not hiring",
+									"Hiring",
+									"Actively hiring",
+								]}
+								placeholder="Select hiring status"
 							/>
 						</div>
 						<div className="space-y-2">
@@ -324,6 +335,7 @@ export function FounderIntakeForm() {
 								allowCreate={false}
 								defaultValue={(values.founderIdentities ?? []).join(", ")}
 								id="founderIdentities"
+								maxSuggestions={7}
 								multiple
 								name="founderIdentities"
 								onValueChange={(value) =>
@@ -341,23 +353,11 @@ export function FounderIntakeForm() {
 									"Rural business",
 									"Multicultural or community-specific business support",
 									"None of these",
-									"Prefer not to say",
 								]}
 								placeholder="Select all that apply"
 							/>
 						</div>
 					</div>
-					<fieldset className="space-y-4">
-						<legend className="font-medium text-sm leading-none">
-							Hiring status
-						</legend>
-						<OptionGrid
-							columns="four"
-							onToggle={(id) => update({ hiringStatus: id })}
-							options={hiringOptions}
-							selected={values.hiringStatus ? [values.hiringStatus] : []}
-						/>
-					</fieldset>
 				</div>
 			)}
 		</NavigatorShell>
