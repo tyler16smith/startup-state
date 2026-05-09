@@ -1,16 +1,37 @@
-# Finance with Fin
+# Startup State
 
-A personal financial intelligence platform. Connect your bank accounts via Plaid, manage a complex rules engine, track net worth over time, model investment growth, and run scenario forecasts.
+A platform built for Utah's Governor's Office of Economic Development (GOED) to connect founders with resources and help investors discover Utah companies.
+
+## What It Does
+
+**For founders** — Answer a short intake and receive a personalized, ranked list of GOED resources matched to your startup stage, sector, goals, and eligibility. Save resources, generate a navigator plan, and track your progress.
+
+**For investors** — Explore Utah's startup ecosystem via an interactive map and searchable directory. Filter companies by sector, stage, hiring status, location, and more. View rich company profiles with ownership, jobs, photos, and ecosystem context.
+
+**For admins** — Manage resources and company listings from an admin dashboard without redeployment. Approve company ownership claims and keep content up to date.
 
 ## Stack
 
-- **Next.js 15** (App Router)
+- **Next.js 15** (App Router) + **Turborepo** monorepo
 - **tRPC v11** — type-safe API layer
 - **Prisma 6** + **Neon Postgres** — database
 - **NextAuth v5** — Google SSO + email/password auth
 - **Tailwind v4** + **shadcn/ui** — UI components
-- **Recharts** — charts
+- **AI Agent (Fin)** — OpenAI-powered assistant with MCP tool integration
 - **Biome** — linting and formatting
+
+## Monorepo Structure
+
+```
+apps/
+  web/        # Next.js front-end
+  api/        # Next.js API (tRPC + REST handlers)
+  mcp/        # Model Context Protocol server
+packages/
+  shared/     # Shared types and utilities
+  mcp-contracts/  # MCP tool/schema contracts
+  client-ts/  # Typed API client
+```
 
 ## Getting Started
 
@@ -32,7 +53,7 @@ A personal financial intelligence platform. Connect your bank accounts via Plaid
    pnpm db:push
    ```
 
-4. **Run the dev server for the web app**
+4. **Run the dev server**
    ```bash
    pnpm dev
    ```
@@ -40,17 +61,20 @@ A personal financial intelligence platform. Connect your bank accounts via Plaid
 ## Key Commands
 
 ```bash
-pnpm dev              # Start web development server via Turborepo
-pnpm build            # Build all packages and apps
-pnpm lint             # Run lint across the workspace
-pnpm typecheck        # Run TypeScript checks
-pnpm db:studio        # Open Prisma Studio for apps/web
+pnpm dev                          # Start all dev servers via Turborepo
+pnpm build                        # Build all packages and apps
+pnpm typecheck                    # Run TypeScript checks across all workspaces
+pnpm --filter @app/web check:write   # Lint + format the web app
+pnpm --filter @app/api run check     # Lint + format the API
+pnpm db:studio                    # Open Prisma Studio
 ```
 
 ## Features
 
-- **Plaid Integration** — Securely connect bank accounts for automatic transaction sync
-- **Net Worth Chart** — Historical + multi-scenario forecasts (conservative / expected / aggressive)
-- **Investments** — Track investment accounts with projected growth
-- **Scenario Modeling** — Custom salary growth, return rate, expense, and inflation assumptions
-- **Spending Intelligence** — Category breakdowns and month-over-month trends
+- **Founder Navigator** — Intake form → personalized ranked resources with match reasoning
+- **Utah Startup Map** — Interactive map + list view, filterable by sector, stage, hiring, and location
+- **Company Profiles** — Rich profiles with ownership claims, jobs, photos, and ecosystem tags
+- **Navigator Plans** — Saved, shareable resource plans generated from founder intake
+- **Resource Directory** — Admin-managed resource listings with filtering by stage, goal, sector, community, and region
+- **AI Agent** — Fin, an OpenAI-powered assistant with access to resources, companies, and navigator tools via MCP
+- **Admin Dashboard** — Manage resources, companies, and ownership claims without redeployment
