@@ -155,7 +155,8 @@ const supportSections: SupportSection[] = [
 			"Use a remote mcp-remote config for hosted MCP once the MCP app is deployed.",
 		],
 		commonQuestions: [
-			"Which scope exists now? The current first-pass scope is mcp:read.",
+			"Which scope exists now? Read-only navigator tools use mcp:read.",
+			"Which tools are available? search_resources, get_resource, recommend_resources, search_companies, get_company, and get_support_documentation.",
 			"Which clients are expected? The server has profiles for ChatGPT, Claude, Claude Desktop, Cursor, Codex, Gemini, OpenAI API, and local development.",
 		],
 		nextSteps: [
@@ -215,7 +216,7 @@ function selectSections(input: SupportDocumentationInput): SupportSection[] {
 
 export const getSupportDocumentationTool: McpToolImplementation<SupportDocumentationInput> =
 	{
-		contract: mcpToolContracts["mcp.get_support_documentation"],
+		contract: mcpToolContracts.get_support_documentation,
 		async execute(input) {
 			const sections = selectSections(input);
 			return schemaEnvelope("support.documentation.get", {

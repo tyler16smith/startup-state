@@ -11,7 +11,13 @@ import {
 } from "~/auth/scope-checker";
 import type { McpAuthContext } from "~/auth/types";
 import { checkRateLimit } from "~/rate-limit/rate-limit";
-import { getProfileTool } from "./profile";
+import {
+	getCompanyTool,
+	getResourceTool,
+	recommendResourcesTool,
+	searchCompaniesTool,
+	searchResourcesTool,
+} from "./startup-navigator";
 import { getSupportDocumentationTool } from "./support-documentation";
 import {
 	type McpToolImplementation,
@@ -25,8 +31,12 @@ export class McpToolError extends Error {
 }
 
 const implementations: Record<McpToolName, McpToolImplementation> = {
-	"mcp.get_profile": getProfileTool,
-	"mcp.get_support_documentation": getSupportDocumentationTool,
+	search_resources: searchResourcesTool,
+	get_resource: getResourceTool,
+	recommend_resources: recommendResourcesTool,
+	search_companies: searchCompaniesTool,
+	get_company: getCompanyTool,
+	get_support_documentation: getSupportDocumentationTool,
 };
 
 export function getRegisteredTools(): McpToolImplementation[] {

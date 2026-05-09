@@ -3,10 +3,10 @@
 		"startup-state-local": {
 			"type": "stdio",
 			"command": "pnpm",
-			"args": ["--filter", "@app/mcp", "dev:stdio"],
+			"args": ["--silent", "--filter", "@app/mcp", "dev:stdio"],
 			"env": {
-				"STARTUP_STATE_MCP_TOKEN": "paste_your_mcp_personal_access_token_here",
-				"DATABASE_URL": "paste_your_database_url_here"
+				"STARTUP_STATE_MCP_TOKEN": "fin_dev_WwxOKg1redZOztnOzmC6C-sSQFVnaqaUuGRfllEqNSU",
+				"DATABASE_URL": "postgresql://neondb_owner:npg_Hg5l8MjUuiCk@ep-weathered-cloud-ak6n6bwu-pooler.c-3.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 			}
 		},
 		"startup-state-prod": {

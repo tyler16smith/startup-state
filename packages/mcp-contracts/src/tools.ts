@@ -1,10 +1,20 @@
 import type { z } from "zod";
-import { emptyInputSchema, supportDocumentationInputSchema } from "./schemas";
+import {
+	mcpGetByIdOrSlugInputSchema,
+	mcpRecommendResourcesInputSchema,
+	mcpSearchCompaniesInputSchema,
+	mcpSearchResourcesInputSchema,
+	supportDocumentationInputSchema,
+} from "./schemas";
 import type { McpScope } from "./scopes";
 
 export const mcpToolNames = [
-	"mcp.get_profile",
-	"mcp.get_support_documentation",
+	"search_resources",
+	"get_resource",
+	"recommend_resources",
+	"search_companies",
+	"get_company",
+	"get_support_documentation",
 ] as const;
 
 export type McpToolName = (typeof mcpToolNames)[number];
@@ -26,18 +36,61 @@ export type McpToolContract = {
 };
 
 export const mcpToolContracts = {
-	"mcp.get_profile": {
-		name: "mcp.get_profile",
-		title: "Get profile",
-		description: "Return basic profile info for the authenticated user.",
-		inputSchema: emptyInputSchema,
+	search_resources: {
+		name: "search_resources",
+		title: "Search resources",
+		description:
+			"Search published startup resources by keyword, founder stage, sector, goal, region, and business type.",
+		inputSchema: mcpSearchResourcesInputSchema,
 		requiredScopes: ["mcp:read"],
 		safetyClass: "read_only_app_data",
 		requiresConfirmation: false,
 		widgetReady: true,
 	},
-	"mcp.get_support_documentation": {
-		name: "mcp.get_support_documentation",
+	get_resource: {
+		name: "get_resource",
+		title: "Get resource",
+		description: "Fetch one published startup resource by id or slug.",
+		inputSchema: mcpGetByIdOrSlugInputSchema,
+		requiredScopes: ["mcp:read"],
+		safetyClass: "read_only_app_data",
+		requiresConfirmation: false,
+		widgetReady: true,
+	},
+	recommend_resources: {
+		name: "recommend_resources",
+		title: "Recommend resources",
+		description:
+			"Recommend published startup resources for a founder profile using stage, sector, goals, funding needs, business type, region, and keywords.",
+		inputSchema: mcpRecommendResourcesInputSchema,
+		requiredScopes: ["mcp:read"],
+		safetyClass: "read_only_app_data",
+		requiresConfirmation: false,
+		widgetReady: true,
+	},
+	search_companies: {
+		name: "search_companies",
+		title: "Search companies",
+		description:
+			"Search published company profiles by keyword, sector, stage, hiring status, employee range, city, or county.",
+		inputSchema: mcpSearchCompaniesInputSchema,
+		requiredScopes: ["mcp:read"],
+		safetyClass: "read_only_app_data",
+		requiresConfirmation: false,
+		widgetReady: true,
+	},
+	get_company: {
+		name: "get_company",
+		title: "Get company",
+		description: "Fetch one published company profile by id or slug.",
+		inputSchema: mcpGetByIdOrSlugInputSchema,
+		requiredScopes: ["mcp:read"],
+		safetyClass: "read_only_app_data",
+		requiresConfirmation: false,
+		widgetReady: true,
+	},
+	get_support_documentation: {
+		name: "get_support_documentation",
 		title: "Get support documentation",
 		description:
 			"Return concise support documentation that helps users navigate and use Startup State Navigator.",
