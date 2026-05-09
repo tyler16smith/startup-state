@@ -27,6 +27,7 @@
 		"@auth/prisma-adapter": "^2.7.2",
 		"@axiomhq/js": "^1.6.0",
 		"@app/mcp-contracts": "workspace:*",
+		"@mendable/firecrawl-js": "^4.22.2",
 		"@prisma/client": "^6.19.3",
 		"bcryptjs": "^3.0.3",
 		"date-fns": "^4.1.0",

@@ -2,7 +2,9 @@
 
 import { Building2, Hammer, Search } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { VersionSelect } from "~/components/startup/onboarding-v2/version-select";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -26,15 +28,25 @@ const audiences = [
 ] as const;
 
 export function AudienceSelector() {
+	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<string | null>(null);
+	const version = searchParams.get("v") === "2" ? "v2" : "v1";
+	const versionQuery = version === "v2" ? "?v=2" : "";
 
 	return (
 		<main className="min-h-screen bg-white text-slate-950">
 			<header className="fixed inset-x-0 top-0 z-30 border-slate-200 border-b bg-white/95 backdrop-blur">
 				<div className="flex h-16 items-center justify-between px-4 sm:px-6">
-					<Link className="font-semibold text-sm" href="/">
-						Startup State
-					</Link>
+					<div className="flex items-center gap-3">
+						<VersionSelect
+							v1Href="/?choosePath=1"
+							v2Href="/?choosePath=1&v=2"
+							value={version}
+						/>
+						<Link className="font-semibold text-sm" href="/">
+							Startup State
+						</Link>
+					</div>
 					<Button asChild size="sm" variant="ghost">
 						<Link href="/auth/signin?callbackUrl=/plan">Sign in</Link>
 					</Button>
@@ -62,7 +74,7 @@ export function AudienceSelector() {
 										? "border-emerald-900 bg-emerald-50"
 										: "border-gray-200",
 								)}
-								href={href}
+								href={`${href}${versionQuery}`}
 								key={id}
 								onClick={() => setSelected(id)}
 							>

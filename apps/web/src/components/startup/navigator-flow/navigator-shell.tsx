@@ -3,6 +3,8 @@
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { VersionSelect } from "~/components/startup/onboarding-v2/version-select";
 import { Button } from "~/components/ui/button";
 
 const stepVariants: Variants = {
@@ -32,15 +34,20 @@ export function NavigatorShell({
 	nextLabel?: string;
 	brandLabel?: string;
 }) {
+	const searchParams = useSearchParams();
 	const progress = ((step + 1) / totalSteps) * 100;
+	const version = searchParams.get("v") === "2" ? "v2" : "v1";
 
 	return (
 		<main className="min-h-screen bg-white text-slate-950">
 			<header className="fixed inset-x-0 top-0 z-30 border-slate-200 border-b bg-white/95 backdrop-blur">
 				<div className="flex h-16 items-center justify-between px-4 sm:px-6">
-					<Link className="font-semibold text-sm" href="/">
-						{brandLabel}
-					</Link>
+					<div className="flex items-center gap-3">
+						<VersionSelect value={version} />
+						<Link className="font-semibold text-sm" href="/">
+							{brandLabel}
+						</Link>
+					</div>
 					<p className="font-medium text-muted-foreground text-xs sm:text-sm">
 						Step {step + 1} of {totalSteps}
 					</p>

@@ -1,5 +1,5 @@
 import type { MessageReference } from "@app/mcp-contracts";
-import { ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import {
 	HoverCard,
@@ -28,9 +28,9 @@ function ReferenceLink({ href }: { href: string }) {
 		"mt-3 inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted";
 	if (isInternalHref(href)) {
 		return (
-			<Link className={className} href={href}>
+			<Link className={className} href={href + '?agent=open'}>
 				Open
-				<ExternalLink className="size-3" />
+				<ArrowRight className="size-3" />
 			</Link>
 		);
 	}

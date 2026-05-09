@@ -3,6 +3,7 @@ export { agent } from "./agent";
 export { auth } from "./auth";
 export { companies } from "./companies";
 export { household } from "./household";
+export { landingPages } from "./landing-pages";
 export { mcp } from "./mcp";
 export { mobileAuth } from "./mobile-auth";
 export { navigatorPlans } from "./navigator-plans";

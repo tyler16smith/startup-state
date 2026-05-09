@@ -80,7 +80,13 @@ export function DropdownAutocomplete({
 					scoreOption(rightOption, query) - scoreOption(leftOption, query),
 			)
 			.slice(0, maxSuggestions);
-	}, [availableOptions, inputValue, isMultiple, selectedValues]);
+	}, [
+		availableOptions,
+		inputValue,
+		isMultiple,
+		maxSuggestions,
+		selectedValues,
+	]);
 	const trimmedInput = inputValue.trim();
 	const matchesExisting = normalizedOptions.some(
 		(option) => option.toLowerCase() === trimmedInput.toLowerCase(),
