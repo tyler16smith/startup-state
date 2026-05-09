@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { useStartupStateAIPanel } from "~/components/agent/startup-state-ai-context";
 import { StartupStateAIPanel } from "~/components/agent/startup-state-ai-panel";
@@ -29,11 +30,13 @@ function useIsMobile() {
 export function StartupStateAIWorkspace({ children }: { children: ReactNode }) {
 	const { isOpen, close, toggle } = useStartupStateAIPanel();
 	const isMobile = useIsMobile();
+	const pathname = usePathname();
+	const hideAgentButton = pathname === "/map";
 
 	return (
 		<div className="relative flex min-w-0 flex-1 overflow-hidden">
 			<div className="relative flex min-w-0 flex-1 flex-col overflow-auto">
-				{isOpen ? null : (
+				{isOpen || hideAgentButton ? null : (
 					<div className="pointer-events-none absolute top-3 right-3 z-30 hidden md:block">
 						<Button
 							className="pointer-events-auto shadow-md shadow-white"

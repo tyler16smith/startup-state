@@ -51,7 +51,7 @@ export function StartupLayoutShell({
 						<span className="min-w-0 truncate font-semibold text-sm">
 							Startup State
 						</span>
-						<MobileAgentButton />
+						{pathname !== "/map" && <MobileAgentButton />}
 					</div>
 					<StartupSidebar className="hidden md:flex" />
 					<StartupStateAIWorkspace>

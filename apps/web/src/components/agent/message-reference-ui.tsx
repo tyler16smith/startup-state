@@ -28,7 +28,7 @@ function ReferenceLink({ href }: { href: string }) {
 		"mt-3 inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 font-medium text-xs transition-colors hover:bg-muted";
 	if (isInternalHref(href)) {
 		return (
-			<Link className={className} href={href + '?agent=open'}>
+			<Link className={className} href={href + "?agent=open"}>
 				Open
 				<ArrowRight className="size-3" />
 			</Link>

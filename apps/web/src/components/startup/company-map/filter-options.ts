@@ -18,7 +18,12 @@ export function uniqueOptions(
 		if (!seen.has(key)) seen.set(key, value);
 	}
 	return Array.from(seen.values())
-		.sort((first, second) => first.trim().toLocaleLowerCase().localeCompare(second.trim().toLocaleLowerCase()))
+		.sort((first, second) =>
+			first
+				.trim()
+				.toLocaleLowerCase()
+				.localeCompare(second.trim().toLocaleLowerCase()),
+		)
 		.map((value) => ({ label: value, value }));
 }
 

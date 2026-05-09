@@ -38,31 +38,34 @@ export function FounderDescriptionSection({
 					Company description
 				</h2>
 				<p className="text-muted-foreground text-sm">
-					Add the company context recommendations should use. Paste your company homepage and we'll draft a company description. You can edit it below.
+					Add the company context recommendations should use. Paste your company
+					homepage and we'll draft a company description. You can edit it below.
 				</p>
 			</div>
 
 			<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-        <div className="space-y-2">
-          <Label htmlFor="landingPageUrl">Import from landing page (optional)</Label>
-          <Input
-            disabled={loading}
-            id="landingPageUrl"
-            onChange={(event) => onLandingPageUrlChange(event.target.value)}
-            placeholder="https://company.com"
-            type="url"
-            value={landingPageUrl}
-          />
-        </div>
-        <Button
-          disabled={!landingPageUrl.trim() || loading}
-          onClick={onImport}
-          type="button"
-        >
-          {loading && <Loader2 className="size-4 animate-spin" />}
-          Import
-        </Button>
-      </div>
+				<div className="space-y-2">
+					<Label htmlFor="landingPageUrl">
+						Import from landing page (optional)
+					</Label>
+					<Input
+						disabled={loading}
+						id="landingPageUrl"
+						onChange={(event) => onLandingPageUrlChange(event.target.value)}
+						placeholder="https://company.com"
+						type="url"
+						value={landingPageUrl}
+					/>
+				</div>
+				<Button
+					disabled={!landingPageUrl.trim() || loading}
+					onClick={onImport}
+					type="button"
+				>
+					{loading && <Loader2 className="size-4 animate-spin" />}
+					Import
+				</Button>
+			</div>
 
 			<div className="space-y-2">
 				<Label htmlFor="companyDescription">Description</Label>
