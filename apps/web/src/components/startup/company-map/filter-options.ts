@@ -11,9 +11,14 @@ export function formatEnumLabel(value: string) {
 export function uniqueOptions(
 	values: Array<string | null | undefined>,
 ): FilterOption[] {
-	const options = values.filter((value): value is string => Boolean(value));
-	return Array.from(new Set(options))
-		.sort((first, second) => first.localeCompare(second))
+	const seen = new Map<string, string>();
+	for (const value of values) {
+		if (!value) continue;
+		const key = value.trim().toLocaleLowerCase();
+		if (!seen.has(key)) seen.set(key, value);
+	}
+	return Array.from(seen.values())
+		.sort((first, second) => first.trim().toLocaleLowerCase().localeCompare(second.trim().toLocaleLowerCase()))
 		.map((value) => ({ label: value, value }));
 }
 

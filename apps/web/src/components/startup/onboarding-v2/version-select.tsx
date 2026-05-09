@@ -47,7 +47,7 @@ export function VersionSelect({ value, v1Href, v2Href }: VersionSelectProps) {
 		>
 			<SelectTrigger
 				aria-label="Onboarding version"
-				className="w-24 bg-white"
+				className="w-20 bg-white"
 				size="sm"
 			>
 				<SelectValue />

@@ -21,7 +21,7 @@ export function OnboardingV2Shell({
 	title,
 }: OnboardingV2ShellProps) {
 	return (
-		<main className="min-h-screen bg-white text-slate-950">
+		<main className="min-h-screen bg-white text-slate-950 flex justify-center items-center">
 			<header className="fixed inset-x-0 top-0 z-30 border-slate-200 border-b bg-white/95 backdrop-blur">
 				<div className="flex h-16 items-center justify-between px-4 sm:px-6">
 					<div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function OnboardingV2Shell({
 			</header>
 
 			<section className="px-4 pt-24 pb-28 sm:px-6">
-				<div className="mx-auto w-full max-w-5xl space-y-8">
+				<div className="mx-auto w-full max-w-2xl space-y-8">
 					<div className="space-y-2 text-center">
 						<h1 className="font-semibold text-2xl tracking-normal sm:text-3xl">
 							{title}
