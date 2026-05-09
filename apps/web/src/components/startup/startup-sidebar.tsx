@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	BriefcaseBusiness,
 	Building2,
 	ChevronUp,
 	Compass,
@@ -33,6 +34,10 @@ const navItems = [
 	{ href: "/newsletter", label: "Newsletter", icon: Mail },
 	{ href: "/map", label: "Map", icon: MapIcon },
 	{ href: "/companies/new", label: "Add company", icon: Building2 },
+];
+
+const signedInNavItems = [
+	{ href: "/my-companies", label: "My companies", icon: BriefcaseBusiness },
 ];
 
 function NavLink({
@@ -148,6 +153,15 @@ export function StartupSidebar({
 						pathname={pathname}
 					/>
 				))}
+				{session &&
+					signedInNavItems.map((item) => (
+						<NavLink
+							key={item.href}
+							{...item}
+							onClick={onClose}
+							pathname={pathname}
+						/>
+					))}
 			</nav>
 
 			{!session ? (

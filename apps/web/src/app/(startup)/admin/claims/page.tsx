@@ -16,7 +16,12 @@ type Claim = {
 	workEmail: string;
 	explanation?: string | null;
 	domainMatches: boolean;
-	status: "email_pending" | "pending_review" | "approved" | "rejected";
+	status:
+		| "email_pending"
+		| "pending_review"
+		| "on_hold"
+		| "approved"
+		| "rejected";
 	company: { name: string };
 	user: { email?: string | null; name?: string | null };
 };
@@ -24,6 +29,7 @@ type Claim = {
 const claimStatusLabel: Record<Claim["status"], string> = {
 	email_pending: "email pending",
 	pending_review: "pending review",
+	on_hold: "on hold",
 	approved: "approved",
 	rejected: "rejected",
 };
@@ -43,6 +49,9 @@ export default async function AdminClaimsPage() {
 				<h1 className="mt-2 font-semibold text-4xl tracking-normal">
 					Company claims
 				</h1>
+				<p className="mt-3 text-muted-foreground">
+					Approve, hold, or reject verified company ownership claims.
+				</p>
 			</div>
 			<div className="rounded-lg border bg-white p-4 shadow-sm">
 				<Table>
@@ -54,7 +63,7 @@ export default async function AdminClaimsPage() {
 							<TableHead>Work email</TableHead>
 							<TableHead>Domain</TableHead>
 							<TableHead>Status</TableHead>
-							<TableHead className="text-right">Review</TableHead>
+							<TableHead className="text-right">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -74,13 +83,20 @@ export default async function AdminClaimsPage() {
 								</TableCell>
 								<TableCell>{claimStatusLabel[claim.status]}</TableCell>
 								<TableCell className="text-right">
-									<ClaimActions
-										claimId={claim.id}
-										disabled={claim.status !== "pending_review"}
-									/>
+									<ClaimActions claimId={claim.id} status={claim.status} />
 								</TableCell>
 							</TableRow>
 						))}
+						{claims.length === 0 ? (
+							<TableRow>
+								<TableCell
+									className="h-24 text-center text-muted-foreground"
+									colSpan={6}
+								>
+									No company claims to review.
+								</TableCell>
+							</TableRow>
+						) : null}
 					</TableBody>
 				</Table>
 			</div>

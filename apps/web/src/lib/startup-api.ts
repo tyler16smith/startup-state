@@ -65,6 +65,26 @@ export type Company = {
 	updatedAt: string;
 };
 
+export type CompanyClaimStatus =
+	| "email_pending"
+	| "pending_review"
+	| "on_hold"
+	| "approved"
+	| "rejected";
+
+export type MyCompanyRelationship = "owner" | "submitted" | "claim";
+
+export type MyCompany = {
+	company: Company;
+	relationship: MyCompanyRelationship;
+	claimId?: string;
+	claimStatus?: CompanyClaimStatus;
+	canEdit: boolean;
+	submittedAt?: string;
+	ownedAt?: string;
+	updatedAt: string;
+};
+
 export type FounderProfileInput = {
 	stage?: string;
 	city?: string;

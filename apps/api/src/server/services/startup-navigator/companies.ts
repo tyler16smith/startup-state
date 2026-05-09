@@ -7,7 +7,11 @@ import {
 	generateClaimVerificationTokenPair,
 	hashClaimVerificationToken,
 } from "~/server/lib/claim-verification-token";
-import type { Prisma, PrismaClient } from "../../../../generated/prisma";
+import type {
+	ClaimStatus,
+	Prisma,
+	PrismaClient,
+} from "../../../../generated/prisma";
 import { enrichCompanyLocations } from "./geocoding";
 import {
 	asArray,
@@ -24,6 +28,18 @@ import { createUniqueSlug, slugify } from "./slug";
 import { getWebsiteDomain } from "./website-domain";
 
 type Db = PrismaClient;
+type MyCompanyRelationship = "owner" | "submitted" | "claim";
+type MyCompanyCompany = Prisma.CompanyGetPayload<{ include: { photos: true } }>;
+type MyCompanyEntry = {
+	company: MyCompanyCompany;
+	relationship: MyCompanyRelationship;
+	claimId?: string;
+	claimStatus?: ClaimStatus;
+	canEdit: boolean;
+	submittedAt?: Date;
+	ownedAt?: Date;
+	updatedAt: Date;
+};
 
 const PUBLIC_COMPANY_SUBMISSION_SOURCE = "public_company_submission";
 const CLAIM_VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -467,6 +483,65 @@ export async function updateCompany(db: Db, companyId: string, input: unknown) {
 	});
 }
 
+export async function listMyCompanies(db: Db, userId: string) {
+	const [claims, ownerships] = await Promise.all([
+		db.companyClaim.findMany({
+			where: { userId },
+			include: {
+				company: { include: { photos: { orderBy: { sortOrder: "asc" } } } },
+			},
+			orderBy: { updatedAt: "desc" },
+		}),
+		db.companyOwner.findMany({
+			where: { userId },
+			include: {
+				company: { include: { photos: { orderBy: { sortOrder: "asc" } } } },
+			},
+			orderBy: { createdAt: "desc" },
+		}),
+	]);
+
+	const entries = new Map<string, MyCompanyEntry>();
+
+	for (const claim of claims) {
+		const relationship: MyCompanyRelationship =
+			claim.company.source === PUBLIC_COMPANY_SUBMISSION_SOURCE
+				? "submitted"
+				: "claim";
+		entries.set(claim.companyId, {
+			company: claim.company,
+			relationship,
+			claimId: claim.id,
+			claimStatus: claim.status,
+			canEdit: false,
+			submittedAt: claim.createdAt,
+			updatedAt: claim.updatedAt,
+		});
+	}
+
+	for (const ownership of ownerships) {
+		const currentEntry = entries.get(ownership.companyId);
+		entries.set(ownership.companyId, {
+			...(currentEntry ?? {}),
+			company: ownership.company,
+			relationship: "owner",
+			canEdit: true,
+			ownedAt: ownership.createdAt,
+			updatedAt: ownership.createdAt,
+		});
+	}
+
+	return Array.from(entries.values()).sort((first, second) => {
+		const firstDate = entryDate(first);
+		const secondDate = entryDate(second);
+		return secondDate.getTime() - firstDate.getTime();
+	});
+}
+
+function entryDate(entry: MyCompanyEntry) {
+	return entry.ownedAt ?? entry.updatedAt ?? entry.submittedAt ?? new Date(0);
+}
+
 export async function archiveCompany(db: Db, companyId: string) {
 	return db.company.update({
 		where: { id: companyId },
@@ -548,7 +623,9 @@ export async function createCompanyClaim(
 		where: {
 			companyId: data.companyId,
 			userId,
-			status: { in: ["email_pending", "pending_review", "approved"] },
+			status: {
+				in: ["email_pending", "pending_review", "on_hold", "approved"],
+			},
 		},
 		include: { company: true },
 		orderBy: { createdAt: "desc" },
@@ -556,6 +633,9 @@ export async function createCompanyClaim(
 
 	if (existingClaim?.status === "pending_review") {
 		throw createApiError("Claim is already pending review", 409);
+	}
+	if (existingClaim?.status === "on_hold") {
+		throw createApiError("Claim is on hold for admin review", 409);
 	}
 	if (existingClaim?.status === "approved") {
 		throw createApiError("Claim has already been approved", 409);
@@ -697,7 +777,7 @@ export async function approveCompanyClaim(
 ) {
 	const claim = await db.companyClaim.findUnique({ where: { id: claimId } });
 	if (!claim) throw createApiError("Claim not found", 404);
-	if (claim.status !== "pending_review") {
+	if (claim.status !== "pending_review" && claim.status !== "on_hold") {
 		throw createApiError("Only verified claims can be approved", 409);
 	}
 
@@ -726,11 +806,38 @@ export async function approveCompanyClaim(
 	});
 }
 
+export async function holdCompanyClaim(
+	db: Db,
+	claimId: string,
+	reviewerId: string,
+) {
+	const claim = await db.companyClaim.findUnique({ where: { id: claimId } });
+	if (!claim) throw createApiError("Claim not found", 404);
+	if (claim.status !== "pending_review") {
+		throw createApiError("Only pending claims can be held", 409);
+	}
+
+	return db.companyClaim.update({
+		where: { id: claimId },
+		data: {
+			status: "on_hold",
+			reviewedAt: new Date(),
+			reviewedById: reviewerId,
+		},
+	});
+}
+
 export async function rejectCompanyClaim(
 	db: Db,
 	claimId: string,
 	reviewerId: string,
 ) {
+	const claim = await db.companyClaim.findUnique({ where: { id: claimId } });
+	if (!claim) throw createApiError("Claim not found", 404);
+	if (claim.status !== "pending_review" && claim.status !== "on_hold") {
+		throw createApiError("Only pending or held claims can be rejected", 409);
+	}
+
 	return db.companyClaim.update({
 		where: { id: claimId },
 		data: {

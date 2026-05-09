@@ -779,6 +779,7 @@ enum GeocodeProvider {
 enum ClaimStatus {
   email_pending
   pending_review
+  on_hold
   approved
   rejected
 }

@@ -10,6 +10,7 @@ export const companyStatusSchema = z.enum([
 export const claimStatusSchema = z.enum([
 	"email_pending",
 	"pending_review",
+	"on_hold",
 	"approved",
 	"rejected",
 ]);

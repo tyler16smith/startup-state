@@ -17,9 +17,11 @@ import {
 	getAdminSummary,
 	getCompanyById,
 	getCompanyClaimForUser,
+	holdCompanyClaim,
 	importCompaniesFromCsv,
 	listCompanyClaims,
 	listCompanySubmissions,
+	listMyCompanies,
 	rejectCompanyClaim,
 	resendCompanyClaimVerification,
 	reviewCompanySubmission,
@@ -62,6 +64,17 @@ export const companies = {
 		if (!companyId) throw createApiError("Company id required", 400);
 		await requireCompanyEditor(ctx, companyId);
 		return updateCompany(ctx.db, companyId, body);
+	}),
+
+	myCompanies: withAuth(async (ctx: AuthenticatedContext) => {
+		return listMyCompanies(ctx.db, ctx.userId);
+	}),
+
+	editorGet: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
+		const companyId = companyIdentifier(body);
+		if (!companyId) throw createApiError("Company id required", 400);
+		await requireCompanyEditor(ctx, companyId);
+		return getCompanyById(ctx.db, { id: companyId }, { admin: true });
 	}),
 
 	claim: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
@@ -150,6 +163,13 @@ export const companies = {
 		const claimId = claimIdentifier(body);
 		if (!claimId) throw createApiError("Claim id required", 400);
 		return approveCompanyClaim(ctx.db, claimId, ctx.userId);
+	}),
+
+	holdClaim: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
+		await requireAdmin(ctx);
+		const claimId = claimIdentifier(body);
+		if (!claimId) throw createApiError("Claim id required", 400);
+		return holdCompanyClaim(ctx.db, claimId, ctx.userId);
 	}),
 
 	rejectClaim: withAuth(async (ctx: AuthenticatedContext, body: unknown) => {
