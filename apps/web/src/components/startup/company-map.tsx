@@ -7,6 +7,7 @@ import { useStartupStateAIPanel } from "~/components/agent/startup-state-ai-cont
 import { CompanyMapControls } from "~/components/startup/company-map/company-map-controls";
 import {
 	filterCompanies,
+	filterCompaniesByMapBounds,
 	getActiveFilterCount,
 } from "~/components/startup/company-map/filter-companies";
 import { getCompanyMapFilterOptions } from "~/components/startup/company-map/filter-options";
@@ -53,6 +54,7 @@ export function CompanyMap({ token }: { token?: string }) {
 		() => filterCompanies(companies, filters),
 		[companies, filters],
 	);
+	const hasSearchQuery = filters.query.trim().length > 0;
 	const mapCompanies = isPresentationMode ? companies : filtered;
 	const companiesById = useMemo(
 		() => new Map(mapCompanies.map((company) => [company.id, company])),
@@ -73,7 +75,7 @@ export function CompanyMap({ token }: { token?: string }) {
 		setResultsOpen(false);
 	}, []);
 
-	const { flyToCompany, mapRef } = useCompanyMapbox({
+	const { flyToCompany, mapRef, visibleBounds } = useCompanyMapbox({
 		companiesById,
 		companyFeatureCollection,
 		isFullscreen,
@@ -83,6 +85,10 @@ export function CompanyMap({ token }: { token?: string }) {
 		selectedCompanyId,
 		token,
 	});
+	const resultCompanies = useMemo(() => {
+		if (hasSearchQuery) return filtered;
+		return filterCompaniesByMapBounds(filtered, visibleBounds);
+	}, [filtered, hasSearchQuery, visibleBounds]);
 
 	useFullscreenLock(isFullscreen, setIsFullscreen);
 
@@ -126,10 +132,10 @@ export function CompanyMap({ token }: { token?: string }) {
 
 	useEffect(() => {
 		if (!selectedCompanyId) return;
-		if (!filtered.some((company) => company.id === selectedCompanyId)) {
+		if (!resultCompanies.some((company) => company.id === selectedCompanyId)) {
 			setSelected(null);
 		}
-	}, [filtered, selectedCompanyId]);
+	}, [resultCompanies, selectedCompanyId]);
 
 	const clearFilters = useCallback(() => {
 		clearFilterState();
@@ -204,7 +210,7 @@ export function CompanyMap({ token }: { token?: string }) {
 					/>
 					<ResultsPanel
 						activeFilterCount={activeFilterCount}
-						companies={filtered}
+						companies={resultCompanies}
 						onClearSelected={closeSelectedCompany}
 						onClose={() => setResultsOpen(false)}
 						onFocusCompany={focusCompany}

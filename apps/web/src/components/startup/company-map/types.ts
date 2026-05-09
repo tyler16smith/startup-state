@@ -23,6 +23,13 @@ export type CompanyMapFilterOptions = {
 	counties: FilterOption[];
 };
 
+export type CompanyMapBounds = {
+	east: number;
+	north: number;
+	south: number;
+	west: number;
+};
+
 export type CompanyFeature = {
 	type: "Feature";
 	geometry: {

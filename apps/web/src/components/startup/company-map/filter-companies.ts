@@ -1,5 +1,9 @@
 import { DEFAULT_COMPANY_MAP_FILTERS } from "~/components/startup/company-map/constants";
-import type { CompanyMapFilters } from "~/components/startup/company-map/types";
+import { getCompanyCoordinates } from "~/components/startup/company-map/map-data";
+import type {
+	CompanyMapBounds,
+	CompanyMapFilters,
+} from "~/components/startup/company-map/types";
 import type { Company } from "~/lib/startup-api";
 
 export function getInitialCompanyMapFilters(search: string): CompanyMapFilters {
@@ -68,7 +72,7 @@ export function companyMatchesFilters(
 	company: Company,
 	filters: CompanyMapFilters,
 ) {
-	const query = filters.query.toLowerCase();
+	const query = filters.query.trim().toLowerCase();
 	const haystack =
 		`${company.name} ${company.description ?? ""} ${company.address ?? ""} ${company.city ?? ""} ${company.county ?? ""} ${company.sector ?? ""}`.toLowerCase();
 
@@ -88,4 +92,39 @@ export function filterCompanies(
 	filters: CompanyMapFilters,
 ) {
 	return companies.filter((company) => companyMatchesFilters(company, filters));
+}
+
+function longitudeMatchesBounds(longitude: number, bounds: CompanyMapBounds) {
+	if (bounds.west <= bounds.east) {
+		return longitude >= bounds.west && longitude <= bounds.east;
+	}
+
+	return longitude >= bounds.west || longitude <= bounds.east;
+}
+
+export function companyMatchesMapBounds(
+	company: Company,
+	bounds: CompanyMapBounds | null,
+) {
+	if (!bounds) return true;
+
+	const coordinates = getCompanyCoordinates(company);
+	if (!coordinates) return false;
+
+	const [longitude, latitude] = coordinates;
+	return (
+		latitude >= bounds.south &&
+		latitude <= bounds.north &&
+		longitudeMatchesBounds(longitude, bounds)
+	);
+}
+
+export function filterCompaniesByMapBounds(
+	companies: Company[],
+	bounds: CompanyMapBounds | null,
+) {
+	if (!bounds) return companies;
+	return companies.filter((company) =>
+		companyMatchesMapBounds(company, bounds),
+	);
 }

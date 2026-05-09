@@ -39,6 +39,8 @@ function buildCompanyWhere(
 		where.status = query.status;
 	} else if (!options.admin) {
 		where.status = "PUBLISHED";
+	} else {
+		where.status = { not: "ARCHIVED" };
 	}
 
 	if (query.q) {
@@ -502,7 +504,11 @@ export async function getAdminSummary(db: Db) {
 		db.companyClaim.count({ where: { status: "PENDING" } }),
 		db.company.count({ where: publicCompanySubmissionWhere() }),
 		db.resource.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
-		db.company.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
+		db.company.findMany({
+			where: { status: { not: "ARCHIVED" } },
+			orderBy: { updatedAt: "desc" },
+			take: 5,
+		}),
 	]);
 
 	return {

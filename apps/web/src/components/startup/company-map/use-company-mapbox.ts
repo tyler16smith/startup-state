@@ -12,7 +12,10 @@ import {
 	createCompanyMarkerElement,
 	setCompanyMarkerSelected,
 } from "~/components/startup/company-map/marker-element";
-import type { CompanyFeatureCollection } from "~/components/startup/company-map/types";
+import type {
+	CompanyFeatureCollection,
+	CompanyMapBounds,
+} from "~/components/startup/company-map/types";
 import type { Company } from "~/lib/startup-api";
 
 // ── Presentation mode: animated flight lines ─────────────────────────────────
@@ -147,6 +150,27 @@ export function useCompanyMapbox({
 	const presentationFrameRef = useRef<number | null>(null);
 	const flightFrameRef = useRef<number | null>(null);
 	const [mapReady, setMapReady] = useState(false);
+	const [visibleBounds, setVisibleBounds] = useState<CompanyMapBounds | null>(
+		null,
+	);
+
+	const updateVisibleBounds = useCallback(() => {
+		const map = mapInstanceRef.current;
+		if (!map) return;
+
+		const bounds = map.getBounds();
+		if (!bounds) {
+			setVisibleBounds(null);
+			return;
+		}
+
+		setVisibleBounds({
+			east: bounds.getEast(),
+			north: bounds.getNorth(),
+			south: bounds.getSouth(),
+			west: bounds.getWest(),
+		});
+	}, []);
 
 	const flyToCompany = useCallback((company: Company) => {
 		const coordinates = getCompanyCoordinates(company);
@@ -313,6 +337,17 @@ export function useCompanyMapbox({
 			selectedMarkerRef.current = null;
 		};
 	}, [mapReady, onCompanyClick, selectedCompany]);
+
+	useEffect(() => {
+		const map = mapInstanceRef.current;
+		if (!map || !mapReady) return;
+
+		updateVisibleBounds();
+		map.on("moveend", updateVisibleBounds);
+		return () => {
+			map.off("moveend", updateVisibleBounds);
+		};
+	}, [mapReady, updateVisibleBounds]);
 
 	useEffect(() => {
 		const map = mapInstanceRef.current;
@@ -594,5 +629,5 @@ export function useCompanyMapbox({
 		};
 	}, [mapReady, refreshPhotoMarkers]);
 
-	return { flyToCompany, mapRef };
+	return { flyToCompany, mapRef, visibleBounds };
 }
