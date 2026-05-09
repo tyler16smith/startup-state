@@ -11,6 +11,7 @@
 		"check:write": "biome check --write .",
 		"dev": "next dev --turbo -p 3000",
 		"find-logos": "tsx src/scripts/find-logos.ts",
+		"import-company-logos": "tsx src/scripts/import-company-logos.ts",
 		"preview": "next build && next start",
 		"start": "next start",
 		"test:a11y": "playwright test --config=playwright.a11y.config.ts",

@@ -165,16 +165,16 @@ model FounderProfile {
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  stage         String?
-  city          String?
-  county        String?
-  region        String?
-  sectors       String[] @default([])
-  goals         String[] @default([])
-  businessTypes String[] @default([])
-  fundingNeeds  String[] @default([])
+  stage             String?
+  city              String?
+  county            String?
+  region            String?
+  sectors           String[] @default([])
+  goals             String[] @default([])
+  businessTypes     String[] @default([])
+  fundingNeeds      String[] @default([])
   founderIdentities String[] @default([])
-  hiringStatus  String?
+  hiringStatus      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
