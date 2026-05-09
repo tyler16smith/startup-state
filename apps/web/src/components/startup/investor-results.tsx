@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "~/components/startup/empty-state";
+import { InvestorResultsLoading } from "~/components/startup/investor-results-loading";
 import { InvestorResultsMap } from "~/components/startup/investor-results-map";
 import { SavePlanDialog } from "~/components/startup/navigator-flow/save-plan-dialog";
 import { Badge } from "~/components/ui/badge";
@@ -14,6 +15,7 @@ import {
 	type InvestorCompanyRecommendation,
 	type InvestorProfileInput,
 } from "~/lib/startup-api";
+import { cn } from "~/lib/utils";
 
 type InvestorResultsProps = {
 	mapToken?: string;
@@ -32,9 +34,13 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const autoSaveAttempted = useRef(false);
+	const cardRefs = useRef(new Map<string, HTMLElement>());
 	const [selectedCompanyId, setSelectedCompanyId] = useState<
 		string | undefined
 	>(undefined);
+	const [focusedCompanyId, setFocusedCompanyId] = useState<
+		string | undefined
+	>();
 
 	useEffect(() => {
 		const raw = sessionStorage.getItem("startup-investor-intake");
@@ -124,15 +130,21 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 		void savePlan();
 	}, [error, loading, recommendations.length, session?.user, status, savePlan]);
 
+	const selectCompanyFromMap = useCallback((companyId: string) => {
+		setSelectedCompanyId(companyId);
+		setFocusedCompanyId(companyId);
+	}, []);
+
+	useEffect(() => {
+		if (!focusedCompanyId) return;
+		const selectedCard = cardRefs.current.get(focusedCompanyId);
+		if (!selectedCard) return;
+		selectedCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+		selectedCard.focus({ preventScroll: true });
+	}, [focusedCompanyId]);
+
 	if (loading) {
-		return (
-			<div className="flex min-h-screen items-center justify-center bg-white px-4 py-20">
-				<div className="flex items-center gap-3 text-muted-foreground">
-					<Loader2 className="size-5 animate-spin" /> Loading up your investor
-					recommendations
-				</div>
-			</div>
-		);
+		return <InvestorResultsLoading />;
 	}
 
 	if (!profile) {
@@ -199,25 +211,36 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 			)}
 			{recommendations.length ? (
 				<div className="relative h-[680px] overflow-hidden rounded-xl border shadow-sm">
-					{/* Map fills the full container */}
 					<div className="absolute inset-0">
 						<InvestorResultsMap
 							mapToken={mapToken}
+							onCompanySelect={selectCompanyFromMap}
 							recommendations={recommendations}
 							selectedCompanyId={selectedCompanyId}
 						/>
 					</div>
 
-					{/* Company list panel overlaying the left side */}
 					<div className="absolute top-0 bottom-0 left-0 flex w-80 flex-col gap-3 overflow-y-auto bg-white/95 p-3 shadow-lg backdrop-blur-sm">
 						{recommendations.map((recommendation) => (
 							<article
-								className="flex flex-col rounded-lg border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+								className={cn(
+									"flex flex-col rounded-lg border bg-white p-4 shadow-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2",
+									selectedCompanyId === recommendation.company.id &&
+										"border-emerald-300 bg-emerald-50/35 shadow-md",
+								)}
 								key={recommendation.company.id}
 								onMouseEnter={() =>
 									setSelectedCompanyId(recommendation.company.id)
 								}
 								onMouseLeave={() => setSelectedCompanyId(undefined)}
+								ref={(node) => {
+									if (node) {
+										cardRefs.current.set(recommendation.company.id, node);
+									} else {
+										cardRefs.current.delete(recommendation.company.id);
+									}
+								}}
+								tabIndex={-1}
 							>
 								<div className="flex items-start justify-between gap-3">
 									<Badge className="rounded-md bg-emerald-600 text-white">
@@ -238,9 +261,12 @@ export function InvestorResults({ mapToken }: InvestorResultsProps) {
 										? ` · ${recommendation.company.stage.replace(/_/g, " ").toLowerCase()}`
 										: ""}
 								</p>
-								<p className="mt-3 text-sm leading-relaxed">
-									{recommendation.why}
-								</p>
+								<div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+									<p className="font-medium text-emerald-950 text-xs">Why</p>
+									<p className="mt-2 text-sm leading-relaxed">
+										{recommendation.why}
+									</p>
+								</div>
 								<Button
 									asChild
 									className="mt-3 w-full"

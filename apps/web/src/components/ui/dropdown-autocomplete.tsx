@@ -22,8 +22,6 @@ type DropdownAutocompleteProps = {
 	single?: boolean;
 };
 
-
-
 export function DropdownAutocomplete({
 	allowCreate = true,
 	"aria-describedby": ariaDescribedBy,

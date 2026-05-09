@@ -291,14 +291,14 @@ export function FounderIntakeForm() {
 								Utah region
 							</legend>
 							<OptionGrid
-							  columns="four"
+								columns="four"
 								onToggle={(id) => update({ region: id })}
 								options={regionOptions}
 								selected={values.region ? [values.region] : []}
 							/>
 						</fieldset>
 					</div>
-					<div className="grid gap-4 md:grid-cols-3 py-8">
+					<div className="grid gap-4 py-8 md:grid-cols-3">
 						<div className="space-y-2">
 							<Label htmlFor="county">County</Label>
 							<Input

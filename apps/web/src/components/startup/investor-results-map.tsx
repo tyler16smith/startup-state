@@ -7,12 +7,14 @@ import type { InvestorCompanyRecommendation } from "~/lib/startup-api";
 type InvestorResultsMapProps = {
 	recommendations: InvestorCompanyRecommendation[];
 	selectedCompanyId?: string;
+	onCompanySelect?: (companyId: string) => void;
 	mapToken?: string;
 };
 
 export function InvestorResultsMap({
 	recommendations,
 	selectedCompanyId,
+	onCompanySelect,
 	mapToken,
 }: InvestorResultsMapProps) {
 	const mapRef = useRef<HTMLDivElement | null>(null);
@@ -52,10 +54,13 @@ export function InvestorResultsMap({
 						continue;
 					}
 
-					const el = document.createElement("div");
+					const el = document.createElement("button");
+					el.type = "button";
+					el.setAttribute("aria-label", `Focus ${rec.company.name}`);
 					el.style.cssText =
-						"width:28px;height:28px;border-radius:50%;background:#059669;color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid white;cursor:default;";
+						"width:28px;height:28px;border-radius:50%;background:#059669;color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid white;cursor:pointer;padding:0;outline:none;";
 					el.textContent = String(rec.rank);
+					el.addEventListener("click", () => onCompanySelect?.(rec.company.id));
 
 					const marker = new mapboxgl.default.Marker({ element: el })
 						.setLngLat([longitude, latitude])
@@ -72,7 +77,10 @@ export function InvestorResultsMap({
 							(b, coord) => b.extend(coord),
 							new mapboxgl.default.LngLatBounds(first, first),
 						);
-						map.fitBounds(bounds, { maxZoom: 10, padding: 80 });
+						map.fitBounds(bounds, {
+							maxZoom: 10,
+							padding: { bottom: 80, left: 380, right: 80, top: 80 },
+						});
 					}
 				}
 			});
@@ -87,7 +95,22 @@ export function InvestorResultsMap({
 			mapInstanceRef.current?.remove();
 			mapInstanceRef.current = null;
 		};
-	}, [mapToken, recommendations]);
+	}, [mapToken, onCompanySelect, recommendations]);
+
+	useEffect(() => {
+		for (const [companyId, marker] of markersRef.current.entries()) {
+			const element = marker.getElement() as HTMLElement;
+			const isSelected = companyId === selectedCompanyId;
+			element.style.background = isSelected ? "#047857" : "#059669";
+			element.style.borderColor = isSelected ? "#a7f3d0" : "white";
+			element.style.outline = isSelected
+				? "3px solid rgba(16,185,129,0.35)"
+				: "none";
+			element.style.boxShadow = isSelected
+				? "0 4px 12px rgba(4,120,87,0.45)"
+				: "0 2px 6px rgba(0,0,0,0.3)";
+		}
+	}, [selectedCompanyId]);
 
 	useEffect(() => {
 		if (!selectedCompanyId || !mapInstanceRef.current) return;
@@ -100,6 +123,7 @@ export function InvestorResultsMap({
 			center: [longitude, latitude],
 			duration: 900,
 			essential: true,
+			padding: { left: 320 },
 			zoom: 11,
 		});
 	}, [selectedCompanyId, recommendations]);
