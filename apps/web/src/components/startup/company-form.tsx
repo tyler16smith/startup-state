@@ -358,6 +358,7 @@ function FullFields({
 					label="Website"
 					name="websiteUrl"
 					placeholder="https://example.com"
+					type="url"
 				/>
 				<AutocompleteField
 					defaultValue={values.sector}
@@ -399,6 +400,8 @@ function FullFields({
 					defaultValue={values.jobPostingsUrl}
 					label="Job postings URL"
 					name="jobPostingsUrl"
+					placeholder="https://example.com/careers"
+					type="url"
 				/>
 				<SelectField
 					defaultValue={values.hiringStatus}
@@ -434,12 +437,13 @@ function FullFields({
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label htmlFor="company-photos">Photo URLs</Label>
-				<Input
+				<Label htmlFor="company-photos">Gallery image URLs</Label>
+				<Textarea
 					defaultValue={values.photos}
 					id="company-photos"
 					name="photos"
-					placeholder="https://...jpg, https://...jpg"
+					placeholder="https://...jpg"
+					rows={4}
 				/>
 			</div>
 			<CompanyLogoDropZone onLogoChange={onLogoChange} value={values.photos} />

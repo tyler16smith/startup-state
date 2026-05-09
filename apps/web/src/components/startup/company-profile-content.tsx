@@ -8,6 +8,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { CompanyCard } from "~/components/startup/company-card";
+import { CompanyPhotoGallery } from "~/components/startup/company-photo-gallery";
 import { Button } from "~/components/ui/button";
 import type { Company } from "~/lib/startup-api";
 
@@ -67,6 +68,17 @@ export function CompanyProfileContent({
 								<Button asChild variant="outline">
 									<a href={company.websiteUrl} rel="noreferrer" target="_blank">
 										Website <ArrowUpRight className="size-4" />
+									</a>
+								</Button>
+							)}
+							{company.jobPostingsUrl && (
+								<Button asChild variant="outline">
+									<a
+										href={company.jobPostingsUrl}
+										rel="noreferrer"
+										target="_blank"
+									>
+										Job postings <ArrowUpRight className="size-4" />
 									</a>
 								</Button>
 							)}
@@ -172,6 +184,11 @@ export function CompanyProfileContent({
 					</div>
 				)}
 			</section>
+			<CompanyPhotoGallery
+				companyName={company.name}
+				layout={layout}
+				photos={company.photos}
+			/>
 			{company.related?.length ? (
 				<section
 					className={isPanel ? "space-y-4" : "mt-10"}
