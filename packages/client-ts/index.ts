@@ -5,15 +5,19 @@
  * Configure the base URL via NEXT_PUBLIC_API_URL environment variable.
  */
 
+export { clearCsrfToken, getCsrfToken } from "./api-client";
 export * from "./src/index";
-export { getCsrfToken, clearCsrfToken } from "./api-client";
 
 import type { listTransactionCategoriesResponse } from "./src/index";
 
 // Configuration helpers
+function normalizeApiBaseUrl(url: string | undefined): string {
+	return (url ?? "").trim().replace(/\/+$/, "");
+}
+
 export function getApiBaseUrl(): string {
 	const isDevelopment = process.env.NODE_ENV === "development";
-	const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+	const publicApiUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 	// Browser context
 	if (typeof window !== "undefined") {
@@ -33,7 +37,7 @@ export function getApiBaseUrl(): string {
 		return publicApiUrl;
 	}
 
-	const baseUrl = process.env.API_URL;
+	const baseUrl = normalizeApiBaseUrl(process.env.API_URL);
 	if (!baseUrl) {
 		console.warn(
 			"API_URL not set. Set NEXT_PUBLIC_API_URL or API_URL environment variable.",

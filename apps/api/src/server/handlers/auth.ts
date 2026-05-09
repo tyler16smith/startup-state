@@ -7,6 +7,7 @@ import type { ApiContext } from "../api-context";
 import { createApiError } from "../api-context";
 import { type AuthenticatedContext, withAuth } from "../handler-wrappers";
 import { verifyAppleIdentityToken } from "../lib/apple-auth";
+import { getSessionCookieDiagnostics } from "../lib/auth-diagnostics";
 import { computeCsrfToken } from "../lib/csrf";
 import {
 	createAuthSession,
@@ -682,8 +683,21 @@ export const auth = {
 	csrfToken: async (ctx: ApiContext) => {
 		try {
 			const csrfToken = await computeCsrfToken(ctx.req.headers.cookie ?? "");
+			logger.info("auth.csrf_token.issued", {
+				feature: "auth",
+				operation: "csrf_token",
+				origin: ctx.req.headers.origin,
+				...getSessionCookieDiagnostics(ctx.req.headers.cookie),
+			});
 			return { csrfToken };
-		} catch (_err) {
+		} catch (error) {
+			logger.warn("auth.csrf_token.rejected", {
+				feature: "auth",
+				operation: "csrf_token",
+				origin: ctx.req.headers.origin,
+				errorMessage: error instanceof Error ? error.message : "Unknown error",
+				...getSessionCookieDiagnostics(ctx.req.headers.cookie),
+			});
 			throw createApiError("Not authenticated", 401);
 		}
 	},

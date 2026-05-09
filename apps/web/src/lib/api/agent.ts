@@ -429,7 +429,12 @@ export async function streamStartupStateAgentMessage({
 	// token from a previous server version.
 	clearCsrfToken();
 	const csrfToken = await getCsrfToken();
-	const response = await fetch(toApiUrl("/api/v1/agent/chat/stream"), {
+	const url = toApiUrl("/api/v1/agent/chat/stream");
+	console.log("[Agent API] Starting chat stream", {
+		url,
+		hasCsrfToken: Boolean(csrfToken),
+	});
+	const response = await fetch(url, {
 		method: "POST",
 		credentials: "include",
 		signal,
@@ -438,6 +443,12 @@ export async function streamStartupStateAgentMessage({
 			...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
 		},
 		body: JSON.stringify(input),
+	});
+	console.log("[Agent API] Chat stream response", {
+		url: response.url,
+		status: response.status,
+		ok: response.ok,
+		redirected: response.redirected,
 	});
 
 	if (!response.ok) {
@@ -487,7 +498,12 @@ export async function streamStartupStateWidgetAction({
 	signal?: AbortSignal;
 }): Promise<void> {
 	const csrfToken = await getCsrfToken();
-	const response = await fetch(toApiUrl("/api/v1/agent/widget-action/stream"), {
+	const url = toApiUrl("/api/v1/agent/widget-action/stream");
+	console.log("[Agent API] Starting widget action stream", {
+		url,
+		hasCsrfToken: Boolean(csrfToken),
+	});
+	const response = await fetch(url, {
 		method: "POST",
 		credentials: "include",
 		signal,
@@ -496,6 +512,12 @@ export async function streamStartupStateWidgetAction({
 			...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
 		},
 		body: JSON.stringify(input),
+	});
+	console.log("[Agent API] Widget action stream response", {
+		url: response.url,
+		status: response.status,
+		ok: response.ok,
+		redirected: response.redirected,
 	});
 
 	if (!response.ok) {

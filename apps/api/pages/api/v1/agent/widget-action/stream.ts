@@ -10,6 +10,7 @@ import {
 } from "../../../../../src/agent/widgets/action-executor";
 import { logger } from "../../../../../src/lib/logger";
 import { createApiContext } from "../../../../../src/server/api-context";
+import { getSessionCookieDiagnostics } from "../../../../../src/server/lib/auth-diagnostics";
 import {
 	applyCorsHeaders,
 	enforceOrigin,
@@ -94,6 +95,15 @@ export default async function handler(
 
 	const hasBearerAuth = hasBearerToken(req);
 	const hasSession = hasSessionCookie(req);
+	logger.info("agent.widget_action.stream.request_received", {
+		feature: "agent",
+		operation: "widget_action.stream",
+		origin,
+		isAllowedOrigin,
+		hasBearerAuth,
+		hasSession,
+		...getSessionCookieDiagnostics(req.headers.cookie),
+	});
 
 	if (!hasBearerAuth && hasSession) {
 		try {
@@ -125,6 +135,16 @@ export default async function handler(
 	const ctx = await createApiContext(req, res);
 	const userId = ctx.userId;
 	if (!userId) {
+		logger.warn("agent.widget_action.stream.unauthorized", {
+			feature: "agent",
+			operation: "widget_action.stream",
+			origin,
+			hasBearerAuth,
+			hasSession,
+			hasContextSession: Boolean(ctx.session),
+			hasJwtPayload: Boolean(ctx.jwtPayload),
+			...getSessionCookieDiagnostics(req.headers.cookie),
+		});
 		res.status(401).json({ error: { message: "Unauthorized" } });
 		return;
 	}

@@ -109,6 +109,17 @@ describe("generated API client request shape", () => {
 		assert.equal(headers.has("content-type"), false);
 	});
 
+	it("normalizes configured API URLs with trailing slashes", async () => {
+		process.env.NEXT_PUBLIC_API_URL = "https://api.example.com/";
+
+		await customFetch("/api/v1/billing/getStatus", { method: "GET" });
+
+		assert.equal(
+			latestRequest().url,
+			"https://api.example.com/api/v1/billing/getStatus",
+		);
+	});
+
 	it("keeps JSON Content-Type on requests with a body", async () => {
 		await customFetch("/api/v1/billing/createCheckoutSession", {
 			body: JSON.stringify({ plan: "monthly" }),

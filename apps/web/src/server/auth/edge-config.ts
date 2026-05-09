@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { USER_ROLE } from "~/lib/user-role";
+import { getAuthCookieDomain } from "./cookie-domain";
 
 // Startup check for AUTH_SECRET
 if (typeof process !== "undefined" && !process.env.AUTH_SECRET) {
@@ -23,11 +24,7 @@ export const edgeAuthConfig = {
 				sameSite: "lax",
 				path: "/",
 				secure: process.env.NODE_ENV === "production",
-				// Set AUTH_COOKIE_DOMAIN to share cookies across app/api subdomains.
-				domain:
-					process.env.NODE_ENV === "production"
-						? process.env.AUTH_COOKIE_DOMAIN || undefined
-						: undefined,
+				domain: getAuthCookieDomain(),
 			},
 		},
 	},

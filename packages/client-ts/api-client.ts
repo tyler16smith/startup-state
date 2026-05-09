@@ -6,9 +6,13 @@
  * Mobile: Will use Bearer tokens (added by mobile app layer)
  */
 
+function normalizeApiBaseUrl(url: string | undefined): string {
+	return (url ?? "").trim().replace(/\/+$/, "");
+}
+
 function getApiBaseUrl(): string {
 	const isDevelopment = process.env.NODE_ENV === "development";
-	const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+	const publicApiUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 	// Browser context
 	if (typeof window !== "undefined") {
@@ -28,7 +32,7 @@ function getApiBaseUrl(): string {
 		return publicApiUrl;
 	}
 
-	const baseUrl = process.env.API_URL;
+	const baseUrl = normalizeApiBaseUrl(process.env.API_URL);
 	if (!baseUrl) {
 		console.warn(
 			"[API Client] API_URL not set. Set NEXT_PUBLIC_API_URL or API_URL environment variable.",
@@ -56,16 +60,29 @@ async function fetchCsrfToken(): Promise<CsrfTokenFetchResult> {
 	if (typeof window === "undefined") return { ok: false, token: null };
 	try {
 		const baseUrl = getApiBaseUrl();
-		const response = await fetch(`${baseUrl}/api/v1/auth/csrfToken`, {
+		const url = `${baseUrl}/api/v1/auth/csrfToken`;
+		console.log("[API Client] Fetching CSRF token", { url });
+		const response = await fetch(url, {
 			method: "GET",
 			credentials: "include",
+		});
+		console.log("[API Client] CSRF token response", {
+			url: response.url,
+			status: response.status,
+			ok: response.ok,
+			redirected: response.redirected,
 		});
 		if (!response.ok) return { ok: false, token: null };
 		const payload = (await response.json()) as {
 			data?: { csrfToken?: string };
 		};
-		return { ok: true, token: payload?.data?.csrfToken ?? null };
-	} catch {
+		const token = payload?.data?.csrfToken ?? null;
+		console.log("[API Client] CSRF token parsed", { hasToken: Boolean(token) });
+		return { ok: true, token };
+	} catch (error) {
+		console.log("[API Client] CSRF token fetch failed", {
+			errorMessage: error instanceof Error ? error.message : "Unknown error",
+		});
 		return { ok: false, token: null };
 	}
 }

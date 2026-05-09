@@ -5,6 +5,7 @@ import { decode } from "next-auth/jwt";
 
 import { logger } from "~/lib/logger";
 import { db } from "./db";
+import { getSessionCookieDiagnostics } from "./lib/auth-diagnostics";
 import {
 	extractSessionCookie,
 	parseCookieHeader,
@@ -105,6 +106,14 @@ export async function createApiContext(
 
 	// Try to get userId from NextAuth session cookie
 	const sessionUserId = await getUserIdFromSessionCookie(cookies);
+	if (!sessionUserId && extractSessionCookie(cookies)) {
+		logger.warn("auth.session_cookie.unresolved", {
+			feature: "auth",
+			operation: "createApiContext",
+			origin: req.headers.origin,
+			...getSessionCookieDiagnostics(cookieHeader),
+		});
+	}
 
 	// Check for JWT token (for mobile apps)
 	const authHeader = req.headers.authorization;

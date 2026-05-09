@@ -11,6 +11,7 @@ import {
 	getAuthUser,
 	resolveGoogleUser,
 } from "./api-auth";
+import { getAuthCookieDomain } from "./cookie-domain";
 
 // Startup check for AUTH_SECRET
 if (!process.env.AUTH_SECRET) {
@@ -91,11 +92,7 @@ export const authConfig = {
 				sameSite: "lax",
 				path: "/",
 				secure: process.env.NODE_ENV === "production",
-				// Set AUTH_COOKIE_DOMAIN to share cookies across app/api subdomains.
-				domain:
-					process.env.NODE_ENV === "production"
-						? process.env.AUTH_COOKIE_DOMAIN || undefined
-						: undefined,
+				domain: getAuthCookieDomain(),
 			},
 		},
 	},
