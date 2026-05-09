@@ -128,6 +128,10 @@
 	}
 }
 
+.map-presentation-mode .mapboxgl-ctrl-bottom-right {
+	display: none;
+}
+
 /* Reposition Sonner close button to top-right with slight overhang */
 [data-sonner-toast] [data-close-button] {
 	left: auto !important;

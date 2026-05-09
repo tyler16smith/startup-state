@@ -12,14 +12,16 @@ export function PresentationSummary({
 			<h2 className="max-w-xl text-balance font-semibold text-2xl leading-tight sm:text-3xl">
 				Utah: The Startup Capital of the World
 			</h2>
-			<div className="mt-3 space-y-1 font-medium text-lg text-slate-700 sm:text-xl">
+			<div className="mt-3 space-y-1 font-medium text-lg text-slate-700 sm:text-2xl">
 				<p>
-					<span className="font-semibold text-slate-950">
+					<span className="font-semibold text-emerald-500">
 						{numberFormatter.format(startupCount)}
 					</span>{" "}
 					startups
 				</p>
-				<p><b>$9.4B</b> in funding</p>
+				<p>
+					<b className="text-emerald-500">$9.4B</b> in funding
+				</p>
 			</div>
 		</section>
 	);

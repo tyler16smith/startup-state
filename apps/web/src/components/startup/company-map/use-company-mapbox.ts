@@ -15,6 +15,108 @@ import {
 import type { CompanyFeatureCollection } from "~/components/startup/company-map/types";
 import type { Company } from "~/lib/startup-api";
 
+// ── Presentation mode: animated flight lines ─────────────────────────────────
+const UTAH_ORIGIN: [number, number] = [-111.891, 39.321];
+const FLIGHT_ARC_STEPS = 80;
+const FLIGHT_CYCLE_MS = 10_000;
+const FLIGHT_DRAW_MS = 1_400;
+const FLIGHT_HOLD_MS = 400;
+const FLIGHT_FADE_MS = 700;
+const FLIGHT_TOTAL_MS = FLIGHT_DRAW_MS + FLIGHT_HOLD_MS + FLIGHT_FADE_MS;
+const FLIGHT_SOURCE_ID = "presentation-flights";
+const FLIGHT_GLOW_LAYER_ID = "presentation-flights-glow";
+const FLIGHT_LINE_LAYER_ID = "presentation-flights-line";
+
+const FLIGHT_DESTINATIONS: readonly [number, number][] = [
+	[-0.118, 51.509], // London
+	[139.691, 35.689], // Tokyo
+	[151.209, -33.868], // Sydney
+	[-46.633, -23.55], // São Paulo
+	[72.877, 18.975], // Mumbai
+	[18.424, -33.924], // Cape Town
+	[-79.383, 43.653], // Toronto
+	[-99.133, 19.432], // Mexico City
+	[116.391, 39.907], // Beijing
+	[13.405, 52.52], // Berlin
+	[55.296, 25.204], // Dubai
+	[103.82, 1.352], // Singapore
+	[31.235, 30.044], // Cairo
+	[-58.437, -34.603], // Buenos Aires
+	[3.379, 6.524], // Lagos
+	[37.618, 55.751], // Moscow
+	[126.978, 37.566], // Seoul
+	[-87.629, 41.878], // Chicago
+	[-80.191, 25.775], // Miami
+	[4.9, 52.367], // Amsterdam
+	[36.817, -1.286], // Nairobi
+	[106.845, -6.211], // Jakarta
+	[-70.669, -33.456], // Santiago
+	[46.738, 24.688], // Riyadh
+	[2.349, 48.864], // Paris
+];
+
+function shuffleDestinations(
+	arr: readonly [number, number][],
+): [number, number][] {
+	const result: [number, number][] = [...arr];
+	for (let i = result.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		const tmp = result[i] as [number, number];
+		result[i] = result[j] as [number, number];
+		result[j] = tmp;
+	}
+	return result;
+}
+
+function unwrapLongitude(previousLongitude: number, longitude: number) {
+	let unwrappedLongitude = longitude;
+	while (unwrappedLongitude - previousLongitude > 180) {
+		unwrappedLongitude -= 360;
+	}
+	while (unwrappedLongitude - previousLongitude < -180) {
+		unwrappedLongitude += 360;
+	}
+	return unwrappedLongitude;
+}
+
+function clamp(value: number, min: number, max: number) {
+	return Math.min(Math.max(value, min), max);
+}
+
+function computeFlightArc(
+	from: [number, number],
+	to: [number, number],
+): [number, number][] {
+	const targetLongitude = unwrapLongitude(from[0], to[0]);
+	const longitudeDelta = targetLongitude - from[0];
+	const latitudeDelta = to[1] - from[1];
+	const routeDistance = Math.hypot(longitudeDelta, latitudeDelta);
+	const bend = clamp(routeDistance * 0.18, 8, 24);
+	const midpointLatitude = (from[1] + to[1]) / 2;
+	const shouldBendSouth = Math.abs(longitudeDelta) > 60 || latitudeDelta < 0;
+	const controlPoint: [number, number] = [
+		(from[0] + targetLongitude) / 2,
+		clamp(midpointLatitude + (shouldBendSouth ? -bend : bend), -45, 55),
+	];
+	const points: [number, number][] = [];
+
+	for (let i = 0; i <= FLIGHT_ARC_STEPS; i++) {
+		const t = i / FLIGHT_ARC_STEPS;
+		const inverseT = 1 - t;
+		points.push([
+			inverseT * inverseT * from[0] +
+				2 * inverseT * t * controlPoint[0] +
+				t * t * targetLongitude,
+			inverseT * inverseT * from[1] +
+				2 * inverseT * t * controlPoint[1] +
+				t * t * to[1],
+		]);
+	}
+
+	return points;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 type UseCompanyMapboxParams = {
 	companiesById: Map<string, Company>;
 	companyFeatureCollection: CompanyFeatureCollection;
@@ -43,6 +145,7 @@ export function useCompanyMapbox({
 	const selectedMarkerRef = useRef<Marker | null>(null);
 	const clusterHandlersAttachedRef = useRef(false);
 	const presentationFrameRef = useRef<number | null>(null);
+	const flightFrameRef = useRef<number | null>(null);
 	const [mapReady, setMapReady] = useState(false);
 
 	const flyToCompany = useCallback((company: Company) => {
@@ -376,6 +479,115 @@ export function useCompanyMapbox({
 				window.cancelAnimationFrame(presentationFrameRef.current);
 				presentationFrameRef.current = null;
 			}
+		};
+	}, [isPresentationMode, mapReady]);
+
+	useEffect(() => {
+		const map = mapInstanceRef.current;
+		if (!map || !mapReady || !isPresentationMode) return;
+
+		const destinations = shuffleDestinations(FLIGHT_DESTINATIONS);
+		const arcs = destinations.map((dest) =>
+			computeFlightArc(UTAH_ORIGIN, dest),
+		);
+		const startInterval = FLIGHT_CYCLE_MS / destinations.length;
+
+		map.addSource(FLIGHT_SOURCE_ID, {
+			type: "geojson",
+			data: { type: "FeatureCollection", features: [] },
+		});
+		map.addLayer({
+			id: FLIGHT_GLOW_LAYER_ID,
+			type: "line",
+			source: FLIGHT_SOURCE_ID,
+			paint: {
+				"line-color": "#10b981",
+				"line-width": 6,
+				"line-opacity": ["*", ["get", "opacity"], 0.22],
+				"line-blur": 3,
+			},
+			layout: { "line-cap": "round", "line-join": "round" },
+		});
+		map.addLayer({
+			id: FLIGHT_LINE_LAYER_ID,
+			type: "line",
+			source: FLIGHT_SOURCE_ID,
+			paint: {
+				"line-color": "#34d399",
+				"line-width": 1.5,
+				"line-opacity": ["get", "opacity"],
+			},
+			layout: { "line-cap": "round", "line-join": "round" },
+		});
+
+		const cycleStart = performance.now();
+
+		function tick() {
+			const m = mapInstanceRef.current;
+			if (!m) return;
+			const cycleTime = (performance.now() - cycleStart) % FLIGHT_CYCLE_MS;
+			const features: GeoJSON.Feature<
+				GeoJSON.LineString,
+				{ opacity: number }
+			>[] = [];
+
+			for (let i = 0; i < destinations.length; i++) {
+				const lineStart = i * startInterval;
+				const lineTime = cycleTime - lineStart;
+				if (lineTime <= 0 || lineTime > FLIGHT_TOTAL_MS) continue;
+
+				let drawProgress: number;
+				let opacity: number;
+
+				if (lineTime <= FLIGHT_DRAW_MS) {
+					const t = lineTime / FLIGHT_DRAW_MS;
+					drawProgress = t * t * (3 - 2 * t); // smoothstep
+					opacity = 1;
+				} else if (lineTime <= FLIGHT_DRAW_MS + FLIGHT_HOLD_MS) {
+					drawProgress = 1;
+					opacity = 1;
+				} else {
+					drawProgress = 1;
+					opacity =
+						1 - (lineTime - FLIGHT_DRAW_MS - FLIGHT_HOLD_MS) / FLIGHT_FADE_MS;
+				}
+
+				const arc = arcs[i];
+				if (!arc || arc.length < 2) continue;
+				const pointCount = Math.max(2, Math.ceil(arc.length * drawProgress));
+				features.push({
+					type: "Feature",
+					properties: { opacity: Math.max(0, opacity) },
+					geometry: {
+						type: "LineString",
+						coordinates: arc.slice(0, pointCount),
+					},
+				});
+			}
+
+			const src = m.getSource(FLIGHT_SOURCE_ID);
+			if (src) {
+				(src as GeoJSONSource).setData({
+					type: "FeatureCollection",
+					features,
+				});
+			}
+
+			flightFrameRef.current = window.requestAnimationFrame(tick);
+		}
+
+		flightFrameRef.current = window.requestAnimationFrame(tick);
+
+		return () => {
+			if (flightFrameRef.current !== null) {
+				window.cancelAnimationFrame(flightFrameRef.current);
+				flightFrameRef.current = null;
+			}
+			const m = mapInstanceRef.current;
+			if (!m) return;
+			if (m.getLayer(FLIGHT_LINE_LAYER_ID)) m.removeLayer(FLIGHT_LINE_LAYER_ID);
+			if (m.getLayer(FLIGHT_GLOW_LAYER_ID)) m.removeLayer(FLIGHT_GLOW_LAYER_ID);
+			if (m.getSource(FLIGHT_SOURCE_ID)) m.removeSource(FLIGHT_SOURCE_ID);
 		};
 	}, [isPresentationMode, mapReady]);
 

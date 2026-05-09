@@ -165,6 +165,7 @@ export function CompanyMap({ token }: { token?: string }) {
 				isFullscreen
 					? "fixed inset-0 z-[60] h-screen w-screen"
 					: "relative h-full min-h-0",
+				isPresentationMode ? "map-presentation-mode" : "",
 			].join(" ")}
 		>
 			{token ? <div className="h-full min-h-0" ref={mapRef} /> : null}
@@ -174,10 +175,12 @@ export function CompanyMap({ token }: { token?: string }) {
 				isPresentationMode={isPresentationMode}
 				onToggle={togglePresentationMode}
 			/>
-			<FullscreenButton
-				isFullscreen={isFullscreen}
-				onToggle={() => setIsFullscreen((current) => !current)}
-			/>
+			{!isPresentationMode && (
+				<FullscreenButton
+					isFullscreen={isFullscreen}
+					onToggle={() => setIsFullscreen((current) => !current)}
+				/>
+			)}
 			{isPresentationMode && (
 				<PresentationSummary startupCount={companies.length} />
 			)}
