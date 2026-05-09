@@ -178,8 +178,13 @@ export const companyQuerySchema = paginationSchema.extend({
 	sort: z.enum(["name", "recent"]).default("recent"),
 });
 
+const companyPhotoUrlSchema = z
+	.string()
+	.url()
+	.or(z.string().regex(/^data:image\/(png|jpeg);base64,[a-z0-9+/=]+$/i));
+
 export const companyPhotoInputSchema = z.object({
-	url: z.string().url(),
+	url: companyPhotoUrlSchema,
 	altText: z.string().optional().nullable(),
 	sortOrder: z.coerce.number().int().default(0),
 });

@@ -1,8 +1,8 @@
 "use client";
 
-import { Loader2, Save } from "lucide-react";
+import { ImageIcon, Loader2, Save, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	CompanyAddressAutocomplete,
 	type CompanyAddressSelection,
@@ -23,6 +23,9 @@ import { apiClient, type Company } from "~/lib/startup-api";
 type CompanyFormMode = "full" | "submission";
 type CompanyFormValues = Record<string, string>;
 
+const COMPANY_DRAFT_KEY = "add-company-draft";
+const acceptedLogoTypes = new Set(["image/png", "image/jpeg"]);
+
 export function CompanyForm({
 	company,
 	admin = false,
@@ -36,15 +39,27 @@ export function CompanyForm({
 }) {
 	const router = useRouter();
 	const resolvedMode = mode ?? (!admin && !company ? "submission" : "full");
+	const isDraftable = !company;
+	const formRef = useRef<HTMLFormElement>(null);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
+	const [formVersion, setFormVersion] = useState(0);
 	const [previewValues, setPreviewValues] = useState<CompanyFormValues>(() =>
 		initialCompanyValues(company, admin),
 	);
 	const [addressFields, setAddressFields] = useState<CompanyAddressSelection>(
 		() => initialAddressFields(company),
 	);
+
+	useEffect(() => {
+		if (!isDraftable) return;
+		const draft = readFormDraft(COMPANY_DRAFT_KEY);
+		if (!draft) return;
+		setPreviewValues((current) => ({ ...current, ...draft }));
+		setAddressFields((current) => ({ ...current, ...draft }));
+		setFormVersion((current) => current + 1);
+	}, [isDraftable]);
 
 	function updatePreview(event: React.FormEvent<HTMLFormElement>) {
 		const field = event.target;
@@ -60,26 +75,57 @@ export function CompanyForm({
 	}
 
 	function updatePreviewValue(name: string, value: string) {
-		setPreviewValues((current) => ({ ...current, [name]: value }));
+		setPreviewValues((current) => {
+			const next = { ...current, [name]: value };
+			if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+			return next;
+		});
+	}
+
+	function persistDraftFromForm(form: HTMLFormElement) {
+		if (!isDraftable) return;
+		writeFormDraft(COMPANY_DRAFT_KEY, {
+			...previewValues,
+			...formValues(form),
+		});
+	}
+
+	function updateLogo(value: string) {
+		setPreviewValues((current) => {
+			const formValuesSnapshot = formRef.current
+				? formValues(formRef.current)
+				: {};
+			const next = {
+				...current,
+				...formValuesSnapshot,
+				photos: logoPhotoValue(
+					formValuesSnapshot.photos ?? current.photos,
+					value,
+				),
+			};
+			if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+			return next;
+		});
+		setFormVersion((current) => current + 1);
 	}
 
 	const handleAddressChange = useCallback(
 		(selection: CompanyAddressSelection) => {
 			setAddressFields((current) => ({ ...current, ...selection }));
-			setPreviewValues((current) => ({ ...current, ...selection }));
+			setPreviewValues((current) => {
+				const next = { ...current, ...selection };
+				if (isDraftable) writeFormDraft(COMPANY_DRAFT_KEY, next);
+				return next;
+			});
 		},
-		[],
+		[isDraftable],
 	);
 
 	async function submit(formData: FormData) {
 		setSaving(true);
 		setError(null);
 		setSuccess(null);
-		const photos = String(formData.get("photos") ?? "")
-			.split(",")
-			.map((url) => url.trim())
-			.filter(Boolean)
-			.map((url, sortOrder) => ({ url, sortOrder }));
+		const photos = photosFromValue(String(formData.get("photos") ?? ""));
 		const body = Object.fromEntries(formData.entries());
 		try {
 			const path = company
@@ -98,6 +144,7 @@ export function CompanyForm({
 					photos,
 				}),
 			});
+			if (isDraftable) localStorage.removeItem(COMPANY_DRAFT_KEY);
 			if (!admin && !company) {
 				setSuccess(
 					"Company submitted for review. An admin can publish it and approve ownership from the claims queue.",
@@ -125,7 +172,10 @@ export function CompanyForm({
 					? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]"
 					: "grid gap-5"
 			}
+			key={formVersion}
+			onBlur={(event) => persistDraftFromForm(event.currentTarget)}
 			onChange={updatePreview}
+			ref={formRef}
 		>
 			<div
 				className={
@@ -138,6 +188,7 @@ export function CompanyForm({
 					<SubmissionFields
 						addressFields={addressFields}
 						onAddressChange={handleAddressChange}
+						onLogoChange={updateLogo}
 						onValueChange={updatePreviewValue}
 						values={previewValues}
 					/>
@@ -146,6 +197,7 @@ export function CompanyForm({
 						addressFields={addressFields}
 						admin={admin}
 						onAddressChange={handleAddressChange}
+						onLogoChange={updateLogo}
 						onValueChange={updatePreviewValue}
 						values={previewValues}
 					/>
@@ -184,11 +236,13 @@ export function CompanyForm({
 function SubmissionFields({
 	addressFields,
 	onAddressChange,
+	onLogoChange,
 	onValueChange,
 	values,
 }: {
 	addressFields: CompanyAddressSelection;
 	onAddressChange: (selection: CompanyAddressSelection) => void;
+	onLogoChange: (value: string) => void;
 	onValueChange: (name: string, value: string) => void;
 	values: CompanyFormValues;
 }) {
@@ -262,6 +316,8 @@ function SubmissionFields({
 					placeholder="Select sector"
 				/>
 			</div>
+			<CompanyLogoDropZone onLogoChange={onLogoChange} value={values.photos} />
+			<input name="photos" readOnly type="hidden" value={values.photos ?? ""} />
 		</div>
 	);
 }
@@ -270,12 +326,14 @@ function FullFields({
 	admin,
 	addressFields,
 	onAddressChange,
+	onLogoChange,
 	onValueChange,
 	values,
 }: {
 	admin: boolean;
 	addressFields: CompanyAddressSelection;
 	onAddressChange: (selection: CompanyAddressSelection) => void;
+	onLogoChange: (value: string) => void;
 	onValueChange: (name: string, value: string) => void;
 	values: CompanyFormValues;
 }) {
@@ -372,7 +430,141 @@ function FullFields({
 					placeholder="https://...jpg, https://...jpg"
 				/>
 			</div>
+			<CompanyLogoDropZone onLogoChange={onLogoChange} value={values.photos} />
 		</>
+	);
+}
+
+function CompanyLogoDropZone({
+	onLogoChange,
+	value,
+}: {
+	onLogoChange: (value: string) => void;
+	value?: string;
+}) {
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const dragCounterRef = useRef(0);
+	const [isPageDragOver, setIsPageDragOver] = useState(false);
+	const [message, setMessage] = useState<string | null>(null);
+	const hasLogo = photosFromValue(value).length > 0;
+
+	const processFile = useCallback(
+		async (file: File) => {
+			if (!acceptedLogoTypes.has(file.type)) {
+				setMessage("Logo must be a PNG or JPEG image.");
+				return;
+			}
+
+			const dataUrl = await readFileAsDataUrl(file);
+			onLogoChange(dataUrl);
+			setMessage(`${file.name} added as the company logo.`);
+		},
+		[onLogoChange],
+	);
+
+	const processFileRef = useRef(processFile);
+	useEffect(() => {
+		processFileRef.current = processFile;
+	}, [processFile]);
+
+	useEffect(() => {
+		const handleDragEnter = (event: DragEvent) => {
+			if (!hasDraggedFiles(event)) return;
+			event.preventDefault();
+			dragCounterRef.current += 1;
+			if (dragCounterRef.current === 1) setIsPageDragOver(true);
+		};
+
+		const handleDragLeave = (event: DragEvent) => {
+			if (!hasDraggedFiles(event)) return;
+			event.preventDefault();
+			dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+			if (dragCounterRef.current === 0) setIsPageDragOver(false);
+		};
+
+		const handleDragOver = (event: DragEvent) => {
+			if (!hasDraggedFiles(event)) return;
+			event.preventDefault();
+		};
+
+		const handleDrop = (event: DragEvent) => {
+			if (!hasDraggedFiles(event)) return;
+			event.preventDefault();
+			dragCounterRef.current = 0;
+			setIsPageDragOver(false);
+			const file = event.dataTransfer?.files?.[0];
+			if (file) void processFileRef.current(file);
+		};
+
+		document.addEventListener("dragenter", handleDragEnter);
+		document.addEventListener("dragleave", handleDragLeave);
+		document.addEventListener("dragover", handleDragOver);
+		document.addEventListener("drop", handleDrop);
+
+		return () => {
+			document.removeEventListener("dragenter", handleDragEnter);
+			document.removeEventListener("dragleave", handleDragLeave);
+			document.removeEventListener("dragover", handleDragOver);
+			document.removeEventListener("drop", handleDrop);
+		};
+	}, []);
+
+	return (
+		<div className="space-y-2">
+			{isPageDragOver && <LogoPageDropOverlay />}
+			<input
+				accept="image/png,image/jpeg"
+				className="hidden"
+				onChange={(event) => {
+					const file = event.target.files?.[0];
+					if (file) void processFile(file);
+					event.target.value = "";
+				}}
+				ref={fileInputRef}
+				type="file"
+			/>
+			<button
+				className="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-emerald-300 border-dashed bg-emerald-50 px-4 py-5 font-medium text-emerald-800 text-sm transition-colors hover:border-emerald-500 hover:bg-emerald-100"
+				onClick={() => fileInputRef.current?.click()}
+				type="button"
+			>
+				{hasLogo ? (
+					<ImageIcon aria-hidden="true" className="size-5" />
+				) : (
+					<UploadCloud aria-hidden="true" className="size-5" />
+				)}
+				<span>{hasLogo ? "Replace company logo" : "Upload company logo"}</span>
+				<span className="font-normal text-emerald-700 text-xs">
+					PNG or JPEG. Drag and drop anywhere on this page.
+				</span>
+			</button>
+			{message && (
+				<p
+					className={
+						message.includes("must")
+							? "text-destructive text-sm"
+							: "text-muted-foreground text-sm"
+					}
+					role={message.includes("must") ? "alert" : "status"}
+				>
+					{message}
+				</p>
+			)}
+		</div>
+	);
+}
+
+function LogoPageDropOverlay() {
+	return (
+		<div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-emerald-50/95 p-8">
+			<div className="flex h-full w-full flex-col items-center justify-center gap-6 rounded-2xl border-4 border-emerald-400 border-dashed">
+				<UploadCloud aria-hidden="true" className="size-24 text-emerald-500" />
+				<p className="font-semibold text-3xl text-emerald-700">
+					Drop your image here
+				</p>
+				<p className="text-emerald-600 text-lg">PNG or JPEG only</p>
+			</div>
+		</div>
 	);
 }
 
@@ -445,11 +637,78 @@ function initialAddressFields(company?: Company): CompanyAddressSelection {
 }
 
 function photosFromValue(value: string | undefined) {
-	return String(value ?? "")
-		.split(",")
+	const rawValue = String(value ?? "").trim();
+	if (!rawValue) return [];
+	const values = rawValue.includes("\n")
+		? rawValue.split(/\n+/)
+		: rawValue.startsWith("data:image/")
+			? [rawValue]
+			: rawValue.split(",");
+	return values
 		.map((url) => url.trim())
 		.filter(Boolean)
 		.map((url, sortOrder) => ({ url, sortOrder }));
+}
+
+function logoPhotoValue(currentValue: string | undefined, nextValue: string) {
+	return [
+		nextValue,
+		...photosFromValue(currentValue)
+			.map((photo) => photo.url)
+			.filter((url) => url !== nextValue),
+	]
+		.filter(Boolean)
+		.join("\n");
+}
+
+function hasDraggedFiles(event: DragEvent) {
+	return Array.from(event.dataTransfer?.types ?? []).includes("Files");
+}
+
+function readFileAsDataUrl(file: File) {
+	return new Promise<string>((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result === "string") {
+				resolve(reader.result);
+				return;
+			}
+			reject(new Error("Could not read image file"));
+		};
+		reader.onerror = () =>
+			reject(reader.error ?? new Error("Could not read image file"));
+		reader.readAsDataURL(file);
+	});
+}
+
+function formValues(form: HTMLFormElement): CompanyFormValues {
+	return Object.fromEntries(
+		Array.from(new FormData(form).entries()).map(([key, value]) => [
+			key,
+			String(value),
+		]),
+	);
+}
+
+function readFormDraft(key: string): CompanyFormValues | null {
+	try {
+		const raw = localStorage.getItem(key);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as unknown;
+		if (!parsed || typeof parsed !== "object") return null;
+		return Object.fromEntries(
+			Object.entries(parsed).flatMap(([draftKey, value]) =>
+				typeof value === "string" ? [[draftKey, value]] : [],
+			),
+		);
+	} catch {
+		localStorage.removeItem(key);
+		return null;
+	}
+}
+
+function writeFormDraft(key: string, values: CompanyFormValues) {
+	localStorage.setItem(key, JSON.stringify(values));
 }
 
 function CompanyPreview({

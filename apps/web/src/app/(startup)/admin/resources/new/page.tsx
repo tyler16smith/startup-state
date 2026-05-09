@@ -1,5 +1,4 @@
 import { AdminCreatePageHeader } from "~/components/startup/admin-create-page-header";
-import { CsvImportDropZone } from "~/components/startup/csv-import-drop-zone";
 import { PageBreadcrumb } from "~/components/startup/page-breadcrumb";
 import { ResourceForm } from "~/components/startup/resource-form";
 import { getResourceTaxonomy } from "~/lib/startup-server-api";

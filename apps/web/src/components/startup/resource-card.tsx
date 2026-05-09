@@ -8,7 +8,10 @@ import {
 	Mail,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
+import { SavePlanDialog } from "~/components/startup/navigator-flow/save-plan-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { apiClient, compactDate, type Resource } from "~/lib/startup-api";
@@ -23,9 +26,12 @@ export function ResourceCard({
 	reasons?: string[];
 	score?: number;
 }) {
+	const pathname = usePathname();
+	const { data: session } = useSession();
 	const [isSaved, setIsSaved] = useState(Boolean(resource.isSaved));
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const communities = taxonomyItems(resource.communities);
 	const sectors = taxonomyItems(resource.sectors);
 	const regions = taxonomyItems(resource.regions);
@@ -36,6 +42,10 @@ export function ResourceCard({
 		: "recently";
 
 	async function toggleSaved() {
+		if (!session?.user && !isSaved) {
+			setSaveDialogOpen(true);
+			return;
+		}
 		setSaving(true);
 		setError(null);
 		try {
@@ -63,6 +73,11 @@ export function ResourceCard({
 
 	return (
 		<article className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+			<SavePlanDialog
+				callbackUrl={pathname || `/resources/${resource.id}`}
+				onOpenChange={setSaveDialogOpen}
+				open={saveDialogOpen}
+			/>
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">

@@ -8,7 +8,7 @@ import { QueryProvider } from "~/components/providers/query-provider";
 import { Toaster } from "~/components/ui/sonner";
 
 export const metadata: Metadata = {
-	title: "Startup State Navigator",
+	title: "Startup State",
 	description:
 		"Personalized Utah startup resource guidance and an interactive ecosystem map.",
 	icons: [{ rel: "icon", url: "/favicon.ico" }],

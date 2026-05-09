@@ -1,14 +1,7 @@
 "use client";
 
 import confetti from "canvas-confetti";
-import {
-	ArrowRight,
-	Compass,
-	Loader2,
-	Map as MapIcon,
-	Redo2,
-	Save,
-} from "lucide-react";
+import { ArrowRight, Compass, Loader2, Save, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -203,8 +196,8 @@ export function FounderResults() {
 							</Link>
 						</Button>
 						<Button asChild variant="outline">
-							<Link href="/resources">
-								Retry <Redo2 className="size-4" />
+							<Link href="/">
+								Restart <Undo2 className="size-4" />
 							</Link>
 						</Button>
 						<Button disabled={saving || saved} onClick={savePlan}>

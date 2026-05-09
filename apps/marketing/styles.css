@@ -46,6 +46,7 @@ button { font: inherit; }
 .mobile-menu { display: none; border-top: 1px solid var(--border); padding: 16px 20px 20px; }
 .mobile-menu.active { display: grid; gap: 12px; }
 .mobile-link { color: var(--muted-foreground); font-weight: 600; }
+.margin-y { margin-top: 30px; margin-bottom: 30px; }
 
 .hero { border-bottom: 1px solid var(--border); background: white; }
 .hero-grid { display: grid; min-height: calc(100vh - 64px); align-items: center; gap: 42px; padding-top: 64px; padding-bottom: 64px; }
@@ -89,7 +90,7 @@ button { font: inherit; }
 .open-resource { display: inline-flex; min-height: 44px; align-items: center; margin-top: 26px; border: 1px solid var(--border); border-radius: 8px; background: white; padding: 0 18px; color: #020617; font-size: 16px; font-weight: 700; box-shadow: 0 1px 4px rgb(15 23 42 / 0.12); }
 .secondary-resource { transform: translateX(0); }
 
-.section { padding: 88px 0; }
+.section { padding: 88px 150px; }
 .section.alt { background: var(--muted); }
 .section-grid { display: grid; gap: 32px; }
 .section h2 { max-width: 620px; margin-top: 12px; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: 0; }

@@ -1,7 +1,7 @@
 import { getCompanyInitials } from "~/components/startup/company-map/company-display";
 import type { Company } from "~/lib/startup-api";
 
-const markerElementBaseClass = "size-11 transition-all duration-300 ease-out";
+const markerElementBaseClasses = ["size-11"];
 const markerButtonBaseClass =
 	"flex size-full items-center justify-center overflow-hidden rounded-full bg-slate-950 font-semibold text-xs text-white transition-all duration-300 ease-out hover:scale-110";
 
@@ -10,23 +10,20 @@ export function setCompanyMarkerSelected(
 	selected: boolean,
 ) {
 	const button = element.querySelector("button");
-	element.className = [
-		markerElementBaseClass,
-		selected ? "scale-125" : "scale-100",
-	].join(" ");
+	element.classList.add(...markerElementBaseClasses);
 	element.style.zIndex = selected ? "10" : "";
 	if (!button) return;
 	button.className = [
 		markerButtonBaseClass,
 		selected
-			? "border-2 border-emerald-500 shadow-2xl ring-4 ring-emerald-200"
-			: "border-2 border-white shadow-lg",
+			? "scale-125 border-2 border-emerald-500 shadow-2xl ring-4 ring-emerald-200"
+			: "scale-100 border-2 border-white shadow-lg",
 	].join(" ");
 }
 
 export function createCompanyMarkerElement(company: Company, selected = false) {
 	const element = document.createElement("div");
-	element.className = markerElementBaseClass;
+	element.classList.add(...markerElementBaseClasses);
 
 	const button = document.createElement("button");
 	button.type = "button";

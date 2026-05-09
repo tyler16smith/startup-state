@@ -19,13 +19,7 @@ import {
 	SheetTrigger,
 } from "~/components/ui/sheet";
 
-const fullPageRoutes = new Set([
-	"/",
-	"/founder",
-	"/founder/results",
-	"/investor",
-	"/investor/results",
-]);
+const fullPageRoutes = new Set(["/", "/founder", "/investor"]);
 
 export function StartupLayoutShell({
 	children,
@@ -55,7 +49,7 @@ export function StartupLayoutShell({
 					<div className="flex h-12 shrink-0 items-center gap-3 border-slate-200 border-b bg-gray-50 px-4 md:hidden">
 						<MobileNavigationSheet onOpenChange={setOpen} open={open} />
 						<span className="min-w-0 truncate font-semibold text-sm">
-							Startup State Navigator
+							Startup State
 						</span>
 						<MobileAgentButton />
 					</div>
@@ -120,7 +114,7 @@ function MobileNavigationSheet({
 						<SheetHeader className="sr-only">
 							<SheetTitle>Navigation</SheetTitle>
 							<SheetDescription>
-								Primary navigation for Startup State Navigator.
+								Primary navigation for Startup State.
 							</SheetDescription>
 						</SheetHeader>
 						<StartupSidebar onClose={() => onOpenChange(false)} />

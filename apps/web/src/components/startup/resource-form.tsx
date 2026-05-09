@@ -2,7 +2,7 @@
 
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RESOURCE_STAGE_OPTIONS } from "~/components/startup/company-form-options";
 import { ResourceCard } from "~/components/startup/resource-card";
 import { Button } from "~/components/ui/button";
@@ -28,6 +28,8 @@ const arrayFields = [
 
 type ResourceFormValues = Record<string, string>;
 
+const RESOURCE_DRAFT_KEY = "add-resource-draft";
+
 export function ResourceForm({
 	resource,
 	taxonomy,
@@ -38,11 +40,22 @@ export function ResourceForm({
 	showPreview?: boolean;
 }) {
 	const router = useRouter();
+	const isDraftable = !resource;
+	const formRef = useRef<HTMLFormElement>(null);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [formVersion, setFormVersion] = useState(0);
 	const [previewValues, setPreviewValues] = useState<ResourceFormValues>(() =>
 		initialResourceValues(resource),
 	);
+
+	useEffect(() => {
+		if (!isDraftable) return;
+		const draft = readFormDraft(RESOURCE_DRAFT_KEY);
+		if (!draft) return;
+		setPreviewValues((current) => ({ ...current, ...draft }));
+		setFormVersion((current) => current + 1);
+	}, [isDraftable]);
 
 	function updatePreview(event: React.FormEvent<HTMLFormElement>) {
 		const field = event.target;
@@ -58,7 +71,19 @@ export function ResourceForm({
 	}
 
 	function updatePreviewValue(name: string, value: string) {
-		setPreviewValues((current) => ({ ...current, [name]: value }));
+		setPreviewValues((current) => {
+			const next = { ...current, [name]: value };
+			if (isDraftable) writeFormDraft(RESOURCE_DRAFT_KEY, next);
+			return next;
+		});
+	}
+
+	function persistDraftFromForm(form: HTMLFormElement) {
+		if (!isDraftable) return;
+		writeFormDraft(RESOURCE_DRAFT_KEY, {
+			...previewValues,
+			...formValues(form),
+		});
 	}
 
 	async function submit(formData: FormData) {
@@ -84,6 +109,7 @@ export function ResourceForm({
 					}),
 				},
 			);
+			if (isDraftable) localStorage.removeItem(RESOURCE_DRAFT_KEY);
 			router.push("/admin/resources");
 			router.refresh();
 		} catch (err) {
@@ -101,7 +127,10 @@ export function ResourceForm({
 					? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]"
 					: "grid gap-5"
 			}
+			key={formVersion}
+			onBlur={(event) => persistDraftFromForm(event.currentTarget)}
 			onChange={updatePreview}
+			ref={formRef}
 		>
 			<div
 				className={
@@ -375,4 +404,34 @@ function Field(
 			<Input id={fieldId} {...inputProps} />
 		</div>
 	);
+}
+
+function formValues(form: HTMLFormElement): ResourceFormValues {
+	return Object.fromEntries(
+		Array.from(new FormData(form).entries()).map(([key, value]) => [
+			key,
+			String(value),
+		]),
+	);
+}
+
+function readFormDraft(key: string): ResourceFormValues | null {
+	try {
+		const raw = localStorage.getItem(key);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as unknown;
+		if (!parsed || typeof parsed !== "object") return null;
+		return Object.fromEntries(
+			Object.entries(parsed).flatMap(([draftKey, value]) =>
+				typeof value === "string" ? [[draftKey, value]] : [],
+			),
+		);
+	} catch {
+		localStorage.removeItem(key);
+		return null;
+	}
+}
+
+function writeFormDraft(key: string, values: ResourceFormValues) {
+	localStorage.setItem(key, JSON.stringify(values));
 }

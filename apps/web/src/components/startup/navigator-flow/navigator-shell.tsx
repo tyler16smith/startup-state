@@ -20,7 +20,7 @@ export function NavigatorShell({
 	onNext,
 	nextDisabled,
 	nextLabel = "Next",
-	brandLabel = "Startup State Navigator",
+	brandLabel = "Startup State",
 }: {
 	children: React.ReactNode;
 	step: number;

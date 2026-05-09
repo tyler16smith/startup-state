@@ -122,7 +122,7 @@ export function StartupSidebar({
 							width={28}
 						/>
 					</span>
-					<span className="text-sm">Startup State Navigator</span>
+					<span className="text-sm">Startup State</span>
 				</Link>
 			</div>
 

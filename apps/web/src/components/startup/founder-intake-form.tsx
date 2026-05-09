@@ -21,7 +21,7 @@ import {
 	Sparkles,
 	TrendingUp,
 	Users,
-	Wrench,
+	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,7 +48,7 @@ const sectorOptions: NavigatorOption[] = [
 		icon: Factory,
 	},
 	{ id: "Consumer", label: "Consumer", icon: ShoppingBag },
-	{ id: "Energy", label: "Energy", icon: Wrench },
+	{ id: "Energy", label: "Energy", icon: Zap },
 	{ id: "Education", label: "Education", icon: GraduationCap },
 ];
 
@@ -58,7 +58,7 @@ const goalOptions: NavigatorOption[] = [
 	{ id: "Grants", label: "Grants", icon: Landmark },
 	{ id: "Education", label: "Education", icon: BookOpen },
 	{ id: "Networking", label: "Networking", icon: Network },
-	{ id: "Exporting", label: "Exporting", icon: Rocket },
+	{ id: "Workspace", label: "Workspace", icon: Building2 },
 	{ id: "Legal help", label: "Legal help", icon: Scale },
 	{ id: "Hiring", label: "Hiring", icon: Users },
 ];
@@ -176,6 +176,11 @@ export function FounderIntakeForm() {
 	}
 
 	function goBack() {
+		if (step === 0) {
+			router.push("/?choosePath=1");
+			return;
+		}
+
 		setDirection(-1);
 		setStep((current) => Math.max(0, current - 1));
 	}
@@ -192,7 +197,7 @@ export function FounderIntakeForm() {
 			direction={direction}
 			nextDisabled={nextDisabled}
 			nextLabel={step === 3 ? "Show my action plan" : "Continue"}
-			onBack={step > 0 ? goBack : undefined}
+			onBack={goBack}
 			onNext={goNext}
 			step={step}
 			totalSteps={4}
@@ -240,6 +245,7 @@ export function FounderIntakeForm() {
 							Funding needs
 						</legend>
 						<OptionGrid
+							columns="four"
 							onToggle={(id) =>
 								update({ fundingNeeds: toggleValue(values.fundingNeeds, id) })
 							}
@@ -269,7 +275,7 @@ export function FounderIntakeForm() {
 						description="A little context helps the recommendations get sharper."
 						title="Where are you right now?"
 					/>
-					<div className="grid gap-8 lg:grid-cols-2">
+					<div className="space-y-8">
 						<fieldset className="space-y-4">
 							<legend className="font-medium text-sm leading-none">
 								Company stage

@@ -34,11 +34,29 @@ const IMPORT_SESSION_TTL_MS = 30 * 60 * 1000;
 const founderRankedResourceSchema = z.object({
 	recommendations: z
 		.array(
-			z.object({
-				resourceId: z.string().min(1),
-				why: z.string().min(10).max(500),
-				score: z.number().min(0).max(100).optional(),
-			}),
+			z
+				.object({
+					resourceId: z.string().min(1).optional(),
+					id: z.string().min(1).optional(),
+					why: z.string().min(10).max(500),
+					score: z.number().min(0).max(100).optional(),
+				})
+				.transform((recommendation, ctx) => {
+					const resourceId = recommendation.resourceId ?? recommendation.id;
+					if (!resourceId) {
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							message: "resourceId is required",
+						});
+						return z.NEVER;
+					}
+
+					return {
+						resourceId,
+						why: recommendation.why,
+						score: recommendation.score,
+					};
+				}),
 		)
 		.min(1)
 		.max(12),
@@ -470,9 +488,7 @@ function intersect(source: string[], target: string[]) {
 	return target.filter((value) => sourceSet.has(value.toLowerCase().trim()));
 }
 
-function founderSemanticQuery(
-	profile: FounderProfileInput,
-) {
+function founderSemanticQuery(profile: FounderProfileInput) {
 	return [
 		profile.keywords,
 		profile.stage ? `Stage: ${profile.stage}` : null,
@@ -579,12 +595,15 @@ function scoreResource(resource: ResourceWithSaved, profile: unknown) {
 
 type ScoredResourceRecommendation = ReturnType<typeof scoreResource>;
 
-function resourcePromptPayload(recommendations: ScoredResourceRecommendation[]) {
+function resourcePromptPayload(
+	recommendations: ScoredResourceRecommendation[],
+) {
 	return recommendations.map((recommendation) => ({
-		id: recommendation.resource.id,
+		resourceId: recommendation.resource.id,
 		name: recommendation.resource.name,
 		description:
-			recommendation.resource.shortDescription ?? recommendation.resource.description,
+			recommendation.resource.shortDescription ??
+			recommendation.resource.description,
 		category: recommendation.resource.category,
 		subcategory: recommendation.resource.subcategory,
 		stages: recommendation.resource.stages,
@@ -618,7 +637,8 @@ async function rankFounderResourcesWithLlm(input: {
 	const systemPrompt = [
 		"You rank Utah startup resources for a founder action-plan workflow.",
 		"Return only JSON that matches the supplied schema.",
-		"Choose up to twelve resources from the candidate list by id.",
+		"Choose up to twelve resources from the candidate list by resourceId.",
+		"The why text must describe the same resourceId it is returned with; never pair one resource's reason with another resource's id.",
 		"Each why must be one concise sentence written directly to the founder as a personalized answer.",
 		"Ground every why only in the supplied founder profile and resource data.",
 		"Treat 'None of these' and 'Prefer not to say' founder identities as neutral signals and do not infer sensitive traits.",
@@ -676,7 +696,10 @@ async function rankFounderResourcesWithLlm(input: {
 		}
 	}
 
-	throw createApiError("Founder recommendations could not be personalized", 502);
+	throw createApiError(
+		"Founder recommendations could not be personalized",
+		502,
+	);
 }
 
 export async function recommendResourcesForFounderProfile(
@@ -730,44 +753,54 @@ export async function recommendResourcesForFounderProfile(
 				right.score - left.score ||
 				left.resource.name.localeCompare(right.resource.name),
 		);
-		const candidatePool = recommendations.slice(0, 20);
+	const candidatePool = recommendations.slice(0, 20);
 
-		if (candidatePool.length === 0) {
-			return { recommendations: [], profile };
-		}
+	if (candidatePool.length === 0) {
+		return { recommendations: [], profile };
+	}
 
-		const ranked = await rankFounderResourcesWithLlm({
-			profile,
-			candidates: candidatePool,
-		});
-		const recommendationsById = new Map(
-			candidatePool.map((recommendation) => [
-				recommendation.resource.id,
-				recommendation,
-			]),
+	const ranked = await rankFounderResourcesWithLlm({
+		profile,
+		candidates: candidatePool,
+	});
+	const recommendationsById = new Map(
+		candidatePool.map((recommendation) => [
+			recommendation.resource.id,
+			recommendation,
+		]),
+	);
+	const personalizedRecommendations = ranked.recommendations.flatMap(
+		(recommendation) => {
+			const baseRecommendation = recommendationsById.get(
+				recommendation.resourceId,
+			);
+			if (!baseRecommendation) {
+				logger.warn("Founder recommendation referenced unknown resource", {
+					feature: "startup-navigator",
+					operation: "founderRecommend",
+					resourceId: recommendation.resourceId,
+				});
+				return [];
+			}
+			return [
+				{
+					...baseRecommendation,
+					score: clampScore(recommendation.score ?? baseRecommendation.score),
+					reasons: [recommendation.why],
+				},
+			];
+		},
+	);
+
+	if (personalizedRecommendations.length === 0) {
+		throw createApiError(
+			"Founder recommendations could not be personalized",
+			502,
 		);
-		const personalizedRecommendations = ranked.recommendations.flatMap(
-			(recommendation) => {
-				const baseRecommendation = recommendationsById.get(
-					recommendation.resourceId,
-				);
-				if (!baseRecommendation) return [];
-				return [
-					{
-						...baseRecommendation,
-						score: clampScore(recommendation.score ?? baseRecommendation.score),
-						reasons: [recommendation.why],
-					},
-				];
-			},
-		);
-
-		if (personalizedRecommendations.length === 0) {
-			throw createApiError("Founder recommendations could not be personalized", 502);
-		}
+	}
 
 	return {
-			recommendations: personalizedRecommendations,
+		recommendations: personalizedRecommendations,
 		profile,
 	};
 }

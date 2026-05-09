@@ -10,14 +10,16 @@ const audiences = [
 	{
 		id: "founder",
 		label: "I'm a founder",
-		description: "Build a personalized Utah startup action plan.",
+		description:
+			"Founders, Utah has so many resources for you. It's about time you found them.",
 		href: "/founder",
 		icon: Hammer,
 	},
 	{
 		id: "investor",
 		label: "I'm an investor",
-		description: "Find companies that match your research focus.",
+		description:
+			"Investors, Utah is building. And it's about time you found out.",
 		href: "/investor",
 		icon: Building2,
 	},
@@ -31,7 +33,7 @@ export function AudienceSelector() {
 			<header className="fixed inset-x-0 top-0 z-30 border-slate-200 border-b bg-white/95 backdrop-blur">
 				<div className="flex h-16 items-center justify-between px-4 sm:px-6">
 					<Link className="font-semibold text-sm" href="/">
-						Startup State Navigator
+						Startup State
 					</Link>
 					<Button asChild size="sm" variant="ghost">
 						<Link href="/auth/signin?callbackUrl=/plan">Sign in</Link>
@@ -70,7 +72,9 @@ export function AudienceSelector() {
 										selected === id ? "text-emerald-800" : "text-slate-700",
 									)}
 								/>
-								<span className="font-semibold">{label}</span>
+								<span className="font-semibold text-lg sm:text-xl">
+									{label}
+								</span>
 								<span className="max-w-64 text-muted-foreground text-sm">
 									{description}
 								</span>

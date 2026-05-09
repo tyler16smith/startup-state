@@ -245,14 +245,10 @@ export function useCompanyMapbox({
 			}
 
 			const company = companiesById.get(companyId);
-			if (!company || feature.geometry.type !== "Point") continue;
+			if (!company) continue;
 
-			const coordinates = feature.geometry.coordinates;
-			const longitude = coordinates.at(0);
-			const latitude = coordinates.at(1);
-			if (typeof longitude !== "number" || typeof latitude !== "number") {
-				continue;
-			}
+			const coordinates = getCompanyCoordinates(company);
+			if (!coordinates) continue;
 
 			visibleCompanyIds.add(companyId);
 			let marker = photoMarkersRef.current.get(companyId);
@@ -265,10 +261,7 @@ export function useCompanyMapbox({
 					onCompanyClick(company);
 					flyToCompany(company);
 				});
-				marker = new mapboxgl.Marker({ element }).setLngLat([
-					longitude,
-					latitude,
-				]);
+				marker = new mapboxgl.Marker({ element }).setLngLat(coordinates);
 				photoMarkersRef.current.set(companyId, marker);
 			}
 
@@ -276,7 +269,7 @@ export function useCompanyMapbox({
 				marker.getElement(),
 				companyId === selectedCompanyId,
 			);
-			marker.setLngLat([longitude, latitude]).addTo(map);
+			marker.setLngLat(coordinates).addTo(map);
 		}
 
 		for (const [companyId, marker] of photoMarkersRef.current) {

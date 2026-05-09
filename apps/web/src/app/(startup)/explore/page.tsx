@@ -63,9 +63,9 @@ export default function ExplorePage() {
 							The official operating system for building in Utah.
 						</h1>
 						<p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-							Startup State Navigator gives founders fast, personalized state
-							resource guidance and gives investors a living map of Utah&apos;s
-							startup economy.
+							Startup State gives founders fast, personalized state resource
+							guidance and gives investors a living map of Utah&apos;s startup
+							economy.
 						</p>
 						<div className="mt-8 grid gap-3 sm:grid-cols-2">
 							<Button asChild className="h-12 justify-between" size="lg">

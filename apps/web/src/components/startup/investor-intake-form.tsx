@@ -15,7 +15,7 @@ import {
 	Sparkles,
 	TrendingUp,
 	Users,
-	Wrench,
+	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,7 +49,7 @@ const sectorOptions: NavigatorOption[] = [
 		icon: Factory,
 	},
 	{ id: "Consumer", label: "Consumer", icon: ShoppingBag },
-	{ id: "Energy", label: "Energy", icon: Wrench },
+	{ id: "Energy", label: "Energy", icon: Zap },
 	{ id: "Education", label: "Education", icon: GraduationCap },
 ];
 
@@ -150,6 +150,11 @@ export function InvestorIntakeForm() {
 	}
 
 	function goBack() {
+		if (step === 0) {
+			router.push("/?choosePath=1");
+			return;
+		}
+
 		setDirection(-1);
 		setStep((current) => Math.max(0, current - 1));
 	}
@@ -163,7 +168,7 @@ export function InvestorIntakeForm() {
 			direction={direction}
 			nextDisabled={nextDisabled}
 			nextLabel={step === 2 ? "Load recommendations" : "Continue"}
-			onBack={step > 0 ? goBack : undefined}
+			onBack={goBack}
 			onNext={goNext}
 			step={step}
 			totalSteps={3}

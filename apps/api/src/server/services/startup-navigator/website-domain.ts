@@ -3,8 +3,10 @@ export function getWebsiteDomain(value?: string | null) {
 	const trimmed = value.trim();
 	if (!trimmed) return null;
 	try {
-		return new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`)
-			.hostname.replace(/^www\./, "")
+		return new URL(
+			/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`,
+		).hostname
+			.replace(/^www\./, "")
 			.toLowerCase();
 	} catch {
 		return null;
